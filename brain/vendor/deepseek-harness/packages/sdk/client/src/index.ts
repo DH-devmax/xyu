@@ -9,7 +9,7 @@
  * @module @deepseek-ai/dsh-sdk-client
  */
 
-export { DeepSeekHarness, HarnessSession } from './api.ts'
+export { createProcessDeepSeekHarness, DeepSeekHarness, HarnessSession } from './api.ts'
 export type { RunOptions } from './api.ts'
 export {
   HarnessClient,
@@ -18,6 +18,7 @@ export {
   TransportClosedError,
 } from './client.ts'
 export type { NotificationSubscription } from './client.ts'
+export type { RuntimeProcessOptions } from './launch.ts'
 export { JsonRpcResponseError } from '@deepseek-ai/dsh-sdk-protocol'
 export type {
   ContentBlock,

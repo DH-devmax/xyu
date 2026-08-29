@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 
 // manifestPath 是产品版本与上游锁定信息的唯一机器可读入口。
 const manifestPath = new URL('../product/manifest.json', import.meta.url);
@@ -19,6 +20,21 @@ const requiredValues = new Map([
 const invalidKeys = [...requiredValues].filter(([, valid]) => !valid).map(([key]) => key);
 if (invalidKeys.length > 0) {
   throw new Error(`产品 manifest 校验失败: ${invalidKeys.join(', ')}`);
+}
+
+// vendorPackagePath 指向 subtree 中与锁定 tag 对应的上游根 manifest。
+const vendorPackagePath = new URL('../brain/vendor/deepseek-harness/package.json', import.meta.url);
+// vendorPackage 用于证明工作树中的 Harness 版本与产品锁定相符。
+const vendorPackage = JSON.parse(await readFile(vendorPackagePath, 'utf8'));
+if (vendorPackage.version !== '0.1.2-alpha.1') throw new Error('Harness subtree 版本与锁定不符');
+
+// subtreeCommit 是从完整 Git 历史中检索的上游 split 证据，CI 必须使用 fetch-depth 0。
+const subtreeCommit = execFileSync('git', [
+  'log', '--all', '--format=%B', '--grep',
+  `git-subtree-split: ${manifest.components.deepseek_harness.commit}`,
+], { encoding: 'utf8' });
+if (!subtreeCommit.includes(manifest.components.deepseek_harness.commit)) {
+  throw new Error('Git 历史中缺少 Harness subtree split 证据');
 }
 
 console.log('product-manifest: 通过');

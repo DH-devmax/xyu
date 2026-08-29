@@ -3,7 +3,7 @@
 GO ?= go
 GOLANGCI_LINT ?= golangci-lint
 
-.PHONY: build build-int build-browser-install build-tray test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
+.PHONY: build build-int build-browser-install build-tray brain-check brain-profile-integration test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
 
 ## build: 编译 server（默认，跳过 integration build tag）
 build:
@@ -16,6 +16,15 @@ build-browser-install:
 ## build-tray: 编译 Windows/macOS 菜单栏控制器（需在目标桌面系统上编译）
 build-tray:
 	$(GO) build ./cmd/tray
+
+## brain-check: 验证 Harness 客服 profile 、结果插件和发布工具白名单
+brain-check:
+	node --test brain/runtime/result-tool.test.mjs
+	node brain/profile/verify-tool-allowlist.mjs
+
+## brain-profile-integration: 使用本地 MCP/模型 fixture 启动真实 DSH profile 并断言最终工具目录
+brain-profile-integration:
+	node brain/profile/verify-runtime-profile.mjs
 
 ## build-int: 带 integration tag 编译（含 browser 包，需要 Chromium 环境）
 build-int:
@@ -106,4 +115,4 @@ comments:
 	node frontend/scripts/check-comments.mjs --mode check --root frontend
 
 ## check: 本地提交前全套检查（fmt + vet + lint + test）
-check: fmt product-check architecture api-check vet lint test comments
+check: fmt product-check brain-check architecture api-check vet lint test comments

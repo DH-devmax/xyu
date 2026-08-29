@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: 配置 Go
         uses: actions/setup-go@v7
@@ -101,6 +103,36 @@ jobs:
           set -Eeuo pipefail
           npm run build --prefix frontend
           git diff --exit-code -- internal/webui/static
+
+  brain:
+    name: Harness 客服大脑检查
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 检出完整 subtree 历史
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: 验证锁定、结果插件和工具白名单
+        run: |
+          node scripts/check-product-manifest.mjs
+          make brain-check
+
+      - name: 安装固定 Harness 工作区
+        working-directory: brain/vendor/deepseek-harness
+        env:
+          CI: "1"
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: 验证 SDK 补丁与客服 profile 真实启动
+        run: |
+          corepack pnpm --dir brain/vendor/deepseek-harness exec vitest run packages/sdk/client
+          make brain-profile-integration
 
   multidb:
     name: MySQL/PostgreSQL 多数据库回归

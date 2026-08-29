@@ -1,0 +1,21 @@
+diff --git a/packages/sdk/client/src/index.ts b/packages/sdk/client/src/index.ts
+index 211cd73..7ab69f6 100644
+--- a/packages/sdk/client/src/index.ts
++++ b/packages/sdk/client/src/index.ts
+@@ -9,7 +9,7 @@
+  * @module @deepseek-ai/dsh-sdk-client
+  */
+ 
+-export { DeepSeekHarness, HarnessSession } from './api.ts'
++export { createProcessDeepSeekHarness, DeepSeekHarness, HarnessSession } from './api.ts'
+ export type { RunOptions } from './api.ts'
+ export {
+   HarnessClient,
+@@ -19,6 +19,7 @@ export {
+   TransportClosedError,
+ } from './client.ts'
+ export type { NotificationSubscription } from './client.ts'
++export type { RuntimeProcessOptions } from './launch.ts'
+ export { JsonRpcResponseError } from '@deepseek-ai/dsh-sdk-protocol'
+ export type {
+   ContentBlock,
