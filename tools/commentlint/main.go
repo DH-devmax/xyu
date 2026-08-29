@@ -239,9 +239,11 @@ func shouldSkipDirectory(path, root string) bool {
 	if ignoredNames[relativePath] {
 		return true
 	}
-	// ignoredPath 表示当前检查的被忽略目录前缀。
-	for ignoredPath := range ignoredNames {
-		if strings.HasPrefix(relativePath, ignoredPath+string(filepath.Separator)) {
+	// segments 将嵌套 vendor/node_modules 目录拆成路径片段，避免只匹配根目录名称。
+	segments := strings.FieldsFunc(relativePath, func(r rune) bool { return r == '/' || r == '\\' })
+	// segment 表示当前遍历项及其索引。
+	for _, segment := range segments {
+		if ignoredNames[segment] {
 			return true
 		}
 	}

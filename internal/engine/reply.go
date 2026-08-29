@@ -25,6 +25,8 @@ type ReplyResult struct {
 	ReplyOnce bool   // 仅默认回复使用，发送状态由 Handle 持久化
 	// AutoPriceQuote 是 AI 已明确承诺且通过价格边界校验的可执行报价。
 	AutoPriceQuote *AIPriceQuoteProposal
+	// BrainRequestID 是 Harness 草案对应的消息幂等键；非 Brain 回复保持为空。
+	BrainRequestID string
 }
 
 // AIPriceQuoteProposal 是等待回复发送成功后绑定到会话的 AI 报价。
@@ -45,6 +47,9 @@ type APIReplier interface {
 type AIReplier interface {
 	Reply(ctx context.Context, m ChatMessage) (*ReplyResult, error)
 }
+
+// AIReplierFactory 是账号组合根创建 AI 回复器的唯一构造入口；实现方负责选择具体 provider。
+type AIReplierFactory func(cookieID string, store *db.Store, logger *slog.Logger) AIReplier
 
 // MessageSender 是回复服务发送文本/图片所需的最小接口。
 type MessageSender interface {
@@ -84,12 +89,28 @@ func NewReplyService(cookieID string, store *db.Store, sender MessageSender,
 func (r *ReplyService) Handle(ctx context.Context, m ChatMessage) error {
 	// res 用于本次流程后续判断的响应
 	res := r.resolve(ctx, m)
-	if res == nil || res.Skip {
+	if res == nil {
 		return nil
+	}
+	if res.Skip {
+		r.markBrainSendStatus(ctx, res, "skipped", nil)
+		return nil
+	}
+	// Brain 草案必须先领取发送权，再执行平台 I/O；并发重复消息只有一个调用方能继续。
+	if res.BrainRequestID != "" && r.store != nil && r.store.Brain != nil {
+		// claimErr、claimed 保存当前步骤的中间结果。
+		claimed, claimErr := r.store.Brain.ClaimTurnSend(ctx, res.BrainRequestID, time.Now().UnixMilli())
+		if claimErr != nil {
+			return fmt.Errorf("领取 Brain 回复发送权失败: %w", claimErr)
+		}
+		if !claimed {
+			return nil
+		}
 	}
 	// 发送：图片优先，文本随后。reply_once 使用持久化分段状态，失败时只重试
 	// 尚未成功的部分。
 	if r.sender == nil {
+		r.markBrainSendStatus(ctx, res, "skipped", nil)
 		return nil
 	}
 	// record 用于本次流程后续判断的record
@@ -112,12 +133,14 @@ func (r *ReplyService) Handle(ctx context.Context, m ChatMessage) error {
 		err := r.sender.SendImage(ctx, m.ChatID, m.SenderUserID, res.ImageURL, 0, 0, 0); err != nil {
 			r.logger.Error("发送回复图片失败", "err", err)
 			r.markReplyFailure(ctx, res, m, err)
+			r.markBrainSendStatus(ctx, res, "failed", err)
 			return err
 		}
 		if res.ReplyOnce && m.ChatID != "" {
 			if // err 用于本次流程后续判断的err
 			err := r.store.DefaultReps.MarkPartSent(ctx, r.cookieID, m.ChatID, "image"); err != nil {
 				r.markReplyFailure(ctx, res, m, err)
+				r.markBrainSendStatus(ctx, res, "failed", err)
 				return err
 			}
 		}
@@ -127,12 +150,14 @@ func (r *ReplyService) Handle(ctx context.Context, m ChatMessage) error {
 		err := r.sender.SendText(ctx, m.ChatID, m.SenderUserID, res.Text); err != nil {
 			r.logger.Error("发送回复文本失败", "err", err)
 			r.markReplyFailure(ctx, res, m, err)
+			r.markBrainSendStatus(ctx, res, "failed", err)
 			return err
 		}
 		if res.ReplyOnce && m.ChatID != "" {
 			if // err 用于本次流程后续判断的err
 			err := r.store.DefaultReps.MarkPartSent(ctx, r.cookieID, m.ChatID, "text"); err != nil {
 				r.markReplyFailure(ctx, res, m, err)
+				r.markBrainSendStatus(ctx, res, "failed", err)
 				return err
 			}
 		}
@@ -151,9 +176,11 @@ func (r *ReplyService) Handle(ctx context.Context, m ChatMessage) error {
 		if // err 用于本次流程后续判断的err
 		err := r.store.DefaultReps.MarkRecordSent(ctx, r.cookieID, m.ChatID); err != nil {
 			r.markReplyFailure(ctx, res, m, err)
+			r.markBrainSendStatus(ctx, res, "failed", err)
 			return err
 		}
 	}
+	r.markBrainSendStatus(ctx, res, "sent", nil)
 	return nil
 }
 
@@ -161,6 +188,25 @@ func (r *ReplyService) Handle(ctx context.Context, m ChatMessage) error {
 func (r *ReplyService) markReplyFailure(ctx context.Context, res *ReplyResult, m ChatMessage, sendErr error) {
 	if res.ReplyOnce && m.ChatID != "" {
 		_ = r.store.DefaultReps.MarkRecordFailed(ctx, r.cookieID, m.ChatID, sendErr.Error())
+	}
+}
+
+// markBrainSendStatus 把 Go 平台发送结果写入 Brain 幂等账本；账本失败只记录日志，不改变已完成的外部发送。
+func (r *ReplyService) markBrainSendStatus(ctx context.Context, res *ReplyResult, status string, sendErr error) {
+	if r == nil || r.store == nil || r.store.Brain == nil || res == nil || res.BrainRequestID == "" {
+		return
+	}
+	// errorMessage 保存当前步骤的中间结果。
+	errorMessage := ""
+	if sendErr != nil {
+		errorMessage = strings.TrimSpace(sendErr.Error())
+		if len([]rune(errorMessage)) > 500 {
+			errorMessage = string([]rune(errorMessage)[:500])
+		}
+	}
+	// err 保存当前步骤的中间结果。
+	if _, err := r.store.Brain.MarkTurnSendStatus(ctx, res.BrainRequestID, status, errorMessage, time.Now().UnixMilli()); err != nil {
+		r.logger.Warn("写入 Brain 回复发送终态失败", "request_id", res.BrainRequestID, "status", status, "err", err)
 	}
 }
 

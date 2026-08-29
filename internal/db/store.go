@@ -43,6 +43,8 @@ type Store struct {
 	AccountTasks  *AccountTaskStore
 	Admin         *AdminQueries
 	Analytics     *AnalyticsQueries
+	// Brain 保存 Harness 会话摘要与消息幂等账本，不拥有 runtime 进程。
+	Brain *BrainStore
 
 	credentialMu    sync.Mutex
 	credentialLocks map[string]*credentialLockEntry
@@ -104,6 +106,7 @@ func NewStore(db *sql.DB, dialect Dialect) *Store {
 		AccountTasks:     &AccountTaskStore{DB: db, Dialect: dialect},
 		Admin:            &AdminQueries{DB: db},
 		Analytics:        &AnalyticsQueries{DB: db},
+		Brain:            &BrainStore{DB: db, Dialect: dialect},
 		credentialLocks:  make(map[string]*credentialLockEntry),
 	}
 }

@@ -6846,6 +6846,142 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthDegradedResponse'
+  "/api/v1/brain/status":
+    get:
+      operationId: getApiV1BrainStatus
+      summary: 读取 Brain runtime 状态
+      security: [{cookieAuth: []}]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BrainStatusResponse'}
+        '401': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '400': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '503': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+  "/api/v1/brain/settings":
+    get:
+      operationId: getApiV1BrainSettings
+      summary: 读取 Brain 脱敏设置
+      security: [{cookieAuth: []}]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BrainSettingsResponse'}
+        '401': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '400': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '403': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+    put:
+      operationId: putApiV1BrainSettings
+      summary: 更新 Brain 设置
+      security: [{cookieAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BrainSettingsUpdateRequest'}
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BrainSettingsResponse'}
+        '400': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '401': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '403': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '503': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+  "/api/v1/brain/sessions":
+    get:
+      operationId: getApiV1BrainSessions
+      summary: 查询 Brain 会话
+      security: [{cookieAuth: []}]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: {type: integer, minimum: 1, maximum: 200, default: 50}
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BrainSessionsResponse'}
+        '400': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '401': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+  "/api/v1/brain/sessions/{id}":
+    get:
+      operationId: getApiV1BrainSessionById
+      summary: 查询 Brain 会话详情
+      security: [{cookieAuth: []}]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string}
+        - name: limit
+          in: query
+          required: false
+          schema: {type: integer, minimum: 1, maximum: 200, default: 50}
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BrainSessionDetailResponse'}
+        '400': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '401': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '404': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+  "/api/v1/brain/tools":
+    get:
+      operationId: getApiV1BrainTools
+      summary: 查询客服 profile 工具目录
+      security: [{cookieAuth: []}]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BrainToolsResponse'}
+        '401': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '400': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+  "/api/v1/brain/test-turn":
+    post:
+      operationId: postApiV1BrainTestTurn
+      summary: 执行隔离 Brain 测试轮次
+      security: [{cookieAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BrainTestTurnRequest'}
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BrainReplyDraftResponse'}
+        '400': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '401': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '403': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '504': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+  "/api/v1/brain/restart":
+    post:
+      operationId: postApiV1BrainRestart
+      summary: 重启 Brain runtime
+      security: [{cookieAuth: []}]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OperationResponse'}
+        '401': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '400': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '403': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+        '503': {description: 统一错误响应, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
 components:
   securitySchemes:
     cookieAuth:
@@ -8307,6 +8443,121 @@ components:
           type: string
         is_new_account:
           type: boolean
+    BrainStatusResponse:
+      type: object
+      required: [state, healthy, runtime_version, active_sessions, queue_depth, restart_count, updated_at]
+      properties:
+        state: {type: string, enum: [stopped, starting, running, degraded, draining]}
+        healthy: {type: boolean}
+        runtime_version: {type: string}
+        active_sessions: {type: integer, minimum: 0}
+        queue_depth: {type: integer, minimum: 0}
+        restart_count: {type: integer, minimum: 0}
+        last_error: {type: string}
+        updated_at: {type: integer, format: int64}
+    BrainSettingsResponse:
+      type: object
+      required: [enabled, provider, model, base_url, reasoning_effort, timeout_ms, queue_timeout_ms, max_concurrency, api_key_configured]
+      properties:
+        enabled: {type: boolean}
+        provider: {type: string, pattern: '^[a-z0-9][a-z0-9._-]{0,63}$'}
+        model: {type: string}
+        base_url: {type: string, format: uri}
+        reasoning_effort: {type: string, enum: [off, low, high, max]}
+        timeout_ms: {type: integer, minimum: 1000, maximum: 90000}
+        queue_timeout_ms: {type: integer, minimum: 100, maximum: 30000}
+        max_concurrency: {type: integer, minimum: 1, maximum: 16}
+        api_key_configured: {type: boolean}
+    BrainSettingsUpdateRequest:
+      type: object
+      required: [enabled, provider, model, base_url, reasoning_effort, timeout_ms, queue_timeout_ms, max_concurrency, api_key_action]
+      properties:
+        enabled: {type: boolean}
+        provider: {type: string, pattern: '^[a-z0-9][a-z0-9._-]{0,63}$'}
+        model: {type: string, minLength: 1, maxLength: 255}
+        base_url: {type: string, format: uri}
+        reasoning_effort: {type: string, enum: [off, low, high, max]}
+        timeout_ms: {type: integer, minimum: 1000, maximum: 90000}
+        queue_timeout_ms: {type: integer, minimum: 100, maximum: 30000}
+        max_concurrency: {type: integer, minimum: 1, maximum: 16}
+        api_key_action: {type: string, enum: [retain, replace, clear]}
+        api_key_value: {type: string, maxLength: 8192}
+    BrainTool:
+      type: object
+      required: [name, kind, description]
+      properties:
+        name: {type: string}
+        kind: {type: string, enum: [mcp_read, result]}
+        description: {type: string}
+    BrainToolsResponse:
+      type: object
+      required: [tools]
+      properties:
+        tools: {type: array, items: {$ref: '#/components/schemas/BrainTool'}}
+    BrainSession:
+      type: object
+      required: [id, user_id, account_id, chat_id, item_id, status, provider, model, summary, last_request_id, created_at, updated_at]
+      properties:
+        id: {type: string}
+        user_id: {type: integer, format: int64}
+        account_id: {type: string}
+        chat_id: {type: string}
+        item_id: {type: string}
+        status: {type: string}
+        provider: {type: string}
+        model: {type: string}
+        summary: {type: string}
+        last_request_id: {type: string}
+        created_at: {type: integer, format: int64}
+        updated_at: {type: integer, format: int64}
+    BrainSessionsResponse:
+      type: object
+      required: [sessions]
+      properties:
+        sessions: {type: array, items: {$ref: '#/components/schemas/BrainSession'}}
+    BrainTurn:
+      type: object
+      required: [id, session_id, request_id, status, trace_json, result_json, error_message, send_status, deadline_at, created_at, updated_at]
+      properties:
+        id: {type: integer, format: int64}
+        session_id: {type: string}
+        request_id: {type: string}
+        status: {type: string}
+        trace_json: {type: string}
+        result_json: {type: string}
+        error_message: {type: string}
+        send_status: {type: string}
+        deadline_at: {type: integer, format: int64}
+        created_at: {type: integer, format: int64}
+        updated_at: {type: integer, format: int64}
+    BrainSessionDetailResponse:
+      type: object
+      required: [session, turns]
+      properties:
+        session: {$ref: '#/components/schemas/BrainSession'}
+        turns: {type: array, items: {$ref: '#/components/schemas/BrainTurn'}}
+    BrainTestTurnRequest:
+      type: object
+      required: [request_id, session_id, message]
+      properties:
+        request_id: {type: string, pattern: '^msg:[^\\s]{1,256}$'}
+        session_id: {type: string, minLength: 1}
+        account_id: {type: string}
+        chat_id: {type: string}
+        buyer_id: {type: string}
+        item_id: {type: string}
+        message: {type: string, minLength: 1, maxLength: 4000}
+    BrainReplyDraftResponse:
+      type: object
+      required: [request_id, status, intent]
+      properties:
+        request_id: {type: string}
+        status: {type: string, enum: [reply, no_reply, handoff]}
+        reply_text: {type: string}
+        intent: {type: string, enum: [chat, bargain, support, handoff, other]}
+        quote_proposal_cents: {type: integer, minimum: 0, format: int64}
+        handoff_reason: {type: string}
+        trace_json: {type: string}
     ErrorResponse:
       type: object
       required: [code, message]

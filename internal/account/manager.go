@@ -29,6 +29,8 @@ type Manager struct {
 	store   *db.Store
 	handler engine.Handler
 	logger  *slog.Logger
+	// aiReplierFactory 是所有新账号运行实例共享的 provider 工厂；实例创建时按账号绑定。
+	aiReplierFactory engine.AIReplierFactory
 
 	mu       sync.Mutex
 	accounts map[string]*managedAccount
@@ -52,15 +54,21 @@ type managedAccount struct {
 
 // NewManager 构造管理器。
 func NewManager(store *db.Store, handler engine.Handler, logger *slog.Logger) *Manager {
+	return NewManagerWithAI(store, handler, logger, nil)
+}
+
+// NewManagerWithAI 构造账号管理器并注入可替换的 AI provider 工厂。
+func NewManagerWithAI(store *db.Store, handler engine.Handler, logger *slog.Logger, factory engine.AIReplierFactory) *Manager {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &Manager{
-		store:    store,
-		handler:  handler,
-		logger:   logger,
-		accounts: make(map[string]*managedAccount),
-		stopping: make(map[string]struct{}),
+		store:            store,
+		handler:          handler,
+		logger:           logger,
+		aiReplierFactory: factory,
+		accounts:         make(map[string]*managedAccount),
+		stopping:         make(map[string]struct{}),
 	}
 }
 
@@ -131,11 +139,12 @@ func (m *Manager) Start(ctx context.Context, cookieID, cookieValue string) error
 	}
 	// acc 用于本次流程后续判断的acc
 	acc := engine.New(engine.Config{
-		CookieID:  cookieID,
-		CookieStr: cookieValue,
-		Store:     m.store,
-		Handler:   m.handler,
-		Logger:    m.logger,
+		CookieID:         cookieID,
+		CookieStr:        cookieValue,
+		Store:            m.store,
+		Handler:          m.handler,
+		Logger:           m.logger,
+		AIReplierFactory: m.aiReplierFactory,
 	})
 	// accCtx、cancel 用于本次流程后续判断的accCtx、cancel
 	accCtx, cancel := context.WithCancel(ctx)

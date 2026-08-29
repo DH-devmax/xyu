@@ -356,6 +356,12 @@ func openServerInfrastructure(ctx context.Context, startup serverStartupConfig, 
 		closeLog()
 		return serverInfrastructure{}, fmt.Errorf("校验或升级数据库敏感字段失败: %w", err)
 	}
+	// err 表示旧 AI 设置向 Harness 命名空间的兼容迁移失败，失败时保留旧值并终止启动。
+	if err := store.MigrateLegacyBrainSettings(ctx); err != nil {
+		_ = database.Close()
+		closeLog()
+		return serverInfrastructure{}, fmt.Errorf("迁移 Harness 设置失败: %w", err)
+	}
 	// outboundPublicOnly 保存用户可配置 HTTP 请求的启动期公网限制快照。
 	if raw, settingErr := store.Settings.Get(ctx, "outbound_http_public_only"); settingErr == nil {
 		netguard.SetDefaultPublicOnly(strings.EqualFold(strings.TrimSpace(raw), "true"))

@@ -9,6 +9,7 @@ import (
 	adminapp "xianyu-go/internal/application/admin"
 	analyticsapp "xianyu-go/internal/application/analytics"
 	automationapp "xianyu-go/internal/application/automation"
+	brainapp "xianyu-go/internal/application/brain"
 	cardsapp "xianyu-go/internal/application/cards"
 	chatapp "xianyu-go/internal/application/chat"
 	defaultreplyapp "xianyu-go/internal/application/defaultreply"
@@ -346,6 +347,18 @@ type SettingsPort interface {
 	ListAIModels(context.Context, int64, string, string) ([]string, error)
 }
 
+// BrainPort 定义 Brain Center HTTP 端点消费的最小应用服务能力。
+type BrainPort interface {
+	Status(context.Context, int64) (brainapp.RuntimeStatus, error)
+	GetSettings(context.Context, int64, bool) (brainapp.Settings, error)
+	UpdateSettings(context.Context, int64, bool, brainapp.SettingsUpdate) (brainapp.Settings, error)
+	ListSessions(context.Context, int64, bool, int) ([]brainapp.Session, error)
+	GetSession(context.Context, int64, bool, string, int) (brainapp.SessionDetail, error)
+	Tools(context.Context, int64) ([]brainapp.Tool, error)
+	TestTurn(context.Context, int64, bool, brainapp.TestTurnInput) (brainapp.ReplyDraft, error)
+	Restart(context.Context, int64, bool) error
+}
+
 // AdminPort 定义管理员用户与统计能力。
 type AdminPort interface {
 	ListUsers(context.Context) ([]adminapp.UserSummary, error)
@@ -432,6 +445,8 @@ type ApplicationPorts struct {
 	settings SettingsPort
 	// admin 是管理员用户与统计用例。
 	admin AdminPort
+	// brain 是 Harness 客服大脑用例。
+	brain BrainPort
 }
 
 // ApplicationPortsInput 是组合根向 HTTP transport 交付的完整应用 Port 快照。
@@ -475,6 +490,8 @@ type ApplicationPortsInput struct {
 	Keywords                    KeywordsPort
 	Settings                    SettingsPort
 	Admin                       AdminPort
+	// Brain 是 Harness 客服大脑用例；兼容旧组合测试时可为空。
+	Brain BrainPort
 }
 
 // NewApplicationPorts 将组合根已经验证的用例依赖冻结为 Server 私有快照。
@@ -494,6 +511,7 @@ func NewApplicationPorts(input ApplicationPortsInput) *ApplicationPorts {
 		analytics: input.Analytics, automationIssues: input.AutomationIssues, automationRules: input.AutomationRules,
 		cards: input.Cards, apiRequestTester: input.APIRequestTester, publishAutomationRules: input.PublishAutomationRules, defaultReplies: input.DefaultReplies,
 		keywords: input.Keywords, settings: input.Settings, admin: input.Admin,
+		brain: input.Brain,
 	}
 }
 
@@ -658,6 +676,11 @@ func (server *Server) loginAuditApplication() LoginAuditPort {
 // settingsApplication 返回系统设置用例。
 func (server *Server) settingsApplication() SettingsPort {
 	return server.applicationServiceSet().settings
+}
+
+// brainApplication 返回 Brain Center 用例 Port。
+func (server *Server) brainApplication() BrainPort {
+	return server.applicationServiceSet().brain
 }
 
 // applicationServiceSet 返回构造期注入的不可变 Port 快照；零值 Server 不会隐式装配业务服务。

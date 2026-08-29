@@ -283,6 +283,8 @@ type Config struct {
 	Renewer cookieRenewer
 	// WSDialer 可选：用于测试隔离原生 WebSocket 握手。
 	WSDialer WSDialer
+	// AIReplierFactory 是组合根注入的 AI provider 工厂；为空时保留历史兼容实现。
+	AIReplierFactory AIReplierFactory
 }
 
 // New 构造单账号运行时（未启动）。
@@ -335,7 +337,14 @@ func New(cfg Config) *Account {
 		accountDependencies: newAccountDependencies(cfg.Store, mtopClient, renewer, wsDialer, cfg.Handler, logger.With("account", cfg.CookieID), nil, newWSRecorder(cfg.Store, cfg.CookieID, logger)),
 	}
 	if cfg.Store != nil {
-		a.reply = NewReplyService(cfg.CookieID, cfg.Store, a, nil, NewAIReplier(cfg.CookieID, cfg.Store, logger), logger)
+		// aiReplier 是当前账号的 provider 实例；生产组合根通过工厂注入 Harness，旧调用仍可使用兼容实现。
+		var aiReplier AIReplier
+		if cfg.AIReplierFactory != nil {
+			aiReplier = cfg.AIReplierFactory(cfg.CookieID, cfg.Store, logger)
+		} else {
+			aiReplier = NewAIReplier(cfg.CookieID, cfg.Store, logger)
+		}
+		a.reply = NewReplyService(cfg.CookieID, cfg.Store, a, nil, aiReplier, logger)
 	}
 	a.messageDispatcher = newMessageDispatcher(messageDispatcherConfig{
 		CookieID:       cfg.CookieID,

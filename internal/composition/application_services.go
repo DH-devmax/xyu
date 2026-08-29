@@ -19,6 +19,7 @@ import (
 	adminapp "xianyu-go/internal/application/admin"
 	analyticsapp "xianyu-go/internal/application/analytics"
 	automationapp "xianyu-go/internal/application/automation"
+	brainapp "xianyu-go/internal/application/brain"
 	cardsapp "xianyu-go/internal/application/cards"
 	chatapp "xianyu-go/internal/application/chat"
 	defaultreplyapp "xianyu-go/internal/application/defaultreply"
@@ -126,6 +127,10 @@ type Services struct {
 	settings *settingsapp.Service
 	// admin 是管理员用户管理与全局统计应用服务。
 	admin *adminapp.Service
+	// brain 是 Harness 客服大脑设置、状态和会话轨迹应用服务。
+	brain *brainapp.Service
+	// brainRuntime 保存可选的 gateway 生命周期拥有者，关闭顺序由组合根统一登记。
+	brainRuntime brainapp.Runtime
 }
 
 // LifecycleContext 返回已启动协调器拥有的进程生命周期 Context，供组合层 transport adapter 注册后台 worker。
@@ -175,6 +180,10 @@ type Dependencies struct {
 	SessionRecovery adapter.SessionRecoveryHandler
 	// LifecycleContext 返回进程协调器拥有的应用生命周期 Context。
 	LifecycleContext func() context.Context
+	// BrainRepository 提供 Brain 设置和会话账本的数据库适配器；兼容旧测试构造时可为空。
+	BrainRepository brainapp.Repository
+	// BrainRuntime 提供 gateway/Harness 生命周期和测试轮次能力；兼容旧测试构造时可为空。
+	BrainRuntime brainapp.Runtime
 }
 
 // settingsRuntimeTransport 将账号运行时控制投影给设置用例，并确保启用或 Cookie 重启永远使用进程生命周期 Context。
@@ -254,6 +263,14 @@ func (services *Services) LifecycleComponents() []lifecycleapp.NamedComponent {
 			},
 		})
 	}
+	// ok、runtime 保存当前步骤的中间结果。
+	if runtime, ok := services.brainRuntime.(interface {
+		Start(context.Context) error
+		CloseContext(context.Context) error
+	}); ok {
+		// brainRuntime 是 gateway 子进程生命周期组件，必须在账号 worker 之后关闭以完成草案排空。
+		components = append(components, lifecycleapp.NamedComponent{Name: "brain-gateway", Component: lifecycleapp.FuncComponent{StartFunc: runtime.Start, CloseFunc: runtime.CloseContext}})
+	}
 	return components
 }
 
@@ -320,6 +337,8 @@ type TransportPorts struct {
 	Keywords               *keywordsapp.Service
 	Settings               *settingsapp.Service
 	Admin                  *adminapp.Service
+	// Brain 是 Harness 客服大脑应用服务；未装配时仅禁用对应 HTTP 路由。
+	Brain *brainapp.Service
 }
 
 // TransportPorts 返回已完成构造的只读服务引用；调用方不得在运行期替换任何字段。
@@ -340,18 +359,15 @@ func (services *Services) TransportPorts() TransportPorts {
 		UncertainNotifications: services.uncertainNotifications, NotificationChannels: services.notificationChannels,
 		Analytics: services.analytics, AutomationIssues: services.automationIssues, AutomationRules: services.automationRules,
 		Cards: services.cards, APICardTester: services.apiCardTester, PublishAutomationRules: services.publishAutomationRules, DefaultReplies: services.defaultReplies,
-		Keywords: services.keywords, Settings: services.settings, Admin: services.admin,
+		Keywords: services.keywords, Settings: services.settings, Admin: services.admin, Brain: services.brain,
 	}
 }
 
 // New 由进程组合根装配全部应用服务，并在启动前拒绝半初始化依赖。
 func New(dependencies Dependencies) (*Services, error) {
-	if dependencies.OrderDependencies == nil || dependencies.AccountDependencies == nil || dependencies.ItemDependencies == nil || dependencies.ChatDependencies == nil || dependencies.AutomationDependencies == nil || dependencies.TransportApplications == nil || dependencies.OrderReconciliationRecovery == nil || dependencies.Manager == nil || dependencies.MTopClient == nil || dependencies.LongLoginClient == nil || dependencies.QRLogin == nil || dependencies.UpdateRunningCookie == nil || dependencies.LifecycleContext == nil {
-		return nil, fmt.Errorf("应用服务组合依赖不完整")
-	}
-	// transportValidationErr 表示组合根预构造的 transport-facing 服务集合是否存在半初始化字段。
-	if transportValidationErr := dependencies.TransportApplications.Validate(); transportValidationErr != nil {
-		return nil, fmt.Errorf("transport 应用服务无效: %w", transportValidationErr)
+	// validationErr 保存组合依赖的 fail-closed 校验结果。
+	if validationErr := validateDependencies(dependencies); validationErr != nil {
+		return nil, validationErr
 	}
 	// orderServices、orderRefreshJobs、orderBuildErr 分别是订单用例集合、刷新任务门面及其构造错误。
 	orderServices, orderRefreshJobs, orderBuildErr := buildOrderServices(dependencies)
@@ -510,14 +526,56 @@ func New(dependencies Dependencies) (*Services, error) {
 		keywords:               dependencies.TransportApplications.Keywords,
 		settings:               dependencies.TransportApplications.Settings,
 		admin:                  dependencies.TransportApplications.Admin,
+		brainRuntime:           dependencies.BrainRuntime,
 	}
+	// brainErr、brainService 保存当前步骤的中间结果。
+	brainService, brainErr := buildBrainService(dependencies)
+	if brainErr != nil {
+		return nil, brainErr
+	}
+	services.brain = brainService
 	// authentication、authenticationErr 分别是认证应用服务及其构造错误。
-	authentication, authenticationErr := accountapp.NewAuthenticationService(dependencies.AccountDependencies.NewAuthenticationRepository())
+	authentication, authenticationErr := buildAuthenticationService(dependencies)
 	if authenticationErr != nil {
 		return nil, authenticationErr
 	}
 	services.authentication = authentication
 	return services, nil
+}
+
+// validateDependencies 拒绝缺少关键适配器或半初始化 transport 服务的组合根。
+func validateDependencies(dependencies Dependencies) error {
+	if dependencies.OrderDependencies == nil || dependencies.AccountDependencies == nil || dependencies.ItemDependencies == nil || dependencies.ChatDependencies == nil || dependencies.AutomationDependencies == nil || dependencies.TransportApplications == nil || dependencies.OrderReconciliationRecovery == nil || dependencies.Manager == nil || dependencies.MTopClient == nil || dependencies.LongLoginClient == nil || dependencies.QRLogin == nil || dependencies.UpdateRunningCookie == nil || dependencies.LifecycleContext == nil {
+		return fmt.Errorf("应用服务组合依赖不完整")
+	}
+	// transportValidationErr 表示组合根预构造的 transport-facing 服务集合是否存在半初始化字段。
+	if transportValidationErr := dependencies.TransportApplications.Validate(); transportValidationErr != nil {
+		return fmt.Errorf("transport 应用服务无效: %w", transportValidationErr)
+	}
+	return nil
+}
+
+// buildBrainService 在组合期创建可选 Brain 应用服务；旧测试依赖为空时保持 nil。
+func buildBrainService(dependencies Dependencies) (*brainapp.Service, error) {
+	if dependencies.BrainRepository == nil || dependencies.BrainRuntime == nil {
+		return nil, nil
+	}
+	// brainService、err 保存当前步骤的中间结果。
+	brainService, err := brainapp.NewService(dependencies.BrainRepository, dependencies.BrainRuntime)
+	if err != nil {
+		return nil, fmt.Errorf("构造 Brain 应用服务失败: %w", err)
+	}
+	return brainService, nil
+}
+
+// buildAuthenticationService 创建 HTTP 登录使用的认证应用服务。
+func buildAuthenticationService(dependencies Dependencies) (*accountapp.AuthenticationService, error) {
+	// authentication、err 保存当前步骤的中间结果。
+	authentication, err := accountapp.NewAuthenticationService(dependencies.AccountDependencies.NewAuthenticationRepository())
+	if err != nil {
+		return nil, err
+	}
+	return authentication, nil
 }
 
 // buildOrderServices 构造订单用例集合及其刷新 worker 门面，并把后台诊断限制在组合根。

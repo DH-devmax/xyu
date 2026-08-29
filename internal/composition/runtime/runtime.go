@@ -4,12 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"xianyu-go/internal/adapter"
+	brainapp "xianyu-go/internal/application/brain"
 	"xianyu-go/internal/application/lifecycle"
 	orderapp "xianyu-go/internal/application/orders"
 	"xianyu-go/internal/auth"
 	"xianyu-go/internal/automation"
+	"xianyu-go/internal/brainruntime"
 	"xianyu-go/internal/browser"
 	composition "xianyu-go/internal/composition"
 	"xianyu-go/internal/db"
@@ -28,6 +33,12 @@ type RuntimeOptions struct {
 	WebDir string
 	// Addr 是 HTTP 监听地址。
 	Addr string
+	// ProductRoot 是包含 Brain gateway 与 vendored Harness 的产品根目录；空值使用当前工作目录。
+	ProductRoot string
+	// BrainNodeBinary 是安装包提供的 Node carrier；空值由 supervisor 查找 PATH。
+	BrainNodeBinary string
+	// BrainDataRoot 是 Harness 派生会话数据目录；空值位于产品根 data/brain。
+	BrainDataRoot string
 }
 
 // RuntimeInfrastructure 是 cmd 打开后交给组合根的基础设施资源。
@@ -56,33 +67,12 @@ func BuildRuntime(options RuntimeOptions, infrastructure RuntimeInfrastructure) 
 	if !options.NoBrowser {
 		browserManager = browser.NewManager(infrastructure.Logger)
 	}
-	// runtimeBundle、bundleErr 分别是账号运行时依赖集合及其构造失败原因。
-	runtimeBundle, bundleErr := adapter.NewRuntimeBundle(infrastructure.Store, browserManager, infrastructure.Logger)
-	if bundleErr != nil {
-		return Runtime{}, fmt.Errorf("构造账号运行时依赖失败: %w", bundleErr)
-	}
 	// lifecycleCoordinator 由 cmd 最终拥有，用于按顺序启动并逆序关闭后台组件。
 	lifecycleCoordinator := lifecycle.NewCoordinator()
 	if browserManager != nil {
 		// addErr 是浏览器组件登记失败原因，失败时运行时不得继续暴露。
 		if addErr := lifecycleCoordinator.Add(lifecycle.NamedComponent{Name: "browser", Component: lifecycle.FuncComponent{StartFunc: browserManager.InitializeContext, CloseFunc: browserManager.CloseContext}}); addErr != nil {
 			return Runtime{}, fmt.Errorf("登记浏览器生命周期组件失败: %w", addErr)
-		}
-	}
-	// automationScheduler、renewalScheduler 分别负责自动化延迟任务和凭证续期扫描。
-	automationScheduler := automation.NewScheduler(runtimeBundle.Automation)
-	// renewalScheduler 负责账号凭证的定期续期，其运行与停止由生命周期协调器统一拥有。
-	renewalScheduler := renewal.NewScheduler(infrastructure.Store, runtimeBundle.Manager, runtimeBundle.Adapter, infrastructure.Logger, runtimeBundle.Notifier)
-	// component 是按依赖顺序登记的基础后台组件，协调器负责后续取消和等待。
-	for _, component := range []lifecycle.NamedComponent{
-		{Name: "notifier", Component: lifecycle.FuncComponent{StartFunc: func(ctx context.Context) error { runtimeBundle.Notifier.Start(ctx); return nil }, CloseFunc: runtimeBundle.Notifier.WaitContext}},
-		{Name: "account-manager", Component: lifecycle.FuncComponent{StartFunc: runtimeBundle.Manager.StartAll, CloseFunc: runtimeBundle.Manager.StopAllContext}},
-		{Name: "automation-scheduler", Component: lifecycle.FuncComponent{StartFunc: func(ctx context.Context) error { go automationScheduler.Run(ctx); return nil }, CloseFunc: automationScheduler.WaitContext}},
-		{Name: "renewal-scheduler", Component: lifecycle.FuncComponent{StartFunc: func(ctx context.Context) error { go renewalScheduler.Run(ctx); return nil }, CloseFunc: renewalScheduler.StopContext}},
-	} {
-		// addErr 是当前后台组件登记失败原因。
-		if addErr := lifecycleCoordinator.Add(component); addErr != nil {
-			return Runtime{}, fmt.Errorf("登记生命周期组件 %q 失败: %w", component.Name, addErr)
 		}
 	}
 	// orderDependencies、orderErr 分别是订单应用服务的仓储适配器及其构造错误。
@@ -128,6 +118,34 @@ func BuildRuntime(options RuntimeOptions, infrastructure RuntimeInfrastructure) 
 	databaseHealth := systemDependencies.NewDatabaseHealth()
 	if databaseHealth == nil {
 		return Runtime{}, fmt.Errorf("构造数据库健康检查端口失败")
+	}
+	// brainErr、brainRepository、brainSupervisor 保存当前步骤的中间结果。
+	brainRepository, brainSupervisor, brainErr := buildBrainSupervisor(options, infrastructure)
+	if brainErr != nil {
+		return Runtime{}, brainErr
+	}
+	// aiFactory 把每个账号的 AI 端口绑定到同一个 Go 所有的 Brain supervisor。
+	aiFactory := adapter.NewBrainAIReplierFactory(brainSupervisor)
+	// runtimeBundle、bundleErr 分别是账号运行时依赖集合及其构造失败原因。
+	runtimeBundle, bundleErr := adapter.NewRuntimeBundleWithAI(infrastructure.Store, browserManager, infrastructure.Logger, aiFactory)
+	if bundleErr != nil {
+		return Runtime{}, fmt.Errorf("构造账号运行时依赖失败: %w", bundleErr)
+	}
+	// automationScheduler、renewalScheduler 分别负责自动化延迟任务和凭证续期扫描。
+	automationScheduler := automation.NewScheduler(runtimeBundle.Automation)
+	// renewalScheduler 负责账号凭证的定期续期，其运行与停止由生命周期协调器统一拥有。
+	renewalScheduler := renewal.NewScheduler(infrastructure.Store, runtimeBundle.Manager, runtimeBundle.Adapter, infrastructure.Logger, runtimeBundle.Notifier)
+	// component 是按依赖顺序登记的基础后台组件，协调器负责后续取消和等待。
+	for _, component := range []lifecycle.NamedComponent{
+		{Name: "notifier", Component: lifecycle.FuncComponent{StartFunc: func(ctx context.Context) error { runtimeBundle.Notifier.Start(ctx); return nil }, CloseFunc: runtimeBundle.Notifier.WaitContext}},
+		{Name: "account-manager", Component: lifecycle.FuncComponent{StartFunc: runtimeBundle.Manager.StartAll, CloseFunc: runtimeBundle.Manager.StopAllContext}},
+		{Name: "automation-scheduler", Component: lifecycle.FuncComponent{StartFunc: func(ctx context.Context) error { go automationScheduler.Run(ctx); return nil }, CloseFunc: automationScheduler.WaitContext}},
+		{Name: "renewal-scheduler", Component: lifecycle.FuncComponent{StartFunc: func(ctx context.Context) error { go renewalScheduler.Run(ctx); return nil }, CloseFunc: renewalScheduler.StopContext}},
+	} {
+		// addErr 是当前后台组件登记失败原因。
+		if addErr := lifecycleCoordinator.Add(component); addErr != nil {
+			return Runtime{}, fmt.Errorf("登记生命周期组件 %q 失败: %w", component.Name, addErr)
+		}
 	}
 	// platformDependencies、platformErr 分别是平台协议适配器集合及其构造错误，仅组合层可持有。
 	platformDependencies, platformErr := adapter.NewDefaultPlatformDependencies(infrastructure.Logger)
@@ -177,6 +195,7 @@ func BuildRuntime(options RuntimeOptions, infrastructure RuntimeInfrastructure) 
 		Notifier: runtimeBundle.Notifier, Chat: runtimeBundle.Chat, Logger: infrastructure.Logger,
 		MTopClient: platformDependencies.MTOPClient, LongLoginClient: platformDependencies.LongLoginClient, QRLogin: platformDependencies.QRLoginService(),
 		UpdateRunningCookie: updateRunningCookie, SessionRecovery: sessionRecovery, LifecycleContext: lifecycleCoordinator.Context,
+		BrainRepository: brainRepository, BrainRuntime: brainSupervisor,
 	})
 	if buildErr != nil {
 		return Runtime{}, fmt.Errorf("构造应用服务集合失败: %w", buildErr)
@@ -202,4 +221,33 @@ func BuildRuntime(options RuntimeOptions, infrastructure RuntimeInfrastructure) 
 		}
 	}
 	return Runtime{HTTPServer: httpServer, Lifecycle: lifecycleCoordinator}, nil
+}
+
+// buildBrainSupervisor 解析产品路径并创建唯一的 Harness gateway 生命周期拥有者。
+func buildBrainSupervisor(options RuntimeOptions, infrastructure RuntimeInfrastructure) (*adapter.BrainRepository, *brainruntime.Supervisor, error) {
+	// productRoot 是 gateway 和 vendored Harness 的产品根目录；桌面打包可显式传入。
+	productRoot := strings.TrimSpace(options.ProductRoot)
+	if productRoot == "" {
+		// rootErr 保存当前流程所需的配置或状态。
+		var rootErr error
+		productRoot, rootErr = os.Getwd()
+		if rootErr != nil {
+			return nil, nil, fmt.Errorf("读取 Brain 产品根目录失败: %w", rootErr)
+		}
+	}
+	// brainRepository 保存当前步骤的中间结果。
+	brainRepository := adapter.NewBrainRepository(infrastructure.Store)
+	// brainSupervisor、supervisorErr 保存当前步骤的中间结果。
+	brainSupervisor, supervisorErr := brainruntime.NewSupervisor(brainruntime.Options{
+		ProductRoot: productRoot, GatewayPath: filepath.Join(productRoot, "brain/gateway/index.mjs"),
+		HarnessRoot: filepath.Join(productRoot, "brain/vendor/deepseek-harness"), NodeBinary: options.BrainNodeBinary,
+		DataRoot: options.BrainDataRoot, Logger: infrastructure.Logger,
+		Settings:   func(ctx context.Context) (brainapp.Settings, error) { return brainRepository.GetSettings(ctx) },
+		APIKey:     func(ctx context.Context) (string, error) { return brainRepository.ReadAPIKey(ctx) },
+		MCPBackend: adapter.NewBrainMCPBackend(infrastructure.Store),
+	})
+	if supervisorErr != nil {
+		return nil, nil, fmt.Errorf("构造 Brain supervisor 失败: %w", supervisorErr)
+	}
+	return brainRepository, brainSupervisor, nil
 }

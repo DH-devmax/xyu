@@ -56,6 +56,41 @@ type AIReply struct {
 	codec   *secretCodec
 }
 
+// GetPolicy 读取账号级 AI 回复策略，但不解密或返回 API key。
+// 该窄查询供 Harness 适配器执行 Go 侧议价边界校验。
+func (a *AIReply) GetPolicy(ctx context.Context, cookieID string) (*AIReplySettings, error) {
+	if a == nil || a.DB == nil {
+		return nil, errors.New("AI 回复策略存储未初始化")
+	}
+	// settings 保存当前流程所需的配置或状态。
+	var settings AIReplySettings
+	// autoAdjust、enabled 保存当前流程所需的配置或状态。
+	var enabled, autoAdjust int
+	// baseURL、customPrompts、modelName 保存当前流程所需的配置或状态。
+	var modelName, baseURL, customPrompts sql.NullString
+	// err 保存当前步骤的中间结果。
+	err := a.DB.QueryRowContext(ctx, `
+		SELECT cookie_id, ai_enabled, auto_adjust_price_enabled,
+		       COALESCE(model_name,''), COALESCE(base_url,''),
+		       COALESCE(max_discount_percent,0), COALESCE(max_discount_amount,0),
+		       COALESCE(max_bargain_rounds,0), COALESCE(custom_prompts,'')
+		FROM ai_reply_settings WHERE cookie_id=?`, cookieID).Scan(
+		&settings.CookieID, &enabled, &autoAdjust, &modelName, &baseURL,
+		&settings.MaxDiscountPercent, &settings.MaxDiscountAmount, &settings.MaxBargainRounds, &customPrompts)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	settings.AIEnabled = enabled != 0
+	settings.AutoAdjustPriceEnabled = autoAdjust != 0
+	settings.ModelName = modelName.String
+	settings.BaseURL = baseURL.String
+	settings.CustomPrompts = customPrompts.String
+	return &settings, nil
+}
+
 // IsEnabled 只读取账号 AI 议价开关，不解密模型密钥或其他敏感字段。
 func (a *AIReply) IsEnabled(ctx context.Context, cookieID string) (bool, error) {
 	// enabled 是数据库保存的 AI 议价开关整数值。

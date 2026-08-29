@@ -16,6 +16,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers/legacy"
+	brainapp "xianyu-go/internal/application/brain"
 )
 
 // TestOpenAPISuccessContractCoverage 从唯一 OpenAPI 文档自动枚举普通 operation，确认每个 operation 都有真实成功响应断言记录。
@@ -54,6 +55,7 @@ func TestOpenAPISuccessContractCoverage(t *testing.T) {
 		{name: "analytics-admin-public-success", run: TestAnalyticsAdminAndPublicSuccessResponseContracts},
 		{name: "local-resource-mutations", run: TestOpenAPILocalResourceMutationResponses},
 		{name: "remaining-versioned-success", run: TestOpenAPIRemainingVersionedSuccessResponses},
+		{name: "brain-center", run: TestOpenAPIBrainCenterResponses},
 	}
 	// scenario 是当前执行的领域真实响应场景。
 	for _, scenario := range scenarios {
@@ -83,6 +85,117 @@ func TestOpenAPISuccessContractCoverage(t *testing.T) {
 	sort.Strings(missing)
 	if len(missing) > 0 {
 		t.Fatalf("缺少真实成功响应契约场景: %s", strings.Join(missing, ", "))
+	}
+}
+
+// openAPIBrainRepositoryFake 为 OpenAPI 成功场景提供不触碰真实模型的 Brain 仓储。
+type openAPIBrainRepositoryFake struct {
+	// settings 保存脱敏设置快照。
+	settings brainapp.Settings
+}
+
+// GetSettings 返回测试设置快照。
+func (fake *openAPIBrainRepositoryFake) GetSettings(context.Context) (brainapp.Settings, error) {
+	return fake.settings, nil
+}
+
+// UpdateSettings 记录管理员设置，并保留密钥只配置标记。
+func (fake *openAPIBrainRepositoryFake) UpdateSettings(_ context.Context, update brainapp.SettingsUpdate) error {
+	fake.settings = update.Settings
+	fake.settings.APIKeyConfigured = update.APIKeyAction == "replace" || fake.settings.APIKeyConfigured
+	return nil
+}
+
+// ListSessions 返回一条脱敏会话摘要。
+func (fake *openAPIBrainRepositoryFake) ListSessions(context.Context, int64, bool, int) ([]brainapp.Session, error) {
+	return []brainapp.Session{{ID: "openapi-session", UserID: 1, AccountID: "acc1", ChatID: "chat1", Status: "idle", Provider: fake.settings.Provider, Model: fake.settings.Model}}, nil
+}
+
+// GetSession 返回一条带 turn 的脱敏会话详情。
+func (fake *openAPIBrainRepositoryFake) GetSession(context.Context, int64, bool, string, int) (brainapp.SessionDetail, error) {
+	return brainapp.SessionDetail{Session: brainapp.Session{ID: "openapi-session", UserID: 1, AccountID: "acc1", ChatID: "chat1", Status: "idle"}, Turns: []brainapp.Turn{{ID: 1, SessionID: "openapi-session", RequestID: "msg:openapi", Status: "completed", SendStatus: "sent"}}}, nil
+}
+
+// openAPIBrainRuntimeFake 为 OpenAPI 场景提供确定性 runtime 状态和草案。
+type openAPIBrainRuntimeFake struct {
+	// restarts 保存管理员重启调用次数。
+	restarts int
+}
+
+// Status 返回运行中的测试状态。
+func (*openAPIBrainRuntimeFake) Status() brainapp.RuntimeStatus {
+	return brainapp.RuntimeStatus{State: "running", Healthy: true, RuntimeVersion: "dsh-v0.1.2-alpha.1", UpdatedAt: 1}
+}
+
+// Restart 记录一次 runtime 重启。
+func (fake *openAPIBrainRuntimeFake) Restart(context.Context) error {
+	fake.restarts++
+	return nil
+}
+
+// TestTurn 返回固定隔离草案。
+func (*openAPIBrainRuntimeFake) TestTurn(context.Context, brainapp.ReplyRequest) (brainapp.ReplyDraft, error) {
+	return brainapp.ReplyDraft{RequestID: "msg:openapi-test", Status: "reply", Intent: "chat", ReplyText: "测试草案"}, nil
+}
+
+// Tools 返回客服 profile 固定工具目录。
+func (*openAPIBrainRuntimeFake) Tools() []brainapp.Tool {
+	return []brainapp.Tool{{Name: "search_knowledge", Kind: "mcp_read", Description: "只读搜索"}, {Name: "submit_reply_draft", Kind: "result", Description: "提交草案"}}
+}
+
+// TestOpenAPIBrainCenterResponses 验证 Brain Center 八个版本化 operation 的真实成功响应契约。
+func TestOpenAPIBrainCenterResponses(t *testing.T) {
+	// srv、_、cleanup 分别是测试 Server、无需直接访问的存储和资源释放函数。
+	srv, _, cleanup := newTestServer(t)
+	defer cleanup()
+	// settings 是符合 API 边界的测试脱敏设置。
+	settings := brainapp.Settings{Enabled: true, Provider: brainapp.DefaultProvider, Model: brainapp.DefaultModel, BaseURL: brainapp.DefaultBaseURL,
+		ReasoningEffort: "high", TimeoutMS: 30_000, QueueTimeoutMS: 5_000, MaxConcurrency: 4, APIKeyConfigured: true}
+	// runtime 保存可观察的测试 runtime。
+	runtime := &openAPIBrainRuntimeFake{}
+	// application、serviceErr 保存注入 Server 的 Brain 应用服务。
+	application, serviceErr := brainapp.NewService(&openAPIBrainRepositoryFake{settings: settings}, runtime)
+	if serviceErr != nil {
+		t.Fatalf("构造 Brain 测试服务失败: %v", serviceErr)
+	}
+	srv.applications.brain = application
+	// handler 是带真实认证中间件的路由树。
+	handler := srv.Router()
+	// sessionCookie 是管理员成功登录后得到的会话 Cookie。
+	sessionCookie := loginHelper(t, handler)
+	// requests 保存八个 Brain operation 的方法、路径和请求体。
+	requests := []struct {
+		// method 是 HTTP 方法。
+		method string
+		// path 是版本化 Brain 路径。
+		path string
+		// body 是可选 JSON 请求体。
+		body string
+	}{
+		{method: http.MethodGet, path: "/api/v1/brain/status"},
+		{method: http.MethodGet, path: "/api/v1/brain/settings"},
+		{method: http.MethodGet, path: "/api/v1/brain/sessions?limit=10"},
+		{method: http.MethodGet, path: "/api/v1/brain/sessions/openapi-session?limit=10"},
+		{method: http.MethodGet, path: "/api/v1/brain/tools"},
+		{method: http.MethodPut, path: "/api/v1/brain/settings", body: `{"enabled":true,"provider":"deepseek-official","model":"deepseek-v4-flash","base_url":"https://api.deepseek.com","reasoning_effort":"high","timeout_ms":30000,"queue_timeout_ms":5000,"max_concurrency":4,"api_key_action":"retain"}`},
+		{method: http.MethodPost, path: "/api/v1/brain/test-turn", body: `{"request_id":"msg:openapi-test","session_id":"openapi-test","message":"你好"}`},
+		{method: http.MethodPost, path: "/api/v1/brain/restart"},
+	}
+	// testRequest 表示当前遍历项及其索引。
+	for _, testRequest := range requests {
+		// request 是当前 Brain operation 的真实 HTTP 请求。
+		request := httptest.NewRequest(testRequest.method, testRequest.path, strings.NewReader(testRequest.body))
+		if testRequest.body != "" {
+			request.Header.Set("Content-Type", "application/json")
+		}
+		request.AddCookie(sessionCookie)
+		// recorder 捕获并校验真实成功响应。
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, request)
+		assertOpenAPISuccessResponse(t, request, recorder)
+		if strings.Contains(recorder.Body.String(), "api_key_value") || strings.Contains(recorder.Body.String(), "fixture-secret") {
+			t.Fatalf("Brain 响应泄漏密钥字段: %s", recorder.Body.String())
+		}
 	}
 }
 
