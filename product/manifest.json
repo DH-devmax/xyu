@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "product": {
+    "display_name": "DH闲不下来",
+    "slug": "dh-xianyu-agentpanel",
+    "version": "2.0.0-alpha.0",
+    "repository": "https://github.com/DH-devmax/xyu"
+  },
+  "identifiers": {
+    "go_module": "github.com/DH-devmax/xyu",
+    "linux_service": "dh-xianyu-agentpanel.service",
+    "windows_service": "DhXianyuAgentPanel",
+    "macos_bundle_id": "com.dhdevmax.xianyu-agentpanel",
+    "environment_prefix": "DH_XIANYU_AGENTPANEL_"
+  },
+  "components": {
+    "ydisks_baseline": {
+      "tag": "v1.0.5",
+      "commit": "353daa2eecd336f838f8322fcf6d0b9d49d96130"
+    },
+    "deepseek_harness": {
+      "tag": "dsh-v0.1.2-alpha.1",
+      "commit": "cd5ef8148158c3a752a658978873241fdf8e2bbc",
+      "path": "brain/vendor/deepseek-harness"
+    }
+  },
+  "contracts": {
+    "openapi": "3.1.0",
+    "brain": "1.0.0"
+  },
+  "runtime": {
+    "node": "24",
+    "native_platforms": [
+      "linux-amd64",
+      "linux-arm64",
+      "darwin-arm64",
+      "windows-amd64"
+    ],
+    "node_carrier_platforms": [
+      "darwin-amd64"
+    ]
+  }
+}

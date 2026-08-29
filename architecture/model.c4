@@ -1,0 +1,52 @@
+specification {
+  element actor
+  element system
+  element container
+}
+
+model {
+  operator = actor "Operator"
+  marketplace = system "Xianyu Platform"
+  provider = system "LLM Provider"
+
+  product = system "DH闲不下来" {
+    web = container "Product Web UI" { technology "React + MUI" }
+    server = container "Product Server" { technology "Go" }
+    database = container "Business Database" { technology "SQLite / MySQL / PostgreSQL" }
+    browser = container "Browser Runtime" { technology "Playwright + Chromium" }
+    gateway = container "Brain Gateway" { technology "TypeScript carrier" }
+    harness = container "Harness Runtime" { technology "DeepSeek Harness + Cordis" }
+    brainStore = container "Derived Brain Data" { technology "Product data directory" }
+  }
+
+  operator -> product.web "Uses"
+  product.web -> product.server "Calls /api/v1"
+  product.server -> product.database "Owns business truth"
+  product.server -> product.browser "Runs browser automation"
+  product.server -> marketplace "Uses platform protocols"
+  product.server -> product.gateway "Requests structured drafts"
+  product.gateway -> product.harness "Drives SDK protocol"
+  product.harness -> product.server "Calls allowlisted MCP tools"
+  product.harness -> provider "Runs model turns"
+  product.harness -> product.brainStore "Stores derived state"
+}
+
+views {
+  view context {
+    title "DH闲不下来 System Context"
+    include operator
+    include product
+    include marketplace
+    include provider
+    autoLayout LeftRight
+  }
+
+  view runtime {
+    title "Unified Product Runtime"
+    include operator
+    include marketplace
+    include provider
+    include product.*
+    autoLayout LeftRight
+  }
+}

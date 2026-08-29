@@ -1,9 +1,10 @@
-name: Pull Request 质量门禁
+name: main 与 Pull Request 质量门禁
 
 on:
   pull_request:
   push:
     branches:
+      - main
       - dev
   workflow_dispatch:
 
@@ -40,6 +41,9 @@ jobs:
 
       - name: 检查中文注释
         run: go run ./tools/commentlint -mode check -root .
+
+      - name: 检查产品与上游锁定清单
+        run: node scripts/check-product-manifest.mjs
 
       - name: 检查架构依赖
         run: go run ./tools/architecturecheck

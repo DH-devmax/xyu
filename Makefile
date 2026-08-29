@@ -3,7 +3,7 @@
 GO ?= go
 GOLANGCI_LINT ?= golangci-lint
 
-.PHONY: build build-int build-browser-install build-tray test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check cover cover-browser cover-frontend tidy frontend fmt comments check
+.PHONY: build build-int build-browser-install build-tray test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
 
 ## build: 编译 server（默认，跳过 integration build tag）
 build:
@@ -68,6 +68,14 @@ api-check:
 	$(GO) test ./internal/server -run '^TestOpenAPISuccessContractCoverage$$' -count=1
 	$(GO) test ./internal/server -run '^(TestOpenAPIPasswordLoginDisabledOperations|TestDownloadItemPublishBatchResultExportsRows|TestChatEventDTOUsesFrontendContract|TestChatWebSocketStreamsOnlyAuthenticatedAccountEvents)$$' -count=1
 
+## product-check: 校验品牌、契约版本和上游组件锁定信息
+product-check:
+	node scripts/check-product-manifest.mjs
+
+## preflight: 在直接推送 main 前从干净工作树运行全部本地门禁
+preflight:
+	bash scripts/preflight-main.sh
+
 ## cover: 生成覆盖率报告
 cover:
 	$(GO) test -coverprofile=cover.out ./... && $(GO) tool cover -func=cover.out | tail -1
@@ -98,4 +106,4 @@ comments:
 	node frontend/scripts/check-comments.mjs --mode check --root frontend
 
 ## check: 本地提交前全套检查（fmt + vet + lint + test）
-check: fmt architecture api-check vet lint test comments
+check: fmt product-check architecture api-check vet lint test comments

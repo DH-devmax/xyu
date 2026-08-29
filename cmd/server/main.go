@@ -147,6 +147,9 @@ type applicationRuntimeCoordinator interface {
 	Close(context.Context) error
 }
 
+// platformServiceRunner 保存当前编译平台的服务入口；变量边界防止非 Windows 构建把平台错误误判为 main 的恒真分支。
+var platformServiceRunner = runPlatformService
+
 // main 封装main业务协调。
 func main() {
 	// opts 是命令行解析出的服务启动选项。
@@ -167,7 +170,7 @@ func main() {
 	run := func(ctx context.Context) error { return runServer(ctx, opts) }
 	if opts.service {
 		// err 表示平台注册或运行服务失败。
-		if err := runPlatformService("YdisksXianyuHelper", run); err != nil {
+		if err := platformServiceRunner("YdisksXianyuHelper", run); err != nil {
 			fmt.Fprintf(os.Stderr, "服务运行失败: %s\n", logsafe.Error(err))
 			os.Exit(1)
 		}
