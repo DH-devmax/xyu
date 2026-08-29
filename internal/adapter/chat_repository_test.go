@@ -5,11 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	chatapp "xianyu-go/internal/application/chat"
-	"xianyu-go/internal/automation"
-	domainchat "xianyu-go/internal/chat"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	"github.com/DH-devmax/xyu/internal/automation"
+	domainchat "github.com/DH-devmax/xyu/internal/chat"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // subscriptionDomainRepository 是领域聊天订阅测试使用的最小内存仓储。

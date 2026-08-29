@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	automationapp "xianyu-go/internal/application/automation"
-	"xianyu-go/internal/db"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestAutomationRepositoryOwnershipMapsNotFound 验证资源缺失只表现为不归属，不泄露数据库模型错误。

@@ -1,10 +1,10 @@
 package adapter
 
 import (
-	"xianyu-go/internal/account"
-	chatapp "xianyu-go/internal/application/chat"
-	"xianyu-go/internal/chat"
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/account"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	"github.com/DH-devmax/xyu/internal/chat"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // ChatDependencies 封装聊天应用服务所需的数据库适配器工厂，避免 Server 依赖通用设施容器。

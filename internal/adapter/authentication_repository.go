@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/db"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AuthenticationRepository 将用户密码与会话数据库操作适配为账号认证应用端口。

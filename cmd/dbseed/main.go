@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/logsafe"
 )
 
 // seedOptions 用于本次流程后续判断的seedOptions

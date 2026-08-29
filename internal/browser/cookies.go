@@ -8,7 +8,7 @@ import (
 
 	"github.com/mxschmitt/playwright-go"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // parseCookieStr 把 "k=v; k2=v2" 解析为 map。

@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"xianyu-go/internal/application/keywords"
-	"xianyu-go/internal/auth"
+	"github.com/DH-devmax/xyu/internal/application/keywords"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // keywordRequest 是普通关键词接口使用的文字回复请求 DTO。

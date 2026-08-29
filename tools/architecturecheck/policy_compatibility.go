@@ -149,7 +149,7 @@ func checkApplicationTypeLeaks(relativePath string, syntax *ast.File, fset *toke
 
 // normalizeImportPath 去除当前模块前缀，统一架构规则使用的内部包路径。
 func normalizeImportPath(importedPath string) string {
-	return strings.TrimPrefix(importedPath, "xianyu-go/")
+	return strings.TrimPrefix(importedPath, "github.com/DH-devmax/xyu/")
 }
 
 // isForbiddenApplicationImport 判断应用层是否依赖了基础设施或 HTTP 层。

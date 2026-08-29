@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/xianyu/mtop"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // itemPublishClientStub 是单商品发布端口测试使用的平台客户端替身。

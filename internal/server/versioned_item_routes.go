@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/go-chi/chi/v5"
 
-	"xianyu-go/internal/auth"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // mountVersionedItems 挂载商品列表、详情、发布、更新和删除的 `/api/v1` 兼容入口。

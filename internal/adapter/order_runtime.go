@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	accountmanager "xianyu-go/internal/account"
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
+	accountmanager "github.com/DH-devmax/xyu/internal/account"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // OrderAutomation 定义订单手动发货所需的最小自动化能力，避免订单适配器依赖具体 Center 类型。

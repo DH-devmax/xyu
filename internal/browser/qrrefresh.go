@@ -9,7 +9,7 @@ import (
 
 	"github.com/mxschmitt/playwright-go"
 
-	"xianyu-go/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/logsafe"
 )
 
 // QRCookieRefresh 用扫码临时 cookie + 风控验证 URL，通过浏览器换取真实 cookie（含 unb）。

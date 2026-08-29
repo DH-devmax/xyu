@@ -3,8 +3,8 @@ package adapter
 import (
 	"context"
 
-	accountmanager "xianyu-go/internal/account"
-	accountapp "xianyu-go/internal/application/account"
+	accountmanager "github.com/DH-devmax/xyu/internal/account"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // AccountRuntimePort 将账号 Manager 的 engine 状态和生命周期能力映射为应用层运行时端口。

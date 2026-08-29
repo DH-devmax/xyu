@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // Service 是订单本地状态补偿服务。

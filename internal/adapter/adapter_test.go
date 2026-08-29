@@ -14,14 +14,14 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/browser"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/engine"
-	"xianyu-go/internal/renewal"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
-	xrenew "xianyu-go/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/browser"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/engine"
+	"github.com/DH-devmax/xyu/internal/renewal"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	xrenew "github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // fakeNotifier 记录告警调用，供 OnAccountAlert 断言。

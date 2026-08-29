@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // send 根据渠道类型将已格式化通知发送到外部服务；渠道配置错误直接返回供 outbox 重试分类。

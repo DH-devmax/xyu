@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"log/slog"
 
-	adminapp "xianyu-go/internal/application/admin"
-	analyticsapp "xianyu-go/internal/application/analytics"
-	automationapp "xianyu-go/internal/application/automation"
-	cardsapp "xianyu-go/internal/application/cards"
-	defaultreplyapp "xianyu-go/internal/application/defaultreply"
-	keywordsapp "xianyu-go/internal/application/keywords"
-	notificationsapp "xianyu-go/internal/application/notifications"
-	settingsapp "xianyu-go/internal/application/settings"
+	adminapp "github.com/DH-devmax/xyu/internal/application/admin"
+	analyticsapp "github.com/DH-devmax/xyu/internal/application/analytics"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
+	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
+	defaultreplyapp "github.com/DH-devmax/xyu/internal/application/defaultreply"
+	keywordsapp "github.com/DH-devmax/xyu/internal/application/keywords"
+	notificationsapp "github.com/DH-devmax/xyu/internal/application/notifications"
+	settingsapp "github.com/DH-devmax/xyu/internal/application/settings"
 )
 
 // TransportApplicationServiceOptions 收集由进程组合根提供的 transport-facing 应用服务构造输入。

@@ -3,7 +3,7 @@ package adapter
 import (
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestNewOrderDependenciesRejectsNilStore 确保订单专用依赖不会在缺少数据库入口时构造成功。

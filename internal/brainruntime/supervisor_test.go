@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	brainapp "xianyu-go/internal/application/brain"
+	brainapp "github.com/DH-devmax/xyu/internal/application/brain"
 )
 
 // productRootForTest 从测试运行目录向上寻找已 vendor 的 Brain 产品根目录。

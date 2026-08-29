@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	accountapp "xianyu-go/internal/application/account"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // lifecycleAuditRepositoryFake 是生命周期适配器测试使用的登录审计仓储替身。

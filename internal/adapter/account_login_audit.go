@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/db"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AccountLoginAuditRepository 将账号登录审计应用 Port 适配为数据库窄写入。

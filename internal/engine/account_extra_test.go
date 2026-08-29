@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
-	xrenew "xianyu-go/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	xrenew "github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // riskCountingMTop 用于本次流程后续判断的riskCountingMTop

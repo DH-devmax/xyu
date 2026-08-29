@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // tokenExpirySafetyMargin 用于本次流程后续判断的令牌ExpirySafetyMargin

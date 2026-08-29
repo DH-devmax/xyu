@@ -10,9 +10,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	accountapp "xianyu-go/internal/application/account"
-	automationapp "xianyu-go/internal/application/automation"
-	"xianyu-go/internal/auth"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // mountCookies 账号 cookie 管理端点。

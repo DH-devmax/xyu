@@ -3,7 +3,7 @@ package adapter
 import (
 	"context"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // DatabaseHealth 将数据库连通性探测收口为 Server 健康检查所需的最小适配器。

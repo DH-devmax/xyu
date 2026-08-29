@@ -13,7 +13,7 @@ import (
 
 	"github.com/mxschmitt/playwright-go"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // quickRenewPageLoadWait 用于本次流程后续判断的quickRenew页码LoadWait

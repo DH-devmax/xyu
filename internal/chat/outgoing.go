@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // RecordOutgoingSent 记录已被平台接受的自动化、本程序或官方客户端出站消息。

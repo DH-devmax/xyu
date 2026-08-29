@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	chatapp "xianyu-go/internal/application/chat"
-	domainchat "xianyu-go/internal/chat"
-	"xianyu-go/internal/db"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	domainchat "github.com/DH-devmax/xyu/internal/chat"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // chatSubscriptionProvider 将聊天领域事件转换为不暴露数据库模型的应用事件。

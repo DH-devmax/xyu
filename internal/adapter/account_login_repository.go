@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/cookierefresh"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // AccountLoginRepository 将账号登录、扫码凭证和非敏感账号摘要能力适配到应用端口。

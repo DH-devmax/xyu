@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // redirectTransport 将所有请求重定向到指定 httptest.Server，保留原 path/query。

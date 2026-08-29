@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/netguard"
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/netguard"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // remoteCaptchaBrowserTimeout 用于本次流程后续判断的remoteCaptcha浏览器Timeout

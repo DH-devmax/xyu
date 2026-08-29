@@ -10,8 +10,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/auth"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // orderRefreshJobStartResponse 是创建订单刷新任务后的响应 DTO。

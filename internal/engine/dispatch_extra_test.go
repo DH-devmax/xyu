@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/automation"
+	"github.com/DH-devmax/xyu/internal/automation"
 )
 
 // TestHandleMessage_SystemEventRoutesToAutomation 付款待发货系统卡片进入自动化中心，不进入回复链。

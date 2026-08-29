@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestListChannels 列出通知渠道。

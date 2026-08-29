@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // scriptedOutboxRepository 为 outbox worker 测试提供可控的领取、确认和隔离结果。

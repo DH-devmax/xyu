@@ -16,9 +16,9 @@ import (
 
 	"golang.org/x/term"
 
-	"xianyu-go/internal/auth"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/auth"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/logsafe"
 )
 
 // main 封装main业务协调。

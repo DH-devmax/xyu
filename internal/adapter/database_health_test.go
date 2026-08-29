@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestDatabaseHealthRejectsMissingDependency 验证健康检查缺少数据库时不会伪装成功。

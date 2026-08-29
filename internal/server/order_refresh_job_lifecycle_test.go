@@ -6,8 +6,8 @@ import (
 	"errors"
 	"testing"
 
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // orderRefreshLifecycleContextKey 是生命周期测试专用的 Context 键类型，避免与生产或其他测试键冲突。

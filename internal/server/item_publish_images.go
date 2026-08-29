@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/netguard"
+	"github.com/DH-devmax/xyu/internal/netguard"
 )
 
 // isPublicIP 保留给同包校验调用；实际策略统一由 netguard 维护。

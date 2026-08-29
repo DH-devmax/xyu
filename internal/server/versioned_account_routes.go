@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/go-chi/chi/v5"
 
-	"xianyu-go/internal/auth"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // mountVersionedAccounts 挂载账号摘要、详情和运行状态的 `/api/v1` 兼容入口。

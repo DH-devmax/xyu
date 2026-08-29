@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/httpapi"
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/httpapi"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // TestAPIContractChatAutomationAndItemErrors 验证聊天、自动化和商品失败均返回统一错误 DTO。

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // FetchItemsPage 获取指定页卖家在售商品列表。

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	orderapp "xianyu-go/internal/application/orders"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
 )
 
 // orderRefreshJobRefresh 是历史生命周期测试使用的 HTTP 结果回调类型。

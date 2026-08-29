@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5/middleware"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/httpapi"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/httpapi"
 )
 
 // healthResponse 是健康检查接口的具名响应 DTO。

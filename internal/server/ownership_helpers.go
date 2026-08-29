@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/auth"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // authSess 从请求上下文读取经过认证中间件注入的会话。

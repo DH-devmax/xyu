@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // blockingOrderDetailClient 在外部请求期间阻塞，用于验证凭证锁不会跨越慢速 I/O。

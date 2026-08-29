@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // noRetryAction 标记外部动作确定未执行且不应被通用恢复队列再次调用的错误。

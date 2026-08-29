@@ -7,9 +7,9 @@ import (
 	"sync"
 	"testing"
 
-	brainapp "xianyu-go/internal/application/brain"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/engine"
+	brainapp "github.com/DH-devmax/xyu/internal/application/brain"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/engine"
 )
 
 // brainRuntimeStub 提供可控的 Harness 草案结果，验证适配器不会重复调用 runtime。

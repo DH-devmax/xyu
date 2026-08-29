@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"xianyu-go/internal/automation"
+	"github.com/DH-devmax/xyu/internal/automation"
 )
 
 // outgoingObserverHandler 用于本次流程后续判断的outgoingObserverHandler

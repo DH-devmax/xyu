@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/netguard"
+	"github.com/DH-devmax/xyu/internal/netguard"
 )
 
 // MaxAIModelsResponseBytes 限制远端模型目录响应大小，避免管理员配置的端点耗尽内存。

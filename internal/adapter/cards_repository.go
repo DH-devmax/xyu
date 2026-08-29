@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	cardsapp "xianyu-go/internal/application/cards"
-	"xianyu-go/internal/db"
+	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // CardsRepository 将卡券数据库仓储适配为应用层消费者定义的 CRUD Port。

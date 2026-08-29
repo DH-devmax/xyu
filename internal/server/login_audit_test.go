@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	accountapp "xianyu-go/internal/application/account"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // TestLoginAuditApplicationPersistsSuccessfulLogin 验证 Server 通过应用审计服务保持登录成功持久化语义。

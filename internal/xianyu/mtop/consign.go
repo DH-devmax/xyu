@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // Consign 调用 mtop.taobao.idle.logistic.consign.dummy 确认发货（虚拟发货）。

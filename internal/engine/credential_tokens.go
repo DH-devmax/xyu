@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // refreshToken 按账号凭证协调器的最小间隔规则刷新平台连接 Token，并返回 Token 与 Cookie 快照。

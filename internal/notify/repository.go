@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // Repository 定义通知器读取渠道、系统 SMTP 配置并处理持久化 outbox 所需的最小能力。

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // eventFactRecorder 只负责把已经解析出的事件事实写入持久化层。

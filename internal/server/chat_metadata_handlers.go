@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	chatapp "xianyu-go/internal/application/chat"
-	"xianyu-go/internal/auth"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // chatQuickReplyResponse 是账号级人工快捷回复的具名 HTTP 响应 DTO。

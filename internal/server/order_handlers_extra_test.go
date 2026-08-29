@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // waitOrderRefreshJob 等待订单刷新后台任务完成并返回具名刷新结果。

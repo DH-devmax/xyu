@@ -17,8 +17,8 @@ import (
 
 	"github.com/coder/websocket"
 
-	"xianyu-go/internal/xianyu"
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // WSURL 闲鱼 IM WebSocket 地址。

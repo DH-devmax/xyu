@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/netguard"
+	"github.com/DH-devmax/xyu/internal/netguard"
 )
 
 // TestSendPublicSMTPRejectsInvalidPortAndLoopback 封装TestSendPublicSMTPRejectsInvalidPortAndLoopback业务协调。

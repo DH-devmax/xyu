@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/db"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestAddKeywordWithItemID 带商品ID的关键词添加 + 缺 keyword 400。

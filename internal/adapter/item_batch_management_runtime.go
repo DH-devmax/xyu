@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	itemapp "xianyu-go/internal/application/items"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
 )
 
 // BatchManagementRuntime 将由组合根拥有的 worker 协调器适配为批次管理应用 Port。

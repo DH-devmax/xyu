@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	adminapp "xianyu-go/internal/application/admin"
-	"xianyu-go/internal/db"
+	adminapp "github.com/DH-devmax/xyu/internal/application/admin"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AdminRepository 将管理员数据库查询转换为非敏感应用模型。

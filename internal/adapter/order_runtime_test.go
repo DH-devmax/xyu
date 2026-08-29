@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // orderRuntimeAutomationFake 是订单运行时测试使用的自动化能力替身。

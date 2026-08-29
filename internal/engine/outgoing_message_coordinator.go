@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // outgoingMessageCoordinator 拥有当前连接上的出站消息、聊天历史和会话查询边界。

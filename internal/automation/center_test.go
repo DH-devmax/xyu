@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // automationRoundTripperFunc 用于本次流程后续判断的自动化RoundTripperFunc

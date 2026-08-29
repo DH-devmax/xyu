@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // platformDependenciesQRFake 是平台依赖测试使用的二维码服务替身。

@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestOrderRepositoryModelConversions 保证数据库订单模型转换为应用模型时不丢失业务字段。

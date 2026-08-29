@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/engine"
+	"github.com/DH-devmax/xyu/internal/engine"
 )
 
 // TestVersionedAccountRoutesPreserveLegacyContracts 验证账号版本化入口复用旧 handler 并保留旧路径。

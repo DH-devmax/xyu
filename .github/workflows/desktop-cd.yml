@@ -94,7 +94,7 @@ jobs:
         run: |
           package_dir="dist/ydisks-xianyu-helper-linux-${GOARCH}"
           mkdir -p "$package_dir"
-          version_ldflags="-s -w -X xianyu-go/internal/version.Version=$BUILD_VERSION -X xianyu-go/internal/version.Commit=$GITHUB_SHA -X xianyu-go/internal/version.BuildTime=$BUILD_TIME"
+          version_ldflags="-s -w -X github.com/DH-devmax/xyu/internal/version.Version=$BUILD_VERSION -X github.com/DH-devmax/xyu/internal/version.Commit=$GITHUB_SHA -X github.com/DH-devmax/xyu/internal/version.BuildTime=$BUILD_TIME"
           go build -trimpath -ldflags="$version_ldflags" -o "$package_dir/xianyu-server" ./cmd/server
           go build -trimpath -ldflags='-s -w' -o "$package_dir/browser-install" ./cmd/browser-install
 
@@ -238,7 +238,7 @@ jobs:
         run: |
           & packaging/windows/build-resources.ps1
           New-Item -ItemType Directory -Force -Path dist/windows | Out-Null
-          $versionLdflags = "-s -w -X xianyu-go/internal/version.Version=$env:BUILD_VERSION -X xianyu-go/internal/version.Commit=$env:GITHUB_SHA -X xianyu-go/internal/version.BuildTime=$env:BUILD_TIME"
+          $versionLdflags = "-s -w -X github.com/DH-devmax/xyu/internal/version.Version=$env:BUILD_VERSION -X github.com/DH-devmax/xyu/internal/version.Commit=$env:GITHUB_SHA -X github.com/DH-devmax/xyu/internal/version.BuildTime=$env:BUILD_TIME"
           go build -trimpath -ldflags $versionLdflags -o dist/windows/xianyu-server.exe ./cmd/server
           go build -trimpath -ldflags "-s -w" -o dist/windows/browser-install.exe ./cmd/browser-install
           go build -trimpath -ldflags "-s -w -H=windowsgui" -o dist/windows/xianyu-tray.exe ./cmd/tray
@@ -626,7 +626,7 @@ jobs:
       - name: 编译 macOS 桌面程序
         run: |
           mkdir -p dist/macos/arm64 dist/macos/amd64
-          version_ldflags="-s -w -X xianyu-go/internal/version.Version=$BUILD_VERSION -X xianyu-go/internal/version.Commit=$GITHUB_SHA -X xianyu-go/internal/version.BuildTime=$BUILD_TIME"
+          version_ldflags="-s -w -X github.com/DH-devmax/xyu/internal/version.Version=$BUILD_VERSION -X github.com/DH-devmax/xyu/internal/version.Commit=$GITHUB_SHA -X github.com/DH-devmax/xyu/internal/version.BuildTime=$BUILD_TIME"
           for arch in arm64 amd64; do
             GOOS=darwin GOARCH="$arch" CGO_ENABLED=1 go build -trimpath -ldflags="$version_ldflags" -o "dist/macos/$arch/xianyu-server" ./cmd/server
             GOOS=darwin GOARCH="$arch" CGO_ENABLED=1 go build -trimpath -ldflags='-s -w' -o "dist/macos/$arch/browser-install" ./cmd/browser-install

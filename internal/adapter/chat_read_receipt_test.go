@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"testing"
 
-	domainchat "xianyu-go/internal/chat"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/engine"
+	domainchat "github.com/DH-devmax/xyu/internal/chat"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/engine"
 )
 
 // TestHandleMessageReadIgnoresIncomingReceipt 验证跨端同步的入站消息已读回执不会误标同会话的本地出站消息。

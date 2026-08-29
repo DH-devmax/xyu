@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestRecordHistoryPageParsesDirectionMediaAndDeduplicates 封装TestRecordHistory页码ParsesDirectionMediaAndDeduplicates业务协调。

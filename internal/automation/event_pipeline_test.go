@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestActionPlannerPaidEventKeepsCardBeforeShipment 验证付款事件只生成匹配卡密动作并保持发货顺序。

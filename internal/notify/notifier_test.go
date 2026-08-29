@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestNotifierWaitContextHonorsDeadline 验证通知 worker 等待受关闭上下文限制。

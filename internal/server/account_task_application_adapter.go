@@ -1,6 +1,6 @@
 package server
 
-import automationapp "xianyu-go/internal/application/automation"
+import automationapp "github.com/DH-devmax/xyu/internal/application/automation"
 
 // newApplicationAccountTaskSettingsResponse 将应用层账号任务设置转换为 HTTP DTO。
 func newApplicationAccountTaskSettingsResponse(settings automationapp.AccountTaskSettings) accountTaskSettingsResponse {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	automationapp "xianyu-go/internal/application/automation"
-	"xianyu-go/internal/db"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AutomationCredentialWakeRepository 将自动化任务唤醒 Port 适配为数据库仓储。

@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/adapter"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/adapter"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // fakeQRLoginService 用于本次流程后续判断的fakeQR登录Service

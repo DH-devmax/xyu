@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	analyticsapp "xianyu-go/internal/application/analytics"
-	"xianyu-go/internal/db"
+	analyticsapp "github.com/DH-devmax/xyu/internal/application/analytics"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AnalyticsRepository 将 Store 的只读查询能力适配为订单分析应用 Port。

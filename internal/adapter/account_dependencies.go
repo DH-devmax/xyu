@@ -3,8 +3,8 @@ package adapter
 import (
 	"errors"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/db"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AccountDependencies 封装账号登录、认证和扫码用例所需的窄适配器构造能力。

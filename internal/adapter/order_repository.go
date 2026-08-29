@@ -3,8 +3,8 @@ package adapter
 import (
 	"context"
 	"errors"
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // OrderRepository 将数据库 Store 适配为订单应用服务窄 repository。

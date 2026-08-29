@@ -3,7 +3,7 @@ package adapter
 import (
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestNewMiscDependenciesRejectsNilStore 确保通知、分析和卡券依赖不会以缺失数据库入口的状态构造。

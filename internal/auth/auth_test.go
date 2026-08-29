@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // newAuth 封装newAuth业务协调。

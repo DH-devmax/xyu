@@ -16,9 +16,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	accountapp "xianyu-go/internal/application/account"
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/auth"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // maxPublishBatchRows 用于本次流程后续判断的max发布批次Rows

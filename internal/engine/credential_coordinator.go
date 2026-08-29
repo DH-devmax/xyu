@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/logsafe"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
-	"xianyu-go/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // credentialCoordinator 统一编排单账号的 Cookie、登录态、API 续期与 Token 缓存。

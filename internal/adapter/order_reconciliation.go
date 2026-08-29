@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // OrderReconciliationRepository 将订单应用层补偿 Port 适配为数据库写入。

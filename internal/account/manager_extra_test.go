@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/engine"
-	"xianyu-go/internal/xianyu/mtop"
-	"xianyu-go/internal/xianyu/ws"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/engine"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/ws"
 )
 
 // fakeWSDialer 用于本次流程后续判断的fakeWSDialer

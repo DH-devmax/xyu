@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // FetchUserProfile 获取当前 cookie 对应账号的实时昵称和头像。

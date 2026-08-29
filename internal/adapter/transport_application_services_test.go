@@ -3,7 +3,7 @@ package adapter
 import (
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestNewTransportApplicationServicesRejectsMissingDependencies 确保组合根不会接受缺失领域依赖的服务集合。

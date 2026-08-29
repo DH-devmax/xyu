@@ -156,10 +156,10 @@ func TestDatabaseArchitectureGate(t *testing.T) {
 	// samples 保存各类上层裸 SQL 泄露、合法 repository 与无法解析源码的最小样例。
 	samples := map[string]string{
 		"internal/application/orders/sql_alias.go":   "package orders\nimport storeSQL \"database/sql\"\nfunc run(database *storeSQL.DB) { _, _ = database.BeginTx(nil, nil) }\n",
-		"internal/server/store.go":                   "package server\nimport persistence \"xianyu-go/internal/db\"\nfunc run(store *persistence.Store) { _ = store.DB }\n",
+		"internal/server/store.go":                   "package server\nimport persistence \"github.com/DH-devmax/xyu/internal/db\"\nfunc run(store *persistence.Store) { _ = store.DB }\n",
 		"internal/application/orders/transaction.go": "package orders\ntype unit struct{}\nfunc (unit) BeginTx() {}\nfunc run(transaction unit) { transaction.BeginTx() }\n",
 		"internal/application/orders/broken.go":      "package orders\nfunc broken( {\n",
-		"internal/adapter/store.go":                  "package adapter\nimport persistence \"xianyu-go/internal/db\"\ntype repository struct { store *persistence.Store }\n",
+		"internal/adapter/store.go":                  "package adapter\nimport persistence \"github.com/DH-devmax/xyu/internal/db\"\ntype repository struct { store *persistence.Store }\n",
 	}
 	// relativePath、source 分别是当前样例的仓库相对路径和源代码。
 	for relativePath, source := range samples {

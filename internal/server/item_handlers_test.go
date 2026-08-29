@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // stubPublishMTop 用于本次流程后续判断的stub发布MTop

@@ -3,7 +3,7 @@ package automation
 import (
 	"context"
 
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // CenterDependencies 保存自动化中心启动时必须固定的外部协作依赖。

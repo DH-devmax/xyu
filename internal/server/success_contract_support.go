@@ -3,8 +3,8 @@ package server
 import (
 	"encoding/json"
 
-	defaultreplyapp "xianyu-go/internal/application/defaultreply"
-	notificationsapp "xianyu-go/internal/application/notifications"
+	defaultreplyapp "github.com/DH-devmax/xyu/internal/application/defaultreply"
+	notificationsapp "github.com/DH-devmax/xyu/internal/application/notifications"
 )
 
 // aiReplySettingsResponse 是账号 AI 回复设置接口的具名响应 DTO。

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // TestOnPasswordLoginRefreshUsesPlatformRuntimeData 验证协议续期不解密登录密码。

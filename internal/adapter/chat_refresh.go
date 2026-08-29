@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"xianyu-go/internal/account"
-	chatapp "xianyu-go/internal/application/chat"
-	"xianyu-go/internal/automation"
-	domainchat "xianyu-go/internal/chat"
+	"github.com/DH-devmax/xyu/internal/account"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	"github.com/DH-devmax/xyu/internal/automation"
+	domainchat "github.com/DH-devmax/xyu/internal/chat"
 )
 
 // chatRefreshProvider 将账号运行时的平台分页能力与聊天领域落库服务收敛到应用端口。

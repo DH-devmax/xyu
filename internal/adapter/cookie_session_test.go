@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/xianyu/cookierefresh"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // minimalCredentialSessionPortFake 仅实现会话写回所需的方法，证明适配器不依赖完整账号仓储。

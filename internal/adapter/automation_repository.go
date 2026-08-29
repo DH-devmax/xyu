@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	automationapp "xianyu-go/internal/application/automation"
-	"xianyu-go/internal/db"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AutomationRepository 将 Store 的自动化异常查询与 resolve 能力适配为应用 Port。

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestAIBargainQuoteAutomaticallyAdjustsCreatedOrder 验证订单创建事件会消费四维匹配的 AI 报价并复用真实改价能力。

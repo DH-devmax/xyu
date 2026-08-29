@@ -1,9 +1,9 @@
 package adapter
 
 import (
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/protocol"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // AccountIDFromCookie 从平台 Cookie 中提取扫码结果使用的账号标识；解析失败返回空字符串。

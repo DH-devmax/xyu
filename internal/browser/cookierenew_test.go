@@ -3,7 +3,7 @@ package browser
 import (
 	"testing"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // TestCredentialCookieSnapshotUsesCurrentFlatCookieAsAuthority 封装TestCredential登录凭证SnapshotUsesCurrentFlat登录凭证AsAuthority业务协调。

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/xianyu"
+	"github.com/DH-devmax/xyu/internal/xianyu"
 )
 
 // TestSanitize 特殊字符替换为下划线（用于 userDataDir 命名）。

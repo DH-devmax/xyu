@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/go-chi/chi/v5"
 
-	"xianyu-go/internal/auth"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // mountVersionedItemBatchRoutes 挂载商品同步、类目推荐和批量发布的 `/api/v1` 兼容入口。

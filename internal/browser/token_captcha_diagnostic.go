@@ -23,7 +23,7 @@ import (
 
 	"github.com/mxschmitt/playwright-go"
 
-	"xianyu-go/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/logsafe"
 )
 
 const (

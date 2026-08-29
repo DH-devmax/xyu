@@ -15,13 +15,13 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
-	"xianyu-go/internal/xianyu/protocol"
-	"xianyu-go/internal/xianyu/renew"
-	"xianyu-go/internal/xianyu/ws"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/xianyu/ws"
 )
 
 // 账号运行时参数。
@@ -337,12 +337,10 @@ func New(cfg Config) *Account {
 		accountDependencies: newAccountDependencies(cfg.Store, mtopClient, renewer, wsDialer, cfg.Handler, logger.With("account", cfg.CookieID), nil, newWSRecorder(cfg.Store, cfg.CookieID, logger)),
 	}
 	if cfg.Store != nil {
-		// aiReplier 是当前账号的 provider 实例；生产组合根通过工厂注入 Harness，旧调用仍可使用兼容实现。
+		// aiReplier 是组合根注入的唯一 AI provider；未装配时保持 nil 并直接走默认回复。
 		var aiReplier AIReplier
 		if cfg.AIReplierFactory != nil {
 			aiReplier = cfg.AIReplierFactory(cfg.CookieID, cfg.Store, logger)
-		} else {
-			aiReplier = NewAIReplier(cfg.CookieID, cfg.Store, logger)
 		}
 		a.reply = NewReplyService(cfg.CookieID, cfg.Store, a, nil, aiReplier, logger)
 	}

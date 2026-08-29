@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // ItemDetailFetcher 是商品同步使用的可选详情能力。

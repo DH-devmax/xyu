@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"xianyu-go/internal/xianyu"
+	"github.com/DH-devmax/xyu/internal/xianyu"
 )
 
 // TestWebsocketHeadersMatchBrowserHandshake 封装TestWebsocketHeadersMatch浏览器Handshake业务协调。

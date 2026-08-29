@@ -1,8 +1,8 @@
 package adapter
 
 import (
-	chatapp "xianyu-go/internal/application/chat"
-	"xianyu-go/internal/db"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // ChatSessionFromApplication 将聊天应用会话转换为 legacy 聊天领域写入模型。

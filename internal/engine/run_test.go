@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
-	xrenew "xianyu-go/internal/xianyu/renew"
-	"xianyu-go/internal/xianyu/ws"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	xrenew "github.com/DH-devmax/xyu/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/xianyu/ws"
 )
 
 // fakeRunMtop 返回成功 token，不触网。

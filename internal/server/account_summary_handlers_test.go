@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"xianyu-go/internal/auth"
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/auth"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestRequireCookieOwnershipPreservesHTTPCompatibility 验证账号所有权辅助函数保留未登录、越权、缺失和成功状态码。

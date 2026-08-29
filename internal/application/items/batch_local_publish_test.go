@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	automationapp "xianyu-go/internal/application/automation"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
 )
 
 // batchCompletionRepositoryFake 保存批次收口测试所需的状态和调用记录。

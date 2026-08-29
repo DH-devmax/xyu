@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log/slog"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // ItemDependencies 封装商品目录、发布、批量和同步用例所需的窄适配器构造能力。

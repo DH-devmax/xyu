@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	cardsapp "xianyu-go/internal/application/cards"
-	"xianyu-go/internal/db"
+	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // apiRequestTesterStub 是卡券 API 测试请求的确定性替身，避免 OpenAPI 契约测试访问真实远端地址。

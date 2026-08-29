@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // apiRenewEnabled 读取 API Cookie 续期开关，并在设置缺失时保留安全默认值。

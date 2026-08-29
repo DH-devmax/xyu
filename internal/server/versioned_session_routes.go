@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/go-chi/chi/v5"
 
-	"xianyu-go/internal/auth"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // mountHealthAndVersionedRoutes 挂载健康检查及当前阶段的版本化 API 入口。

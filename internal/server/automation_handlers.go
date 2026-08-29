@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	automationapp "xianyu-go/internal/application/automation"
-	"xianyu-go/internal/auth"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // automationIssueResolutionRequest 是处理自动化异常或延期任务的 HTTP 请求 DTO。

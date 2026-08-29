@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/go-chi/chi/v5"
 
-	"xianyu-go/internal/auth"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // mountVersionedChatTaskRoutes 挂载聊天和账号任务的 `/api/v1` 兼容入口。

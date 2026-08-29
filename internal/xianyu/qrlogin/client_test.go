@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // failingReader 用于本次流程后续判断的failingReader

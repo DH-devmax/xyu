@@ -7,7 +7,7 @@ import (
 
 	"github.com/mxschmitt/playwright-go"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // TokenCaptchaCookieSnapshot 在滑块引擎退出并释放持久化 Profile 后，重新打开

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"log/slog"
 
-	"xianyu-go/internal/account"
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/notify"
+	"github.com/DH-devmax/xyu/internal/account"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/notify"
 )
 
 // OrderRuntimeAdapter 将账号、自动化、通知和平台调用组合为订单应用 Port，不依赖 HTTP Server。

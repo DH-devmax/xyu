@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/xianyu/cookierefresh"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // TestAccountLoginRepositoryKeepsPlatformViewNarrow 验证平台凭证 Port 只返回 Cookie 运行所需字段。

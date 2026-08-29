@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/go-chi/chi/v5"
 
-	"xianyu-go/internal/auth"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // mountVersionedSettingsCardNotificationRoutes 挂载设置、卡券和通知的 `/api/v1` 兼容入口。

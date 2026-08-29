@@ -1,8 +1,8 @@
 package adapter
 
 import (
-	adminapp "xianyu-go/internal/application/admin"
-	"xianyu-go/internal/db"
+	adminapp "github.com/DH-devmax/xyu/internal/application/admin"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AdminSettingsDependencies 封装管理员和系统设置应用服务所需的数据库适配器。

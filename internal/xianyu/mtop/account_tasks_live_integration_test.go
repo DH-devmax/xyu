@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestLivePolishAccount is opt-in because it calls the real Xianyu APIs and

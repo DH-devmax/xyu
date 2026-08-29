@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"xianyu-go/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/logsafe"
 )
 
 // handleConfirmedQRStatus 完成确认扫码后的风控分流或官网登录收口；两条路径都终止当前轮询。

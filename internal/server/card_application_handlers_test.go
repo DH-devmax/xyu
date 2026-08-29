@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	cardsapp "xianyu-go/internal/application/cards"
-	"xianyu-go/internal/db"
+	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestCardApplicationEndpointsEnforceOwnership 验证详情、更新和删除均由应用服务执行用户隔离。

@@ -2,7 +2,7 @@
 // 实现关键词回复、默认回复和 AI 回复的调度。
 //
 // Phase 3 实现：关键词（含商品ID优先+变量替换+空回复标记）、默认回复（指定商品优先+reply_once+变量替换）。
-// API 回复（调外部 /xianyu/reply 接口）和 AI 回复（OpenAI 兼容）留接口注入。
+// API 回复（调外部 /xianyu/reply 接口）和 Brain 回复由组合根注入。
 
 package engine
 
@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // ReplyResult 回复结果。

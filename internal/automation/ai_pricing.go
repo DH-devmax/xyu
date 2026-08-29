@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // handleAIPricingMode 在订单创建事件中优先执行 AI 报价，并阻止互斥的固定价格规则继续运行。

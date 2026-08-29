@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/db"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AccountSummaryRepository 将数据库账号摘要查询适配为应用层 Port，不向上层暴露数据库模型或凭证字段。

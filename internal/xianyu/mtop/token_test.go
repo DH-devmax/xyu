@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/xianyu"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // testCookiesWithUnb 用于本次流程后续判断的testCookiesWithUnb

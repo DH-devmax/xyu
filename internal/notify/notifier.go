@@ -17,9 +17,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/logsafe"
-	"xianyu-go/internal/netguard"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/netguard"
 )
 
 // EventAccountOffline 用于本次流程后续判断的Event账号Offline

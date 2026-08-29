@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // batchPublishClientStub 是批量远端发布测试使用的平台客户端替身。

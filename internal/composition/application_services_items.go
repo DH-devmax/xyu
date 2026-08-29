@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"xianyu-go/internal/adapter"
-	itemapp "xianyu-go/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/adapter"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
 )
 
 // itemBatchServices 是批量发布运行时、预检和本地收口服务的完整不可变组合结果。

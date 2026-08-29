@@ -3,7 +3,7 @@ package automation
 import (
 	"context"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AccountTaskRepository 定义账号任务协调器需要的最小账号与任务持久化能力。

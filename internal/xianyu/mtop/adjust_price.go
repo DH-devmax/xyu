@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // AdjustPriceAPI 是卖家对待付款订单改价的 MTOP 端点。

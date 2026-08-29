@@ -6,11 +6,11 @@ import (
 	"log/slog"
 	"time"
 
-	"xianyu-go/internal/adapter"
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/auth"
-	composition "xianyu-go/internal/composition"
-	"xianyu-go/internal/server"
+	"github.com/DH-devmax/xyu/internal/adapter"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/auth"
+	composition "github.com/DH-devmax/xyu/internal/composition"
+	"github.com/DH-devmax/xyu/internal/server"
 )
 
 // accountLoginTransport 将组合层账号登录服务适配为 HTTP transport 消费的公开 Port。

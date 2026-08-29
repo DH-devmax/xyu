@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	notificationsapp "xianyu-go/internal/application/notifications"
-	"xianyu-go/internal/db"
+	notificationsapp "github.com/DH-devmax/xyu/internal/application/notifications"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestNotificationChannelRepositoryKeepsConfigOutOfSummaries 验证渠道摘要映射不携带敏感配置。

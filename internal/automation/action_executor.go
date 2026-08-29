@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // automationActionExecutor 负责把动作计划转换为确认发货、卡密发送或消息发送，并集中维护凭证快照、卡券库存和外部发送结果的边界。

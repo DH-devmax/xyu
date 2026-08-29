@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // itemSyncDetailClient 是商品详情探测测试使用的平台客户端替身。

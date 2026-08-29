@@ -4,9 +4,9 @@ import (
 	"context"
 	"log/slog"
 
-	"xianyu-go/internal/xianyu/mtop"
-	"xianyu-go/internal/xianyu/qrlogin"
-	xrenew "xianyu-go/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/qrlogin"
+	xrenew "github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // MTOPClient 是平台装配边界使用的客户端别名，避免上层依赖具体 MTOP 包。

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // countingMtop 包装 fakeRunMtop，计数 RefreshToken 调用次数。

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	orderapp "xianyu-go/internal/application/orders"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
 )
 
 // TestOrderReconciliationRepositoryRecordsPending 验证补偿应用模型能写入数据库并返回记录标识。

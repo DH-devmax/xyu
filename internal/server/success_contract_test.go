@@ -7,7 +7,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
-	chatapp "xianyu-go/internal/application/chat"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
 )
 
 // TestChatMessageDTOKeepsReadReceipt 验证聊天传输 DTO 不会丢弃平台已读回执和语音长度。

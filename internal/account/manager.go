@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/engine"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/engine"
 )
 
 // ErrRestartIncomplete 表示账号重启在旧实例收束或新实例启动前被取消或失败，调用方可据此安排重试与状态展示。

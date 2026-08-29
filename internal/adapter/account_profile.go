@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"strings"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/xianyu/mtop"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // AccountProfilePort 将平台资料查询和账号资料持久化适配到账号应用层。

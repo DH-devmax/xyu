@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	accountapp "xianyu-go/internal/application/account"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // loadCookiePlatformDetail 读取平台请求所需的最小 Cookie 状态，并转换为 Server 内部已有的会话适配模型。

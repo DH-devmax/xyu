@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // ItemSyncRepository 将商品同步应用 Port 适配到数据库、MTOP 和账号运行时。

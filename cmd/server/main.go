@@ -21,13 +21,13 @@ import (
 	"syscall"
 	"time"
 
-	"xianyu-go/internal/auth"
-	compositionruntime "xianyu-go/internal/composition/runtime"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/logging"
-	"xianyu-go/internal/logsafe"
-	"xianyu-go/internal/netguard"
-	appversion "xianyu-go/internal/version"
+	"github.com/DH-devmax/xyu/internal/auth"
+	compositionruntime "github.com/DH-devmax/xyu/internal/composition/runtime"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/logging"
+	"github.com/DH-devmax/xyu/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/netguard"
+	appversion "github.com/DH-devmax/xyu/internal/version"
 )
 
 // serverOptions 保存命令行和环境变量解析后的进程启动选项。

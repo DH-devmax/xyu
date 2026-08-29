@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	automationapp "xianyu-go/internal/application/automation"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
 )
 
 // ErrBatchLocalPublishUnavailable 表示批量发布成功后的本地收口服务未完成装配。

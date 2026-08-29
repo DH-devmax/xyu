@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/db"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // ItemCatalogRepository 将商品读取 Port 适配到数据库商品仓储。

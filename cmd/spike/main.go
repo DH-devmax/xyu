@@ -29,11 +29,11 @@ import (
 	"syscall"
 	"time"
 
-	"xianyu-go/internal/logging"
-	"xianyu-go/internal/logsafe"
-	"xianyu-go/internal/xianyu/mtop"
-	"xianyu-go/internal/xianyu/protocol"
-	"xianyu-go/internal/xianyu/ws"
+	"github.com/DH-devmax/xyu/internal/logging"
+	"github.com/DH-devmax/xyu/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/ws"
 )
 
 // main 封装main业务协调。

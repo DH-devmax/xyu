@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/adapter"
-	accountapp "xianyu-go/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/adapter"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // accountLoginService 组合手动 Cookie 与二维码登录的应用用例；它只在组合层持有适配器细节。

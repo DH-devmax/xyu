@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"testing"
 
-	accountapp "xianyu-go/internal/application/account"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // TestAccountCookieWriterRejectsMissingPorts 验证请求范围凭证 writer 缺少仓储时不会伪装成功。

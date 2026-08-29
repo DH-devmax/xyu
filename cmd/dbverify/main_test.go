@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestMaskURL 验证带凭证的数据库 URL 脱敏：保留 scheme + host，密码替换为 ***。

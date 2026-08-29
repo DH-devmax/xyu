@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // defaultReviewRequestScanInterval 用于本次流程后续判断的defaultReview请求ScanInterval

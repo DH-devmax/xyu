@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TriggerOrderPaid 用于本次流程后续判断的Trigger订单Paid

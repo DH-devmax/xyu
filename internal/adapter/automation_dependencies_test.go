@@ -3,7 +3,7 @@ package adapter
 import (
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestNewAutomationDependenciesRejectsNilStore 确保自动化依赖组不会接受缺失数据库入口的半初始化状态。

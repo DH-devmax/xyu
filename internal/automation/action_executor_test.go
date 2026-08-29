@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // blockingAutomationSender 在发送入口阻塞，用于验证库存锁不会覆盖外部消息 I/O。

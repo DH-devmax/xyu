@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	accountapp "xianyu-go/internal/application/account"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // TestAccountLoginAuditRepositoryMapping 验证登录审计应用模型到 SQLite 数据模型的字段映射。

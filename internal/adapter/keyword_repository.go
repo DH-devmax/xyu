@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	keywordsapp "xianyu-go/internal/application/keywords"
-	"xianyu-go/internal/db"
+	keywordsapp "github.com/DH-devmax/xyu/internal/application/keywords"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // KeywordRepository 将关键词和指定商品回复数据库操作适配为应用层 Port。

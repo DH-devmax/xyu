@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	itemapp "xianyu-go/internal/application/items"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
 )
 
 // TestBatchManagementReadsPersistedPreview 验证批次管理应用服务可以读取预检持久化结果。

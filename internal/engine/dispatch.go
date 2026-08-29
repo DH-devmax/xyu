@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // dispatch 是 ws.ReceiveLoop 的回调，对每条解密后的消息做：

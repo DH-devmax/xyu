@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/auth"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // qrLoginGenerateTimeout 用于本次流程后续判断的qr登录GenerateTimeout

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log/slog"
 
-	accountapp "xianyu-go/internal/application/account"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // AccountCookieWriter 将手动登录产生的明文 Cookie 限制在账号基础设施适配器内。

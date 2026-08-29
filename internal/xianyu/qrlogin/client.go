@@ -18,9 +18,9 @@ import (
 
 	qrcode "github.com/skip2/go-qrcode"
 
-	"xianyu-go/internal/logsafe"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	xrenew "xianyu-go/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	xrenew "github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // maxQRResponseBytes 用于本次流程后续判断的maxQR响应Bytes

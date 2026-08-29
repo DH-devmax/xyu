@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestSeedFromSQLiteCopiesMetadataAndSanitizesSecrets 封装TestSeedFromSQLiteCopiesMetadataAndSanitizesSecrets业务协调。

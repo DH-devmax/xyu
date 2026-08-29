@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // fakeAPIReplier 可控的 API 回复 mock：返回预设结果或错误。

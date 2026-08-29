@@ -10,7 +10,7 @@ import (
 
 	"github.com/mxschmitt/playwright-go"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // TestSnapshotToOptionalCookiesPreservesBrowserAttributes 验证完整 Cookie 快照到 Playwright 参数的属性映射。

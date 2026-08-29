@@ -4,9 +4,9 @@ import (
 	"errors"
 	"log/slog"
 
-	cardsapp "xianyu-go/internal/application/cards"
-	notificationsapp "xianyu-go/internal/application/notifications"
-	"xianyu-go/internal/db"
+	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
+	notificationsapp "github.com/DH-devmax/xyu/internal/application/notifications"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // MiscDependencies 封装通知、订单分析和卡券应用服务所需的数据库适配器构造能力。

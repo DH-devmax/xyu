@@ -5,11 +5,11 @@ import (
 	"errors"
 	"sync"
 
-	"xianyu-go/internal/account"
-	"xianyu-go/internal/adapter"
-	lifecycleapp "xianyu-go/internal/application/lifecycle"
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/chat"
+	"github.com/DH-devmax/xyu/internal/account"
+	"github.com/DH-devmax/xyu/internal/adapter"
+	lifecycleapp "github.com/DH-devmax/xyu/internal/application/lifecycle"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/chat"
 )
 
 // testServerManagers 保存仅供测试夹具访问的账号运行时；生产 Server 不持有该对象。

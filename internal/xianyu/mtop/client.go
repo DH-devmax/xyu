@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu"
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // RegAppKey 是 WS 注册用的 appKey（与签名用的 protocol.SignAppKey 不同）。

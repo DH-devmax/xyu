@@ -4,8 +4,8 @@ import (
 	"errors"
 	"log/slog"
 
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // OrderDependencies 只封装订单用例所需的持久化与运行时适配器构造，避免订单装配依赖万能设施容器。

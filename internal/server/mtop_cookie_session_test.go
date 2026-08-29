@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // stubProfileMTop 用于本次流程后续判断的stubProfileMTop

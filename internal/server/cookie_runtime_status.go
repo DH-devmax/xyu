@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/auth"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // listCookieRuntimeStatus 返回本地账号引擎状态，不请求闲鱼 API；停用但仍存活的实例必须作为冲突诊断返回。

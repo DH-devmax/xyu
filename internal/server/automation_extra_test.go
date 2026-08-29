@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestAutomationRulesCRUD 自动化规则增删查 + 校验分支。

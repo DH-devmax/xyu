@@ -21,10 +21,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"xianyu-go/internal/auth"
-	"xianyu-go/internal/logging"
-	appversion "xianyu-go/internal/version"
-	"xianyu-go/internal/webui"
+	"github.com/DH-devmax/xyu/internal/auth"
+	"github.com/DH-devmax/xyu/internal/logging"
+	appversion "github.com/DH-devmax/xyu/internal/version"
+	"github.com/DH-devmax/xyu/internal/webui"
 )
 
 // Dependencies 是 HTTP Server 的不可变组合依赖；应用服务和生命周期组件必须在进入 Server 前完成装配。

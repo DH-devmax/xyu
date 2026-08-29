@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // automationRunCoordinator 负责自动化运行的创建、续租、动作检查点和结果收口；它不决定具体业务动作，只协调动作执行过程中的持久化状态和三态结果。

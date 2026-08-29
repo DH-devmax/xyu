@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"xianyu-go/internal/auth"
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/auth"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestRequireCookieOwnerSkipsLoginSecret 验证账号所有权校验不依赖登录密码密文。

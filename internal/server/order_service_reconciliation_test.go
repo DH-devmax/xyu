@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"xianyu-go/internal/adapter"
-	orderapp "xianyu-go/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/adapter"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
 )
 
 // serverOrderReconciliationRecorderFake 是 Server 订单运行时适配器测试使用的补偿 Port。

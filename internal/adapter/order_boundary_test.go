@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestNormalizeOrderError 验证数据库错误不会越过订单应用适配边界。

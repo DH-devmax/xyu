@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestRunCreatesAdminInTemporaryDatabase 封装Test运行CreatesAdminInTemporaryDatabase业务协调。

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // fakeRepository 是验证聊天服务窄 repository 依赖的内存替身。

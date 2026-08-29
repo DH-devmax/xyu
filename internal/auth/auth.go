@@ -13,7 +13,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // CookieName 是会话 Cookie 名。

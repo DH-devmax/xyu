@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"xianyu-go/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/logsafe"
 )
 
 // Level is the process-wide dynamic slog level.

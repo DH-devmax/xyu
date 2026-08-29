@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"xianyu-go/internal/httpapi"
+	"github.com/DH-devmax/xyu/internal/httpapi"
 )
 
 // TestAPIContractQRLoginGenerationFailure 验证二维码生成上游失败返回非 2xx 统一错误 DTO。

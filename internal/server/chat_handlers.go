@@ -15,8 +15,8 @@ import (
 	"github.com/coder/websocket/wsjson"
 	"github.com/go-chi/chi/v5"
 
-	chatapp "xianyu-go/internal/application/chat"
-	"xianyu-go/internal/auth"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // markChatReadRequest 是提交聊天已读状态的 HTTP 请求 DTO。

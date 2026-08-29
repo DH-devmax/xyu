@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestUncertainNotificationEndpointsEnforceScope 验证用户与管理员 uncertain 查询的隔离和脱敏边界。

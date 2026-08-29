@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	orderapp "xianyu-go/internal/application/orders"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
 )
 
 // orderHTTPAdapter 将 HTTP 请求模型和兼容响应模型适配到应用层订单服务。

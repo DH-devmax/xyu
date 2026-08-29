@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // longLoginCookieState 用于本次流程后续判断的long登录登录凭证状态

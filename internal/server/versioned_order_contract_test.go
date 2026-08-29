@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestVersionedOrderRoutesPreserveLegacyContracts 验证订单列表、详情和更新入口复用旧 handler 并保留旧路径。

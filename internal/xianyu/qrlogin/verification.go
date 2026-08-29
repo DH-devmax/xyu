@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/logsafe"
-	"xianyu-go/internal/xianyu"
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/xianyu"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // CompleteVerification 完成已确认扫码会话的人工验证并返回最终凭证与平台账号标识。

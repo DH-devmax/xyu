@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/db"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestItemCatalogRepositoryRejectsMissingStore 验证商品读取适配器缺少数据库时快速失败。

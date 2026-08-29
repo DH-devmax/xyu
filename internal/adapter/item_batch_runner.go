@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	itemapp "xianyu-go/internal/application/items"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
 )
 
 // itemBatchPublisher 将平台远端发布和本地成功收口组合为应用层 BatchPublisher，不依赖 HTTP Server。

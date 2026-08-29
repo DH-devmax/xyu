@@ -9,9 +9,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	settingsapp "xianyu-go/internal/application/settings"
-	"xianyu-go/internal/auth"
-	"xianyu-go/internal/logging"
+	settingsapp "github.com/DH-devmax/xyu/internal/application/settings"
+	"github.com/DH-devmax/xyu/internal/auth"
+	"github.com/DH-devmax/xyu/internal/logging"
 )
 
 // systemSettingSecretChangeRequest 是 HTTP 层接收的敏感设置变更命令。

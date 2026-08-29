@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	defaultreplyapp "xianyu-go/internal/application/defaultreply"
+	defaultreplyapp "github.com/DH-devmax/xyu/internal/application/defaultreply"
 )
 
 // TestDefaultReplyRepositoryCRUDMapping 验证默认回复 CRUD 和应用模型之间的字段映射。

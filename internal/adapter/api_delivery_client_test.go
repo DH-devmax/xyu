@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	cardsapp "xianyu-go/internal/application/cards"
-	"xianyu-go/internal/automation"
+	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
+	"github.com/DH-devmax/xyu/internal/automation"
 )
 
 // TestAPICardTesterReturnsResponseDiagnostics 验证测试请求返回状态码、JSON 顶层字段和响应路径提取结果。

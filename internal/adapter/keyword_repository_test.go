@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	keywordsapp "xianyu-go/internal/application/keywords"
+	keywordsapp "github.com/DH-devmax/xyu/internal/application/keywords"
 )
 
 // TestKeywordRepositoryCRUDMapping 验证关键词和指定商品回复的 SQLite 映射及成功路径。

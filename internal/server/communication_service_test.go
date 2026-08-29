@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	automationapp "xianyu-go/internal/application/automation"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
 )
 
 // TestAccountTaskApplicationUpdatesSettings 验证账号任务设置由独立应用服务校验并持久化。

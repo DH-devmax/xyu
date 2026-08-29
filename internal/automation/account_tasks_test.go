@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // fakeAccountTaskClient 用于本次流程后续判断的fake账号任务Client

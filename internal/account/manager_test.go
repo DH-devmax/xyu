@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/engine"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/engine"
 )
 
 // noopHandler 用于本次流程后续判断的noopHandler

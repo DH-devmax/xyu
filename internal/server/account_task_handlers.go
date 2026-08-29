@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	automationapp "xianyu-go/internal/application/automation"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
 )
 
 // mountAccountTasks 封装mount账号任务列表业务协调。

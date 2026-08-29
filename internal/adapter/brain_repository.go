@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	brainapp "xianyu-go/internal/application/brain"
-	"xianyu-go/internal/db"
+	brainapp "github.com/DH-devmax/xyu/internal/application/brain"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // BrainRepository 将数据库 Brain 仓储转换为应用层所需的脱敏 Port。

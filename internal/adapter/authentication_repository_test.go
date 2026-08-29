@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/db"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestAuthenticationRepositoryMapsLoginAndPasswordOperations 验证认证端口在 SQLite 中映射登录、会话和改密行为。

@@ -116,7 +116,7 @@ func handler() { var req requestDTO; _ = req }
 
 // TestNormalizeImportPath 验证架构检查器能够识别当前模块的内部包路径。
 func TestNormalizeImportPath(t *testing.T) {
-	if got /* got 是规范化后的导入路径。 */ := normalizeImportPath("xianyu-go/internal/db"); got != "internal/db" {
+	if got /* got 是规范化后的导入路径。 */ := normalizeImportPath("github.com/DH-devmax/xyu/internal/db"); got != "internal/db" {
 		t.Fatalf("normalizeImportPath=%q", got)
 	}
 	if got /* got 是未带模块前缀的标准库导入路径。 */ := normalizeImportPath("database/sql"); got != "database/sql" {
@@ -312,7 +312,7 @@ func TestStageTwoServerBoundary(t *testing.T) {
 	fset := token.NewFileSet()
 	// syntax、parseErr 分别是包含阶段二禁止依赖和声明的模拟 Server 源码及解析失败原因。
 	syntax, parseErr := parser.ParseFile(fset, "server.go", []byte(`package server
-import "xianyu-go/internal/adapter"
+import "github.com/DH-devmax/xyu/internal/adapter"
 type ApplicationServices struct{}
 type PlatformPort interface{}
 func (s *Server) ApplicationServices() *ApplicationServices { return nil }
@@ -335,7 +335,7 @@ func TestStageTwoConstructionBoundary(t *testing.T) {
 	// syntax、parseErr 分别是包含标准库、应用构造和 factory 链的模拟 Server 源码及解析失败原因。
 	syntax, parseErr := parser.ParseFile(fset, "composition.go", []byte(`package server
 import json "encoding/json"
-import orderapp "xianyu-go/internal/application/orders"
+import orderapp "github.com/DH-devmax/xyu/internal/application/orders"
 func build() { json.NewEncoder(nil); orderapp.NewRefreshJobRunner(nil, nil, orderapp.RefreshJobRunnerOptions{}); dependencies.ItemDependencies.NewItemBatchRepository() }
 `), parser.ParseComments)
 	if parseErr != nil {
@@ -394,7 +394,7 @@ func TestStageTwoCompositionRootBoundary(t *testing.T) {
 		t.Fatal(mkdirErr)
 	}
 	// commandSource 是显式引用组合层的最小入口源码。
-	commandSource := []byte("package main\nimport _ \"xianyu-go/internal/composition\"\n")
+	commandSource := []byte("package main\nimport _ \"github.com/DH-devmax/xyu/internal/composition\"\n")
 	// writeErr 表示写入临时入口源码失败的文件系统原因。
 	if writeErr := os.WriteFile(filepath.Join(commandDir, "main.go"), commandSource, 0o600); writeErr != nil {
 		t.Fatal(writeErr)
@@ -412,7 +412,7 @@ func TestStageTwoApplicationPortBoundary(t *testing.T) {
 	fset := token.NewFileSet()
 	// syntax、parseErr 分别是同时包含违规具体服务指针和合规消费者接口的模拟源码及解析错误。
 	syntax, parseErr := parser.ParseFile(fset, "application_ports.go", []byte(`package server
-import accountapp "xianyu-go/internal/application/account"
+import accountapp "github.com/DH-devmax/xyu/internal/application/account"
 type ApplicationPorts struct { Bad *accountapp.RuntimeService; Good AccountRuntimePort }
 type ApplicationPortsInput struct { Nested []*accountapp.ProfileService }
 type AccountRuntimePort interface{}
@@ -447,7 +447,7 @@ func TestStageTwoCompositionProjectionBoundary(t *testing.T) {
 	fset := token.NewFileSet()
 	// syntax、parseErr 分别是错误依赖 Server 的 composition 核心源码及解析错误。
 	syntax, parseErr := parser.ParseFile(fset, "services.go", []byte(`package composition
-import "xianyu-go/internal/server"
+import "github.com/DH-devmax/xyu/internal/server"
 var _ server.Dependencies
 `), parser.ParseComments)
 	if parseErr != nil {

@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	defaultreplyapp "xianyu-go/internal/application/defaultreply"
-	"xianyu-go/internal/auth"
+	defaultreplyapp "github.com/DH-devmax/xyu/internal/application/defaultreply"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // btoi bool→int（SQLite 无原生 bool）。

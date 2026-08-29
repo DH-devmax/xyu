@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	xrenew "xianyu-go/internal/xianyu/renew"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	xrenew "github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // runtimeStatusPortStub 是运行状态 HTTP 契约测试的最小应用 Port，不持有真实账号实例或凭证。

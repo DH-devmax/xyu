@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/auth"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // refreshOrderChunkSize 用于本次流程后续判断的refresh订单Chunk数量

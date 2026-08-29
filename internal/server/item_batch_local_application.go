@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 
-	itemapp "xianyu-go/internal/application/items"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
 )
 
 // newBatchLocalPublishService 返回构造阶段已完成依赖校验的批量本地收口应用服务。

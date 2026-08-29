@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/db"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // ClearTokens 清理 Cookie 更新后失效的旧连接凭证；缺少 Token 仓储时保持兼容空操作。

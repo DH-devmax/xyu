@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // HistoryPage 用于本次流程后续判断的History页码

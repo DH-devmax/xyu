@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	cardsapp "xianyu-go/internal/application/cards"
-	"xianyu-go/internal/auth"
+	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // maxCardBatchRows 用于本次流程后续判断的max卡密批次Rows

@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	automationapp "xianyu-go/internal/application/automation"
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AccountTaskRepository 将账号任务数据库模型适配为应用层模型。

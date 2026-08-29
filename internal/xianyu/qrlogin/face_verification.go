@@ -16,8 +16,8 @@ import (
 
 	qrcode "github.com/skip2/go-qrcode"
 
-	"xianyu-go/internal/logsafe"
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // runFaceVerification 参照闲鱼浏览器端风控跳转链，纯 HTTP 复现人脸验证流程。

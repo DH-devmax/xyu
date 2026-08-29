@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // TestEffectiveTokenExpireAtUsesServerDeadlineWithSafetyMargin 封装TestEffective令牌ExpireAtUsesServerDeadlineWithSafetyMargin业务协调。

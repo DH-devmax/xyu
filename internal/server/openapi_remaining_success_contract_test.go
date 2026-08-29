@@ -14,14 +14,14 @@ import (
 	"testing"
 	"time"
 
-	automationapp "xianyu-go/internal/application/automation"
-	chatapp "xianyu-go/internal/application/chat"
-	itemapp "xianyu-go/internal/application/items"
-	notificationsapp "xianyu-go/internal/application/notifications"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
-	xrenew "xianyu-go/internal/xianyu/renew"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	notificationsapp "github.com/DH-devmax/xyu/internal/application/notifications"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	xrenew "github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // TestOpenAPIRemainingVersionedSuccessResponses 验证仍未被既有兼容测试触达的版本化本地成功响应。

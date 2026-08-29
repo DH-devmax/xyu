@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // mtopResp 描述一次 mock mtop HTTP 响应。

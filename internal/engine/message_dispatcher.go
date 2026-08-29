@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"xianyu-go/internal/automation"
+	"github.com/DH-devmax/xyu/internal/automation"
 )
 
 // messageDispatcher 负责 WebSocket 消息的事实解析、去重、防抖和并发投递。

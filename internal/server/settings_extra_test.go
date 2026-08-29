@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/logging"
+	"github.com/DH-devmax/xyu/internal/logging"
 )
 
 // TestListAIModels 通过 mock OpenAI 端点返回模型列表。

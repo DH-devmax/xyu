@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"xianyu-go/internal/httpapi"
+	"github.com/DH-devmax/xyu/internal/httpapi"
 )
 
 // TestAPIContractHealth 验证健康检查使用具名 DTO，并在正常状态返回完整构建信息。

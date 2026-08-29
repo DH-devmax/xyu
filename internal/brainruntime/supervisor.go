@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	brainapp "xianyu-go/internal/application/brain"
+	brainapp "github.com/DH-devmax/xyu/internal/application/brain"
 )
 
 const (

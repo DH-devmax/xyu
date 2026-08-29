@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"xianyu-go/internal/adapter"
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/adapter"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestOrderForAutomation 保证未迁移的自动化边界不会丢失订单字段。

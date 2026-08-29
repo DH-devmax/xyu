@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"xianyu-go/internal/adapter"
+	"github.com/DH-devmax/xyu/internal/adapter"
 )
 
 // maxOpenAIModelsResponseBytes 保留旧测试名称，实际限制由适配器统一维护。

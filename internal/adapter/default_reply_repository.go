@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	defaultreplyapp "xianyu-go/internal/application/defaultreply"
-	"xianyu-go/internal/db"
+	defaultreplyapp "github.com/DH-devmax/xyu/internal/application/defaultreply"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // DefaultReplyRepository 将默认回复数据库仓储适配为应用层消费者定义的 Port。

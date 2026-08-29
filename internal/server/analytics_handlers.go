@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	analyticsapp "xianyu-go/internal/application/analytics"
-	"xianyu-go/internal/auth"
+	analyticsapp "github.com/DH-devmax/xyu/internal/application/analytics"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // analyticsApplication 返回当前 Server 绑定的订单分析应用服务。

@@ -3,8 +3,8 @@ package adapter
 import (
 	"log/slog"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/reconciliation"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/reconciliation"
 )
 
 // SystemDependencies 封装健康检查与订单补偿扫描所需的系统级适配器。

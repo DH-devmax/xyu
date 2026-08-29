@@ -3,7 +3,7 @@ package adapter
 import (
 	"errors"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // AutomationDependencies 封装自动化、默认回复和关键词用例所需的窄适配器构造能力。

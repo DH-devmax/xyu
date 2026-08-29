@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	chatapp "xianyu-go/internal/application/chat"
-	"xianyu-go/internal/db"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestChatSessionFromApplicationKeepsNonSensitiveFields 验证会话转换只复制非敏感展示字段。

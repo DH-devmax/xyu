@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // ItemPublishPort 将 MTOP、Cookie 会话与运行时同步适配为商品发布端口。

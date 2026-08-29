@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/db"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // ItemBatchRepository 将商品批量发布数据库仓储适配为应用层 worker Port。

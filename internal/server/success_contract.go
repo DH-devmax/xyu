@@ -1,7 +1,7 @@
 package server
 
 import (
-	chatapp "xianyu-go/internal/application/chat"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
 )
 
 // operationResponse 是密码、会话和设置变更接口共用的操作结果 DTO。

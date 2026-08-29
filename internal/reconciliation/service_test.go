@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestServiceRunOnceReconcilesManualShipment 验证手动发货补偿会补齐本地订单状态并关闭 pending 记录。

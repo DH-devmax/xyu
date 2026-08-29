@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"xianyu-go/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // pendingRenewalCoordinator 拥有静默续期迟到响应的后台等待与 Join 生命周期。

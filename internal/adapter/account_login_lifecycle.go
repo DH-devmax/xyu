@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	accountapp "xianyu-go/internal/application/account"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // AccountLoginLifecycle 将登录审计、资料刷新、账号重启和扫码清理告警收口到适配器。

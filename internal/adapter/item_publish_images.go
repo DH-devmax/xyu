@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // ReadPublishImageFile 是批量发布图片本地读取回调；实现方负责路径安全和图片格式校验。

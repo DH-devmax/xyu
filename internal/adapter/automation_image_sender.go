@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	accountmanager "xianyu-go/internal/account"
-	chatapp "xianyu-go/internal/application/chat"
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/netguard"
-	"xianyu-go/internal/xianyu/mtop"
+	accountmanager "github.com/DH-devmax/xyu/internal/account"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/netguard"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // automationImageMaxBytes 限制一次自动发货从远程 URL 读取的图片体积，避免无状态容器被单个卡密占满内存。

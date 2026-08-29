@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // TestCookieSnapshotMatchesDBSkipsLoginSecret 验证 WS 注册前凭证校验不解密登录密码。

@@ -3,7 +3,7 @@ package chat
 import (
 	"context"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // Repository 定义聊天服务需要的最小持久化能力，避免业务层持有完整 db.Store。

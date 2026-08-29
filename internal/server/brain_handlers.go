@@ -10,8 +10,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	brainapp "xianyu-go/internal/application/brain"
-	"xianyu-go/internal/auth"
+	brainapp "github.com/DH-devmax/xyu/internal/application/brain"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // brainSettingsResponse 是 Brain 管理页面使用的脱敏全局设置响应 DTO。

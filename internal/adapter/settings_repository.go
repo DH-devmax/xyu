@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	settingsapp "xianyu-go/internal/application/settings"
-	"xianyu-go/internal/db"
+	settingsapp "github.com/DH-devmax/xyu/internal/application/settings"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // SettingsRepository 将系统、用户和账号 AI 设置数据库模型适配为应用层 Port。

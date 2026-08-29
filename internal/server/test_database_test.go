@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 var (

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	accountapp "xianyu-go/internal/application/account"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // TestAccountSummaryRepositoryRejectsMissingStore 验证账号摘要适配器缺少数据库时所有入口均快速失败。

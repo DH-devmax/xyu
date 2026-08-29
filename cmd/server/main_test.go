@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // blockingHTTPStopper 模拟不响应关闭的 HTTP transport，用于验证其预算不会吞掉应用 worker 的 Join 时间。

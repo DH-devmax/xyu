@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/logsafe"
 )
 
 // main 是验证 CLI 的进程入口；参数与运行错误统一由 run 返回退出码。

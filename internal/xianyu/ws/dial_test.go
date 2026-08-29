@@ -15,7 +15,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"xianyu-go/internal/xianyu"
+	"github.com/DH-devmax/xyu/internal/xianyu"
 )
 
 // startRegServer 启动一个本地 WS 服务，模拟 /reg 握手并保持连接打开。

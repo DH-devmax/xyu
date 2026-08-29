@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	automationapp "xianyu-go/internal/application/automation"
-	"xianyu-go/internal/auth"
+	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // automationActionRequest 用于本次流程后续判断的自动化动作请求

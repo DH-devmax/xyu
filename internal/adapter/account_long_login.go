@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"time"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	xrenew "xianyu-go/internal/xianyu/renew"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	xrenew "github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // LongLoginClient 定义长登录平台客户端的最小协议，隔离 Server 与 renew 实现。

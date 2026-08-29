@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // recordingHandler 记录收到的聊天消息，用于断言防抖与去重行为。

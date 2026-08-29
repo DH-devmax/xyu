@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	cardsapp "xianyu-go/internal/application/cards"
-	"xianyu-go/internal/auth"
+	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // cardMutationRequest 是卡券创建与更新接口共用的具名请求 DTO。

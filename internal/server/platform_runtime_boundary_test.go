@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	accountapp "xianyu-go/internal/application/account"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
 )
 
 // serverPlatformCredentialPortFake 返回固定的窄平台凭证视图，验证 Server 不直连数据库仓储。

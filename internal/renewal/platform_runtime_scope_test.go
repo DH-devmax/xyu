@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	apirenew "xianyu-go/internal/xianyu/renew"
+	apirenew "github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // TestPendingAPIRenewUsesPlatformRuntimeData 验证迟到接口续期响应不解密登录密码。

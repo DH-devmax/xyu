@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestParsePublishIntervalSeconds 验证批量发布间隔的默认值与边界校验。

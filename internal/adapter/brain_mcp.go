@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"xianyu-go/internal/brainruntime"
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/brainruntime"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // NewBrainMCPBackend 创建只读业务上下文回调，供 gateway 的 MCP server 调用。

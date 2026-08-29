@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
-	"xianyu-go/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // blockingCredentialUpdateHandler 在凭证更新通知中阻塞，用于探测通知期间是否仍持有数据库凭证锁。

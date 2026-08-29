@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	chatapp "xianyu-go/internal/application/chat"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // chatRepository 将数据库聊天仓储和账号归属查询适配为聊天应用端口。

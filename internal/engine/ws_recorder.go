@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // wsRecorder 负责 WebSocket 报文诊断记录的有界队列和后台写入生命周期。

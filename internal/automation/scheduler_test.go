@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // readinessTestSender 用于本次流程后续判断的readinessTestSender

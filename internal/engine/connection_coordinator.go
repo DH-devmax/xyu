@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"xianyu-go/internal/xianyu/mtop"
-	"xianyu-go/internal/xianyu/ws"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/ws"
 )
 
 // connectionShutdownJoinTimeout 是连接协调器取消账号运行 Context 后等待自有 worker 退出的总预算。

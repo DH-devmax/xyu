@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // CookieSession 是一次平台请求流程使用的 Cookie 会话实现别名；Server 通过本适配器访问它，避免直接依赖平台包。

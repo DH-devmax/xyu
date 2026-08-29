@@ -3,8 +3,8 @@ package engine
 import (
 	"log/slog"
 
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // accountRuntimeComponents 统一拥有单账号运行时的可变状态、任务生命周期和消息分发器。

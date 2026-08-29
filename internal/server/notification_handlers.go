@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	notificationsapp "xianyu-go/internal/application/notifications"
+	notificationsapp "github.com/DH-devmax/xyu/internal/application/notifications"
 )
 
 // notificationChannelCreateRequest 是创建通知渠道的具名 HTTP 请求 DTO；Config 只写入应用端口。

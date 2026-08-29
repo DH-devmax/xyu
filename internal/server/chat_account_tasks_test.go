@@ -11,8 +11,8 @@ import (
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 
-	"xianyu-go/internal/chat"
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/chat"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // TestChatHistoryAndAccountTaskSettingsEndpoints 封装Test聊天HistoryAnd账号任务设置Endpoints业务协调。

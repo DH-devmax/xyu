@@ -3,7 +3,7 @@ package browser
 import (
 	"testing"
 
-	"xianyu-go/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
 )
 
 // TestCredentialCookieSnapshotPreservesChromiumAttributes 封装TestCredential登录凭证SnapshotPreservesChromiumAttributes业务协调。

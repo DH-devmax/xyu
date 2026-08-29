@@ -1,6 +1,6 @@
 package server
 
-import cardsapp "xianyu-go/internal/application/cards"
+import cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
 
 // apiCardConfigResponse 是 API 卡券查询接口的脱敏响应 DTO。
 type apiCardConfigResponse struct {

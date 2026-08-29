@@ -3,8 +3,8 @@ package adapter
 import (
 	"errors"
 
-	orderapp "xianyu-go/internal/application/orders"
-	"xianyu-go/internal/db"
+	orderapp "github.com/DH-devmax/xyu/internal/application/orders"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // NormalizeOrderError 将数据库订单错误转换为应用层稳定错误，阻止存储错误类型穿过适配边界。

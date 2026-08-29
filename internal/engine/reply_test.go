@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"xianyu-go/internal/db"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // newReplyStore 封装new回复Store业务协调。

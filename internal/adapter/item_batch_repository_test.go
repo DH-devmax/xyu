@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // TestItemBatchRepositoryCreatesPreviewFromApplicationModels 验证预检应用模型到数据库字段的转换。

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/xianyu/mtop"
-	apirenew "xianyu-go/internal/xianyu/renew"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	apirenew "github.com/DH-devmax/xyu/internal/xianyu/renew"
 )
 
 // TestAPICookieRenewReleasesCredentialLockDuringSlowIO 验证接口续期的慢速请求不占用共享凭证锁。

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	itemapp "xianyu-go/internal/application/items"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
 )
 
 // itemSyncRepositoryStub 是隔离 HTTP 错误映射测试的商品同步 Port 桩。

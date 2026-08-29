@@ -18,10 +18,10 @@ import (
 	"sync"
 	"time"
 
-	cardsapp "xianyu-go/internal/application/cards"
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/netguard"
+	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/netguard"
 )
 
 // apiDeliveryResponseLimit 是 API 发货允许读取的最大响应体大小，避免远端响应耗尽服务端内存。

@@ -20,7 +20,7 @@ import (
 	"github.com/mxschmitt/playwright-go"
 	"golang.org/x/sync/singleflight"
 
-	"xianyu-go/internal/xianyu"
+	"github.com/DH-devmax/xyu/internal/xianyu"
 )
 
 // 默认 UA、语言、时区与视口。

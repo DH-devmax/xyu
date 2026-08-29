@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/go-chi/chi/v5"
 
-	"xianyu-go/internal/auth"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // mountVersionedReplyRoutes 挂载关键词回复、指定商品回复和默认回复的 `/api/v1` 兼容入口。

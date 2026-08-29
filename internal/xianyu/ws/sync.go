@@ -11,7 +11,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // handleSyncExtra 处理服务端增量同步帧并在需要时回传确认，返回解码或发送错误。

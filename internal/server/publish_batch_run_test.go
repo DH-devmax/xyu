@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"xianyu-go/internal/adapter"
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/adapter"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
 )
 
 // minimalPNG 是一张 1x1 PNG，供发布批次图片 zip 复用。

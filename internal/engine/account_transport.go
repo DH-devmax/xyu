@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"xianyu-go/internal/xianyu/mtop"
-	"xianyu-go/internal/xianyu/protocol"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // acquireToken 为当前账号取得连接级 Token 与其绑定 Cookie 快照，供 WebSocket 注册使用。

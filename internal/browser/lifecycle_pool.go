@@ -13,7 +13,7 @@ import (
 
 	"github.com/mxschmitt/playwright-go"
 
-	"xianyu-go/internal/xianyu"
+	"github.com/DH-devmax/xyu/internal/xianyu"
 )
 
 // detectBrowserFingerprint 从受控 Chromium 读取运行时指纹，供浏览器与非浏览器协议请求统一使用。

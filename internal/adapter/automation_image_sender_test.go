@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	chatapp "xianyu-go/internal/application/chat"
-	"xianyu-go/internal/automation"
+	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
+	"github.com/DH-devmax/xyu/internal/automation"
 )
 
 // automationImageSenderStub 记录包装器最终交给账号运行时的发送参数。

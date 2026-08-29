@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	adminapp "xianyu-go/internal/application/admin"
+	adminapp "github.com/DH-devmax/xyu/internal/application/admin"
 )
 
 // mountAdminReal 管理员端点。

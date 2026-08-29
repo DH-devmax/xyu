@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5/middleware"
 
-	"xianyu-go/internal/httpapi"
+	"github.com/DH-devmax/xyu/internal/httpapi"
 )
 
 // writeAuthError 输出认证中间件统一使用的错误 DTO，并关联 chi 请求追踪标识。

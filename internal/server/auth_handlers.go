@@ -8,8 +8,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/auth"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/auth"
 )
 
 // loginRequest 是登录请求体。

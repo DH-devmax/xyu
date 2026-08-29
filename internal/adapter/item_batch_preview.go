@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	itemapp "xianyu-go/internal/application/items"
-	"xianyu-go/internal/db"
+	itemapp "github.com/DH-devmax/xyu/internal/application/items"
+	"github.com/DH-devmax/xyu/internal/db"
 )
 
 // ItemBatchPreviewPort 将批量预检所需的非敏感归属与本地路径校验适配到基础设施。

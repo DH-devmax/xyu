@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	cardsapp "xianyu-go/internal/application/cards"
+	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
 )
 
 // TestCardsRepositoryCRUDMapping 验证 SQLite 卡券 CRUD 与应用模型之间的完整字段映射。

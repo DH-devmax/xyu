@@ -7,17 +7,17 @@ import (
 	"strings"
 	"time"
 
-	accountapp "xianyu-go/internal/application/account"
-	"xianyu-go/internal/automation"
-	"xianyu-go/internal/browser"
-	"xianyu-go/internal/chat"
-	"xianyu-go/internal/db"
-	"xianyu-go/internal/engine"
-	"xianyu-go/internal/logsafe"
-	"xianyu-go/internal/renewal"
-	"xianyu-go/internal/xianyu/cookierefresh"
-	"xianyu-go/internal/xianyu/mtop"
-	"xianyu-go/internal/xianyu/protocol"
+	accountapp "github.com/DH-devmax/xyu/internal/application/account"
+	"github.com/DH-devmax/xyu/internal/automation"
+	"github.com/DH-devmax/xyu/internal/browser"
+	"github.com/DH-devmax/xyu/internal/chat"
+	"github.com/DH-devmax/xyu/internal/db"
+	"github.com/DH-devmax/xyu/internal/engine"
+	"github.com/DH-devmax/xyu/internal/logsafe"
+	"github.com/DH-devmax/xyu/internal/renewal"
+	"github.com/DH-devmax/xyu/internal/xianyu/cookierefresh"
+	"github.com/DH-devmax/xyu/internal/xianyu/mtop"
+	"github.com/DH-devmax/xyu/internal/xianyu/protocol"
 )
 
 // HandleChatMessage 将已解码的入站聊天消息转交给自动化与通知协作链，返回任一业务处理错误。
