@@ -20,10 +20,10 @@
 
 修改后制品为本地可重建验证输出，受 `.gitignore` 的 `/dist/` 规则管理，不作为源码提交或发布包。
 可分发补丁 SHA-256 为
-`7c6323430b0d0e32343252d0383bc2c63ba06b1169a5e1a73311b902d44f59e0`；已在基线临时 worktree 执行
+`b3d7ec39d7204e852b2a6a6a744037e82d8a9ca443eb201874224b658d794497`；已在基线临时 worktree 执行
 `git apply --check`、正向应用、关键文件断言、反向应用，最终工作树重新为干净状态。
 回滚脚本 SHA-256 为
-`e879f693418c904aa971492727b6597c00c05d05257f2e3069bcbecadecd2a52`；已在临时 worktree 实际创建聚合 revert，并以 tree 哈希复核。
+`f1c14bc8c95399e561363fd8764271a3e06986dedb027cf21a08bde743eafe95`；已在临时 worktree 实际创建聚合 revert，并以 tree 哈希复核。
 补丁覆盖从工程治理基线到品牌阶段终点的产品源码与发布门禁，只排除本补丁、验证记录和
 回滚脚本三个元工件，避免自引用。回滚脚本以
 最近一次修改自身的提交锁定品牌阶段终点，只能从该干净 HEAD 执行，并按最新到最旧撤销
@@ -131,7 +131,7 @@ product-data-migration: 通过（哈希、解密、失败原子性、只读副�
 | 官方 Node 24 macOS arm64 载荷重建 | `node-v24.19.0-darwin-arm64.tar.gz: OK`；native/node manifest 与摘要复验通过 |
 | 包内 Node 空 PATH 启动 | `macos-brain-empty-path: ok` |
 | Windows 加密 fixture 语法与本地密钥回归 | `windows-encrypted-fixture: ok` |
-| Windows 安装器迁移诊断 | `migrate-data.ps1` 接受可选 `-LogFile`；记录 `migration_start`、校验、切换、只读和失败异常阶段；日志写入失败不改变迁移结果 |
+| Windows 安装器迁移诊断 | `migrate-data.ps1` 接受可选 `-LogFile`；记录 `migration_start`、目录准备、源哈希、校验、切换、只读和失败异常阶段；日志写入失败不改变迁移结果 |
 | `make product-data-migration-check` | `product-data-migration: 通过（哈希、解密、失败原子性、只读副本、回滚）` |
 | `git diff --check` | 无输出 |
 

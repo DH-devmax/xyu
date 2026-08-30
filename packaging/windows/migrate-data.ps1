@@ -132,16 +132,19 @@ Write-DiagnosticLog -Message ("source_exists={0} destination_exists={1} validato
     (Test-Path -LiteralPath $Destination),
     (Test-Path -LiteralPath $Validator -PathType Leaf))
 
-New-Item -ItemType Directory -Force -Path $RollbackDir | Out-Null
-$recordParent = Split-Path -Parent $Record
-if (-not [string]::IsNullOrWhiteSpace($recordParent)) {
-    New-Item -ItemType Directory -Force -Path $recordParent | Out-Null
-}
-$sourceDigest = Get-TreeDigest -Root $Source
 $staging = $Destination + '.staging-' + $PID
 $destinationCreated = $false
 $sourceReadOnly = $false
 try {
+    New-Item -ItemType Directory -Force -Path $RollbackDir | Out-Null
+    Write-DiagnosticLog -Message 'rollback_directory_ready'
+    $recordParent = Split-Path -Parent $Record
+    if (-not [string]::IsNullOrWhiteSpace($recordParent)) {
+        New-Item -ItemType Directory -Force -Path $recordParent | Out-Null
+    }
+    Write-DiagnosticLog -Message 'record_directory_ready'
+    $sourceDigest = Get-TreeDigest -Root $Source
+    Write-DiagnosticLog -Message 'source_digest_ready'
     New-Item -ItemType Directory -Force -Path $staging | Out-Null
     Get-ChildItem -LiteralPath $Source -Force | Copy-Item -Destination $staging -Recurse -Force
     $stagingDigest = Get-TreeDigest -Root $staging

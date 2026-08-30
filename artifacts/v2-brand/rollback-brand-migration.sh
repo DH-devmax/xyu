@@ -9,7 +9,7 @@ repo_root="$(git -C "$script_directory" rev-parse --show-toplevel)"
 script_path="artifacts/v2-brand/rollback-brand-migration.sh"
 # baseline_commit 是品牌阶段开始前已通过工程治理门禁的提交。
 baseline_commit="2bb0cd20a016fe9e3104f860ae0b7568bb0fb508"
-# phase_tip 是本脚本最近一次被品牌、闭包、Wiki、Windows 编码、安装器诊断或 Docker 资源回收门禁提交修改的位置，避免误回滚未来阶段。
+# phase_tip 是本脚本最近一次被品牌、闭包、Wiki、Windows 编码、安装器诊断阶段标记或 Docker 资源回收门禁提交修改的位置，避免误回滚未来阶段。
 phase_tip="$(git -C "$repo_root" log --format=%H -n 1 -- "$script_path")"
 
 # usage 输出稳定的回滚脚本用法。

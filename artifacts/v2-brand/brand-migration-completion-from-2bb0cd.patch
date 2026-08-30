@@ -1696,7 +1696,7 @@ index 0000000000..2ecac2b08d
 +database.prepare("UPDATE system_settings SET value = ? WHERE key = 'ai_api_key'").run(encryptedValue);
 +database.close();
 diff --git a/packaging/windows/migrate-data.ps1 b/packaging/windows/migrate-data.ps1
-index 6a3aef8e88..9117250632 100644
+index 6a3aef8e88..7162ed21f2 100644
 --- a/packaging/windows/migrate-data.ps1
 +++ b/packaging/windows/migrate-data.ps1
 @@ -1,4 +1,4 @@
@@ -1738,7 +1738,7 @@ index 6a3aef8e88..9117250632 100644
  function Get-TreeDigest {
      param([Parameter(Mandatory = $true)][string]$Root)
      $lines = New-Object System.Collections.Generic.List[string]
-@@ -30,12 +50,87 @@ function Get-TreeDigest {
+@@ -30,59 +50,126 @@ function Get-TreeDigest {
      }
  }
  
@@ -1808,7 +1808,11 @@ index 6a3aef8e88..9117250632 100644
 +if (-not (Test-Path -LiteralPath $Validator -PathType Leaf)) {
 +    throw "数据验证器不存在: $Validator"
 +}
-+
+ 
+-New-Item -ItemType Directory -Force -Path $RollbackDir | Out-Null
+-$recordParent = Split-Path -Parent $Record
+-if (-not [string]::IsNullOrWhiteSpace($recordParent)) {
+-    New-Item -ItemType Directory -Force -Path $recordParent | Out-Null
 +$Source = [IO.Path]::GetFullPath($Source).TrimEnd('\', '/')
 +$Destination = [IO.Path]::GetFullPath($Destination).TrimEnd('\', '/')
 +$RollbackDir = [IO.Path]::GetFullPath($RollbackDir).TrimEnd('\', '/')
@@ -1816,23 +1820,28 @@ index 6a3aef8e88..9117250632 100644
 +$Validator = [IO.Path]::GetFullPath($Validator)
 +if ([StringComparer]::OrdinalIgnoreCase.Equals($Source, $Destination)) {
 +    throw '迁移源和目标不能相同'
-+}
+ }
+-$sourceDigest = Get-TreeDigest -Root $Source
 +
 +Write-DiagnosticLog -Message 'migration_start'
 +Write-DiagnosticLog -Message ("source_exists={0} destination_exists={1} validator_exists={2}" -f `
 +    (Test-Path -LiteralPath $Source -PathType Container),
 +    (Test-Path -LiteralPath $Destination),
 +    (Test-Path -LiteralPath $Validator -PathType Leaf))
- 
- New-Item -ItemType Directory -Force -Path $RollbackDir | Out-Null
- $recordParent = Split-Path -Parent $Record
-@@ -44,45 +139,34 @@ if (-not [string]::IsNullOrWhiteSpace($recordParent)) {
- }
- $sourceDigest = Get-TreeDigest -Root $Source
++
  $staging = $Destination + '.staging-' + $PID
 +$destinationCreated = $false
 +$sourceReadOnly = $false
  try {
++    New-Item -ItemType Directory -Force -Path $RollbackDir | Out-Null
++    Write-DiagnosticLog -Message 'rollback_directory_ready'
++    $recordParent = Split-Path -Parent $Record
++    if (-not [string]::IsNullOrWhiteSpace($recordParent)) {
++        New-Item -ItemType Directory -Force -Path $recordParent | Out-Null
++    }
++    Write-DiagnosticLog -Message 'record_directory_ready'
++    $sourceDigest = Get-TreeDigest -Root $Source
++    Write-DiagnosticLog -Message 'source_digest_ready'
      New-Item -ItemType Directory -Force -Path $staging | Out-Null
      Get-ChildItem -LiteralPath $Source -Force | Copy-Item -Destination $staging -Recurse -Force
      $stagingDigest = Get-TreeDigest -Root $staging
@@ -1882,7 +1891,7 @@ index 6a3aef8e88..9117250632 100644
  $ErrorActionPreference = 'Stop'
  if (-not (Test-Path -LiteralPath $Source -PathType Container) -or -not (Test-Path -LiteralPath $Destination -PathType Container)) {
      throw '回滚源或目标目录不存在'
-@@ -101,17 +185,44 @@ function Get-TreeDigest {
+@@ -101,17 +188,44 @@ function Get-TreeDigest {
      $sha = [Security.Cryptography.SHA256]::Create()
      try { return ($sha.ComputeHash($payload) | ForEach-Object { $_.ToString('x2') }) -join '' } finally { $sha.Dispose() }
  }
@@ -1932,7 +1941,7 @@ index 6a3aef8e88..9117250632 100644
      $recordContent = @(
          'status=ok'
          ('source=' + $Source)
-@@ -119,17 +230,28 @@ Write-Output ('backup=' + $backup)
+@@ -119,17 +233,28 @@ Write-Output ('backup=' + $backup)
          ('source_hash=' + $sourceDigest)
          ('staging_hash=' + $stagingDigest)
          ('destination_hash=' + $destinationDigest)
