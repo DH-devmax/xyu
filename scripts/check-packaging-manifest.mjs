@@ -185,6 +185,12 @@ await assertText('.github/workflows/docker-publish.yml', [
   'harness-workspace-cleanup: released',
   'cache-to: type=gha,mode=min,ignore-error=true',
 ]);
+await assertText('.github/workflows/sync-wiki.yml', [
+  '检查 Wiki 能力',
+  "gh api \"repos/${GITHUB_REPOSITORY}\" --jq '.has_wiki'",
+  'docs/wiki/',
+  "if: steps.wiki-capability.outputs.enabled == 'true'",
+]);
 await assertText('.github/workflows/release.yml', [
   `${expected.slug}-linux-amd64-`,
   'DH-Xianyu-AgentPanel-Setup.exe',

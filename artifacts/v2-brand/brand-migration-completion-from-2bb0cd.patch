@@ -643,6 +643,45 @@ index 9943c1fc48..e09e9cfc34 100644
  
        - name: 检查多架构 manifest
          shell: bash
+diff --git a/.github/workflows/sync-wiki.yml b/.github/workflows/sync-wiki.yml
+index c9eaf726bf..64efa92128 100644
+--- a/.github/workflows/sync-wiki.yml
++++ b/.github/workflows/sync-wiki.yml
+@@ -23,15 +23,34 @@ jobs:
+         with:
+           ref: main
+ 
++      - name: 检查 Wiki 能力
++        id: wiki-capability
++        env:
++          GH_TOKEN: ${{ github.token }}
++        shell: bash
++        run: |
++          set -Eeuo pipefail
++          has_wiki="$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.has_wiki' 2>/dev/null || printf 'false')"
++          if [ "$has_wiki" = true ]; then
++            echo 'enabled=true' >> "$GITHUB_OUTPUT"
++            echo 'Wiki 已启用，继续同步。'
++          else
++            echo 'enabled=false' >> "$GITHUB_OUTPUT"
++            echo '::warning::仓库 Wiki 未启用或当前订阅计划不支持 Wiki；保留 docs/wiki/ 为仓库内文档事实来源，跳过远端同步。'
++          fi
++
+       - name: 克隆 GitHub Wiki 仓库
++        if: steps.wiki-capability.outputs.enabled == 'true'
+         env:
+           WIKI_REPOSITORY: https://x-access-token:${{ github.token }}@github.com/DH-devmax/xyu.wiki.git
+         run: git clone "$WIKI_REPOSITORY" wiki
+ 
+       - name: 镜像 Wiki 页面
++        if: steps.wiki-capability.outputs.enabled == 'true'
+         run: rsync -a --delete --exclude='.git' docs/wiki/ wiki/
+ 
+       - name: 提交并推送 Wiki
++        if: steps.wiki-capability.outputs.enabled == 'true'
+         working-directory: wiki
+         env:
+           GIT_AUTHOR_NAME: github-actions[bot]
 diff --git a/AGENTS.md b/AGENTS.md
 index 6aa002d923..22803202d4 100644
 --- a/AGENTS.md
@@ -1959,7 +1998,7 @@ index b5bef4a0c8..7d4392a14f 100644
  
  console.log(JSON.stringify({
 diff --git a/scripts/check-packaging-manifest.mjs b/scripts/check-packaging-manifest.mjs
-index 3b498d693a..7342b30300 100644
+index 3b498d693a..1e6667998d 100644
 --- a/scripts/check-packaging-manifest.mjs
 +++ b/scripts/check-packaging-manifest.mjs
 @@ -1,5 +1,6 @@
@@ -2061,13 +2100,19 @@ index 3b498d693a..7342b30300 100644
    "Extension -in '.exe', '.dll', '.node'",
  ]);
  await assertText('Dockerfile.debian13', [
-@@ -148,11 +181,40 @@ await assertText('Dockerfile.debian13', [
+@@ -148,11 +181,46 @@ await assertText('Dockerfile.debian13', [
  await assertText('.github/workflows/docker-publish.yml', [
    'build-brain-runtime.mjs',
    '.docker/brain-runtime',
 +  '释放 Harness 构建空间',
 +  'harness-workspace-cleanup: released',
 +  'cache-to: type=gha,mode=min,ignore-error=true',
++]);
++await assertText('.github/workflows/sync-wiki.yml', [
++  '检查 Wiki 能力',
++  "gh api \"repos/${GITHUB_REPOSITORY}\" --jq '.has_wiki'",
++  'docs/wiki/',
++  "if: steps.wiki-capability.outputs.enabled == 'true'",
  ]);
  await assertText('.github/workflows/release.yml', [
    `${expected.slug}-linux-amd64-`,

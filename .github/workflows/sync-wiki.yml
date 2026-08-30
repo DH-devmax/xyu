@@ -23,15 +23,34 @@ jobs:
         with:
           ref: main
 
+      - name: 检查 Wiki 能力
+        id: wiki-capability
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          has_wiki="$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.has_wiki' 2>/dev/null || printf 'false')"
+          if [ "$has_wiki" = true ]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+            echo 'Wiki 已启用，继续同步。'
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo '::warning::仓库 Wiki 未启用或当前订阅计划不支持 Wiki；保留 docs/wiki/ 为仓库内文档事实来源，跳过远端同步。'
+          fi
+
       - name: 克隆 GitHub Wiki 仓库
+        if: steps.wiki-capability.outputs.enabled == 'true'
         env:
           WIKI_REPOSITORY: https://x-access-token:${{ github.token }}@github.com/DH-devmax/xyu.wiki.git
         run: git clone "$WIKI_REPOSITORY" wiki
 
       - name: 镜像 Wiki 页面
+        if: steps.wiki-capability.outputs.enabled == 'true'
         run: rsync -a --delete --exclude='.git' docs/wiki/ wiki/
 
       - name: 提交并推送 Wiki
+        if: steps.wiki-capability.outputs.enabled == 'true'
         working-directory: wiki
         env:
           GIT_AUTHOR_NAME: github-actions[bot]
