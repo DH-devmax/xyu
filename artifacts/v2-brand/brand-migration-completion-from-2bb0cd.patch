@@ -540,7 +540,7 @@ index 9431191f5a..d2aec47ae0 100644
 +          path: dist/macos/DH-Xianyu-AgentPanel-${{ env.APP_VERSION }}-${{ matrix.arch }}.pkg
            if-no-files-found: error
 diff --git a/.github/workflows/docker-publish.yml b/.github/workflows/docker-publish.yml
-index 9943c1fc48..e09e9cfc34 100644
+index 9943c1fc48..4b6bea0db8 100644
 --- a/.github/workflows/docker-publish.yml
 +++ b/.github/workflows/docker-publish.yml
 @@ -129,6 +129,7 @@ jobs:
@@ -551,7 +551,7 @@ index 9943c1fc48..e09e9cfc34 100644
            corepack pnpm install --frozen-lockfile
            CI=true corepack pnpm run build
            CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
-@@ -189,6 +190,26 @@ jobs:
+@@ -189,6 +190,52 @@ jobs:
            path: .docker/playwright-runtime/${{ matrix.arch }}
            key: ${{ steps.cache-docker-playwright.outputs.cache-primary-key }}
  
@@ -573,12 +573,38 @@ index 9943c1fc48..e09e9cfc34 100644
 +          ' "$harness_root"
 +          test ! -e "$harness_root"
 +          printf 'harness-workspace-cleanup: released %s KiB\n' "$harness_kib"
++          node <<'NODE'
++            const { homedir } = require('node:os')
++            const { resolve } = require('node:path')
++            const { rmSync } = require('node:fs')
++            const home = resolve(homedir())
++            const candidates = [
++              resolve(home, '.local/share/pnpm/store'),
++              resolve(home, '.cache/pnpm'),
++              resolve(home, '.npm'),
++              resolve(home, 'go/pkg/mod'),
++              resolve(home, '.cache/go-build'),
++            ]
++            const allowed = [
++              resolve(home, '.local/share/pnpm'),
++              resolve(home, '.cache'),
++              resolve(home, '.npm'),
++              resolve(home, 'go/pkg'),
++            ]
++            for (const candidate of candidates) {
++              if (!allowed.some(parent => candidate === parent || candidate.startsWith(`${parent}/`))) {
++                throw new Error(`拒绝清理边界外缓存: ${candidate}`)
++              }
++              rmSync(candidate, { recursive: true, force: true })
++            }
++          NODE
++          docker builder prune --all --force
 +          df -h "$PWD"
 +
        - name: 配置 Docker Buildx
          uses: docker/setup-buildx-action@v4
  
-@@ -211,13 +232,14 @@ jobs:
+@@ -211,15 +258,16 @@ jobs:
            context: .
            file: Dockerfile.debian13
            platforms: ${{ matrix.platform }}
@@ -589,13 +615,18 @@ index 9943c1fc48..e09e9cfc34 100644
              VCS_REF=${{ github.sha }}
              BUILD_TIME=${{ needs.verify.outputs.build_time }}
 -          outputs: type=image,name=${{ steps.image.outputs.name }},push-by-digest=true,name-canonical=true,push=true
-           cache-from: type=gha,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
+-          cache-from: type=gha,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
 -          cache-to: type=gha,mode=max,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
-+          cache-to: type=gha,mode=min,ignore-error=true,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
-           provenance: mode=max
-           sbom: true
+-          provenance: mode=max
+-          sbom: true
++          cache-from: ${{ inputs.app_version != '' && format('type=gha,scope=dh-xianyu-agentpanel-docker-{0}', matrix.arch) || '' }}
++          cache-to: ${{ inputs.app_version != '' && format('type=gha,mode=min,ignore-error=true,scope=dh-xianyu-agentpanel-docker-{0}', matrix.arch) || '' }}
++          provenance: ${{ inputs.app_version != '' && 'mode=max' || 'false' }}
++          sbom: ${{ inputs.app_version != '' }}
  
-@@ -273,6 +295,7 @@ jobs:
+       - name: 验证待发布镜像中的 Chromium 与服务
+         shell: bash
+@@ -273,6 +321,7 @@ jobs:
            touch "dist/digests/${IMAGE_DIGEST#sha256:}"
  
        - name: 上传镜像摘要
@@ -603,7 +634,7 @@ index 9943c1fc48..e09e9cfc34 100644
          uses: actions/upload-artifact@v7
          with:
            name: dh-xianyu-agentpanel-docker-digest-${{ matrix.arch }}
-@@ -289,13 +312,6 @@ jobs:
+@@ -289,13 +338,6 @@ jobs:
        - name: 配置 Docker Buildx
          uses: docker/setup-buildx-action@v4
  
@@ -617,7 +648,7 @@ index 9943c1fc48..e09e9cfc34 100644
        - name: 登录 GitHub Container Registry
          uses: docker/login-action@v4
          with:
-@@ -325,20 +341,15 @@ jobs:
+@@ -325,20 +367,15 @@ jobs:
            IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
          run: |
            set -Eeuo pipefail
@@ -1654,9 +1685,15 @@ index 0000000000..2ecac2b08d
 +database.prepare("UPDATE system_settings SET value = ? WHERE key = 'ai_api_key'").run(encryptedValue);
 +database.close();
 diff --git a/packaging/windows/migrate-data.ps1 b/packaging/windows/migrate-data.ps1
-index 6a3aef8e88..cc3e6b1a2d 100644
+index 6a3aef8e88..371b22fb77 100644
 --- a/packaging/windows/migrate-data.ps1
 +++ b/packaging/windows/migrate-data.ps1
+@@ -1,4 +1,4 @@
+-param(
++﻿param(
+     [Parameter(Mandatory = $true)]
+     [string]$Source,
+     [Parameter(Mandatory = $true)]
 @@ -6,7 +6,9 @@ param(
      [Parameter(Mandatory = $true)]
      [string]$RollbackDir,
@@ -1881,11 +1918,11 @@ index 6a3aef8e88..cc3e6b1a2d 100644
  }
 diff --git a/packaging/windows/migrate-data.test.ps1 b/packaging/windows/migrate-data.test.ps1
 new file mode 100644
-index 0000000000..0e389864e8
+index 0000000000..f030ab0a4e
 --- /dev/null
 +++ b/packaging/windows/migrate-data.test.ps1
 @@ -0,0 +1,89 @@
-+param(
++﻿param(
 +    [Parameter(Mandatory = $true)]
 +    [string]$Validator
 +)
@@ -1998,7 +2035,7 @@ index b5bef4a0c8..7d4392a14f 100644
  
  console.log(JSON.stringify({
 diff --git a/scripts/check-packaging-manifest.mjs b/scripts/check-packaging-manifest.mjs
-index 3b498d693a..1e6667998d 100644
+index 3b498d693a..14ad1aea96 100644
 --- a/scripts/check-packaging-manifest.mjs
 +++ b/scripts/check-packaging-manifest.mjs
 @@ -1,5 +1,6 @@
@@ -2008,7 +2045,21 @@ index 3b498d693a..1e6667998d 100644
  import { join } from 'node:path';
  import { fileURLToPath } from 'node:url';
  
-@@ -42,11 +43,15 @@ const requiredFiles = [
+@@ -9,6 +10,13 @@ const manifest = JSON.parse(await readFile(join(rootDir, 'product/manifest.json'
+ 
+ // readText 读取打包输入文件，后续断言可以直接对应安装器实际消费的内容。
+ const readText = (relativePath) => readFile(join(rootDir, relativePath), 'utf8');
++// assertWindowsPowerShellEncoding 确认会被 Windows PowerShell 5.1 直接解析的脚本包含 UTF-8 BOM，防止中文字符被按 ANSI 误解。
++const assertWindowsPowerShellEncoding = async (relativePath) => {
++  const content = await readFile(join(rootDir, relativePath));
++  if (content.length < 3 || content[0] !== 0xef || content[1] !== 0xbb || content[2] !== 0xbf) {
++    throw new Error(`打包 manifest 校验失败: ${relativePath} 必须使用 UTF-8 BOM 供 Windows PowerShell 5.1 解析`);
++  }
++};
+ // assertText 确认指定文件包含稳定身份字段，防止只改显示文案而遗漏服务或安装目录。
+ const assertText = async (relativePath, patterns) => {
+   const content = await readText(relativePath);
+@@ -42,11 +50,15 @@ const requiredFiles = [
    'scripts/build-brain-runtime.mjs',
    'scripts/check-brain-runtime-package.mjs',
    'scripts/brain-runtime-package.test.mjs',
@@ -2024,7 +2075,7 @@ index 3b498d693a..1e6667998d 100644
    'packaging/macos/Info.plist',
    'packaging/macos/component.plist',
    'packaging/macos/com.dhdevmax.xianyu-agentpanel.server.plist.template',
-@@ -59,6 +64,10 @@ const requiredFiles = [
+@@ -59,6 +71,10 @@ const requiredFiles = [
  for (const relativePath of requiredFiles) {
    await access(join(rootDir, relativePath), constants.R_OK);
  }
@@ -2035,7 +2086,7 @@ index 3b498d693a..1e6667998d 100644
  try {
    await access(join(rootDir, 'icon/macos/Assets.car'), constants.R_OK);
    throw new Error('打包 manifest 校验失败: icon/macos/Assets.car 不应再作为输入');
-@@ -79,11 +88,19 @@ await assertText('packaging/linux/install.sh', [
+@@ -79,11 +95,19 @@ await assertText('packaging/linux/install.sh', [
    `APP_NAME="${expected.slug}"`,
    `SERVICE_NAME="$APP_NAME.service"`,
    'migrate-product-data.sh',
@@ -2055,7 +2106,7 @@ index 3b498d693a..1e6667998d 100644
  await assertText('packaging/linux/uninstall.sh', [
    `APP_NAME="${expected.slug}"`,
    `LEGACY_APP_NAME="ydisks-xianyu-helper"`,
-@@ -93,6 +110,8 @@ await assertText('packaging/windows/installer.iss', [
+@@ -93,6 +117,8 @@ await assertText('packaging/windows/installer.iss', [
    'OutputBaseFilename=DH-Xianyu-AgentPanel-Setup',
    `AppDataDir "{commonappdata}\\DhXianyuAgentPanel"`,
    `Source: "migrate-data.ps1"`,
@@ -2064,7 +2115,7 @@ index 3b498d693a..1e6667998d 100644
    `Source: "{#WindowsBrainDir}\\*"`,
    '-BrainRuntimeRoot',
    expected.windowsService,
-@@ -104,6 +123,11 @@ await assertText('packaging/windows/service-control.ps1', [
+@@ -104,6 +130,18 @@ await assertText('packaging/windows/service-control.ps1', [
    '-brain-runtime-root',
    expected.displayName,
  ]);
@@ -2073,10 +2124,17 @@ index 3b498d693a..1e6667998d 100644
 +  "('database_integrity=' + $databaseVerification)",
 +  "('database_decryption=' + $databaseVerification)",
 +]);
++for (const windowsPowerShellScript of [
++  'packaging/windows/service-control.ps1',
++  'packaging/windows/migrate-data.ps1',
++  'packaging/windows/migrate-data.test.ps1',
++]) {
++  await assertWindowsPowerShellEncoding(windowsPowerShellScript);
++}
  
  await assertText('packaging/macos/Info.plist', [
    `<string>${expected.macBundleID}</string>`,
-@@ -123,6 +147,10 @@ await assertText('packaging/macos/build-pkg.sh', [
+@@ -123,6 +161,10 @@ await assertText('packaging/macos/build-pkg.sh', [
    'runtime/node-carrier',
    'runtime/result-tool.mjs',
  ]);
@@ -2087,7 +2145,7 @@ index 3b498d693a..1e6667998d 100644
  await assertText('packaging/macos/com.dhdevmax.xianyu-agentpanel.tray.plist.template', [
    expected.macBundleID,
    '__TRAY__',
-@@ -136,7 +164,12 @@ await assertText('.github/workflows/desktop-cd.yml', [
+@@ -136,7 +178,12 @@ await assertText('.github/workflows/desktop-cd.yml', [
    `packaging/linux/${expected.linuxService}`,
    'build-brain-runtime.mjs',
    'check-brain-runtime-package.mjs',
@@ -2100,13 +2158,16 @@ index 3b498d693a..1e6667998d 100644
    "Extension -in '.exe', '.dll', '.node'",
  ]);
  await assertText('Dockerfile.debian13', [
-@@ -148,11 +181,46 @@ await assertText('Dockerfile.debian13', [
+@@ -148,11 +195,49 @@ await assertText('Dockerfile.debian13', [
  await assertText('.github/workflows/docker-publish.yml', [
    'build-brain-runtime.mjs',
    '.docker/brain-runtime',
 +  '释放 Harness 构建空间',
 +  'harness-workspace-cleanup: released',
-+  'cache-to: type=gha,mode=min,ignore-error=true',
++  "cache-from: ${{ inputs.app_version != '' && format(",
++  "cache-to: ${{ inputs.app_version != '' && format(",
++  "provenance: ${{ inputs.app_version != '' && 'mode=max'",
++  "sbom: ${{ inputs.app_version != '' }}",
 +]);
 +await assertText('.github/workflows/sync-wiki.yml', [
 +  '检查 Wiki 能力',

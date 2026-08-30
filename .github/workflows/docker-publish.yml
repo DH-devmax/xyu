@@ -208,6 +208,32 @@ jobs:
           ' "$harness_root"
           test ! -e "$harness_root"
           printf 'harness-workspace-cleanup: released %s KiB\n' "$harness_kib"
+          node <<'NODE'
+            const { homedir } = require('node:os')
+            const { resolve } = require('node:path')
+            const { rmSync } = require('node:fs')
+            const home = resolve(homedir())
+            const candidates = [
+              resolve(home, '.local/share/pnpm/store'),
+              resolve(home, '.cache/pnpm'),
+              resolve(home, '.npm'),
+              resolve(home, 'go/pkg/mod'),
+              resolve(home, '.cache/go-build'),
+            ]
+            const allowed = [
+              resolve(home, '.local/share/pnpm'),
+              resolve(home, '.cache'),
+              resolve(home, '.npm'),
+              resolve(home, 'go/pkg'),
+            ]
+            for (const candidate of candidates) {
+              if (!allowed.some(parent => candidate === parent || candidate.startsWith(`${parent}/`))) {
+                throw new Error(`拒绝清理边界外缓存: ${candidate}`)
+              }
+              rmSync(candidate, { recursive: true, force: true })
+            }
+          NODE
+          docker builder prune --all --force
           df -h "$PWD"
 
       - name: 配置 Docker Buildx
@@ -238,10 +264,10 @@ jobs:
             APP_VERSION=${{ needs.verify.outputs.app_version }}
             VCS_REF=${{ github.sha }}
             BUILD_TIME=${{ needs.verify.outputs.build_time }}
-          cache-from: type=gha,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
-          cache-to: type=gha,mode=min,ignore-error=true,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
-          provenance: mode=max
-          sbom: true
+          cache-from: ${{ inputs.app_version != '' && format('type=gha,scope=dh-xianyu-agentpanel-docker-{0}', matrix.arch) || '' }}
+          cache-to: ${{ inputs.app_version != '' && format('type=gha,mode=min,ignore-error=true,scope=dh-xianyu-agentpanel-docker-{0}', matrix.arch) || '' }}
+          provenance: ${{ inputs.app_version != '' && 'mode=max' || 'false' }}
+          sbom: ${{ inputs.app_version != '' }}
 
       - name: 验证待发布镜像中的 Chromium 与服务
         shell: bash

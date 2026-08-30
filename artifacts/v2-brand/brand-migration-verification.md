@@ -20,10 +20,10 @@
 
 修改后制品为本地可重建验证输出，受 `.gitignore` 的 `/dist/` 规则管理，不作为源码提交或发布包。
 可分发补丁 SHA-256 为
-`a3e0247eaf1e3917720c7c1c359cc8687a5f646de1d89ef89fb8e835867f846e`；已在基线临时 worktree 执行
+`68d0f860654517c7096c5dc73f55179b18f138bf99ed1d905ef2d9617864af91`；已在基线临时 worktree 执行
 `git apply --check`、正向应用、关键文件断言、反向应用，最终工作树重新为干净状态。
 回滚脚本 SHA-256 为
-`13bff38fa8a84e399814eef6881fcb021544baa6271374cd2ba1ffb7a8507fc2`；已在临时 worktree 实际创建聚合 revert，并以 tree 哈希复核。
+`3ae6d1e8e4dc4b22d8af3334d5f76f721bbb64d8b6dd5ecfa9a829a521e28d8e`；已在临时 worktree 实际创建聚合 revert，并以 tree 哈希复核。
 补丁覆盖从工程治理基线到品牌阶段终点的产品源码与发布门禁，只排除本补丁、验证记录和
 回滚脚本三个元工件，避免自引用。回滚脚本以
 最近一次修改自身的提交锁定品牌阶段终点，只能从该干净 HEAD 执行，并按最新到最旧撤销
@@ -126,6 +126,8 @@ product-data-migration: 通过（哈希、解密、失败原子性、只读副�
 | 锁定 Harness 真实 `pnpm deploy` 与归一化 | `依赖 124，恢复 5，解除链接 4`；`symlinks=0`；`dsh-entry=true` |
 | 全部 GitHub Actions YAML 本地解析 | `yaml-ok`；5 个 workflow 均通过 |
 | Wiki 能力读取 | 远端 `has_wiki=false`；同步工作流输出 warning 并成功跳过，docs/wiki/ 保留为仓库事实来源 |
+| Windows PowerShell 5.1 文件编码 | `service-control.ps1`、`migrate-data.ps1`、`migrate-data.test.ps1` 均以 UTF-8 BOM 开头；字节检查通过 |
+| Docker amd64 资源门禁 | 载荷复验后释放 Harness、pnpm、npm、Go 构建缓存；main 不导入或上传 GHA 缓存与 attestation，正式输入仍保留 `mode=min`、SBOM 与 provenance |
 | 官方 Node 24 macOS arm64 载荷重建 | `node-v24.19.0-darwin-arm64.tar.gz: OK`；native/node manifest 与摘要复验通过 |
 | 包内 Node 空 PATH 启动 | `macos-brain-empty-path: ok` |
 | Windows 加密 fixture 语法与本地密钥回归 | `windows-encrypted-fixture: ok` |

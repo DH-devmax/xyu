@@ -10,6 +10,13 @@ const manifest = JSON.parse(await readFile(join(rootDir, 'product/manifest.json'
 
 // readText 读取打包输入文件，后续断言可以直接对应安装器实际消费的内容。
 const readText = (relativePath) => readFile(join(rootDir, relativePath), 'utf8');
+// assertWindowsPowerShellEncoding 确认会被 Windows PowerShell 5.1 直接解析的脚本包含 UTF-8 BOM，防止中文字符被按 ANSI 误解。
+const assertWindowsPowerShellEncoding = async (relativePath) => {
+  const content = await readFile(join(rootDir, relativePath));
+  if (content.length < 3 || content[0] !== 0xef || content[1] !== 0xbb || content[2] !== 0xbf) {
+    throw new Error(`打包 manifest 校验失败: ${relativePath} 必须使用 UTF-8 BOM 供 Windows PowerShell 5.1 解析`);
+  }
+};
 // assertText 确认指定文件包含稳定身份字段，防止只改显示文案而遗漏服务或安装目录。
 const assertText = async (relativePath, patterns) => {
   const content = await readText(relativePath);
@@ -128,6 +135,13 @@ await assertText('packaging/windows/migrate-data.ps1', [
   "('database_integrity=' + $databaseVerification)",
   "('database_decryption=' + $databaseVerification)",
 ]);
+for (const windowsPowerShellScript of [
+  'packaging/windows/service-control.ps1',
+  'packaging/windows/migrate-data.ps1',
+  'packaging/windows/migrate-data.test.ps1',
+]) {
+  await assertWindowsPowerShellEncoding(windowsPowerShellScript);
+}
 
 await assertText('packaging/macos/Info.plist', [
   `<string>${expected.macBundleID}</string>`,
@@ -183,7 +197,10 @@ await assertText('.github/workflows/docker-publish.yml', [
   '.docker/brain-runtime',
   '释放 Harness 构建空间',
   'harness-workspace-cleanup: released',
-  'cache-to: type=gha,mode=min,ignore-error=true',
+  "cache-from: ${{ inputs.app_version != '' && format(",
+  "cache-to: ${{ inputs.app_version != '' && format(",
+  "provenance: ${{ inputs.app_version != '' && 'mode=max'",
+  "sbom: ${{ inputs.app_version != '' }}",
 ]);
 await assertText('.github/workflows/sync-wiki.yml', [
   '检查 Wiki 能力',
