@@ -129,6 +129,7 @@ jobs:
         working-directory: brain/vendor/deepseek-harness
         run: |
           set -Eeuo pipefail
+          corepack enable
           corepack pnpm install --frozen-lockfile
           CI=true corepack pnpm run build
           CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build

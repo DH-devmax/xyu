@@ -113,6 +113,7 @@ jobs:
           HARNESS_TARGET: node24-linux-${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }}
         run: |
           set -Eeuo pipefail
+          corepack enable
           corepack pnpm install --frozen-lockfile
           CI=true corepack pnpm run build
           CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
@@ -244,6 +245,7 @@ jobs:
         shell: pwsh
         working-directory: brain/vendor/deepseek-harness
         run: |
+          corepack enable
           corepack pnpm install --frozen-lockfile
           $env:CI = 'true'
           corepack pnpm run build
@@ -782,6 +784,7 @@ jobs:
         working-directory: brain/vendor/deepseek-harness
         run: |
           set -Eeuo pipefail
+          corepack enable
           corepack pnpm install --frozen-lockfile
           CI=true corepack pnpm run build
           CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets=node24-macos-arm64 --skip-build
