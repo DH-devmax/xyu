@@ -19,6 +19,9 @@
 | 仓库回滚 | `artifacts/v2-brand/rollback-brand-migration.sh` | `--check` 验证；`--apply` 创建普通 `git revert` 提交 |
 
 修改后制品为本地可重建验证输出，受 `.gitignore` 的 `/dist/` 规则管理，不作为源码提交或发布包。
+补丁聚焦产品品牌迁移提交；workflow 可移植性修复保留在普通后续提交中。回滚脚本以
+最近一次修改自身的提交锁定品牌阶段终点，只能从该干净 HEAD 执行，并按最新到最旧撤销
+阶段全部提交；提交前通过 tree 哈希确认结果精确等于工程治理基线。
 
 ## 基线与修改后行为
 
@@ -113,6 +116,8 @@ product-data-migration: 通过（哈希、解密、失败原子性、只读副�
 | `npm run api:check --prefix frontend` | OpenAPI 生成到 `dh-xianyu-agentpanel-openapi-*`并通过 |
 | `npm run build --prefix frontend` | Vite `8.2.2`；`2983 modules transformed`；`built in 685ms` |
 | `node scripts/check-packaging-manifest.mjs` | `packaging-manifest: 通过` |
+| 官方 Node 24 macOS arm64 载荷重建 | `node-v24.19.0-darwin-arm64.tar.gz: OK`；native/node manifest 与摘要复验通过 |
+| 包内 Node 空 PATH 启动 | `macos-brain-empty-path: ok` |
 | Windows 加密 fixture 语法与本地密钥回归 | `windows-encrypted-fixture: ok` |
 | `make product-data-migration-check` | `product-data-migration: 通过（哈希、解密、失败原子性、只读副本、回滚）` |
 | `git diff --check` | 无输出 |
@@ -126,10 +131,15 @@ MySQL/PostgreSQL 实例和真实浏览器风控仍是环境依赖例外。本阶
 `.github/workflows/desktop-cd.yml` 在 `main` 提交上必须完成：
 
 - Linux amd64/arm64 分别用当前架构新服务器运行共享的真实加密迁移与回滚回归。
-- macOS 根据 `go env GOARCH` 选择本机可执行新服务器，运行同一回归。
+- macOS arm64 使用 `macos-14`，amd64 使用 `macos-15-intel`，各自在原生 runner 构建
+  Go、Brain、Playwright runtime 和安装包并运行同一迁移回归；Intel 额外清空 `PATH` 后
+  直接执行包内 Node 24 与 DSH 版本探针。
 - Windows 使用 Windows PowerShell 5.1、Node 24 `node:sqlite` 和 `node:crypto` 构造真实密文，
   验证错误密钥、验证器崩溃、成功切换、只读副本和真实回滚。
 - Windows Inno Setup 安装器将待安装的服务器作为临时验证器，完成 v1 数据升级、
   服务健康检查、安装后数据回滚和回滚后再次健康检查。
+- `main` 构建在没有证书 Secret 时生成无签名安装包并完成安装/升级/回滚门禁，但不长期上传
+  大体积安装产物；正式版本输入存在时，Windows/macOS 缺少任一签名 Secret 都会终止发布，
+  且桌面安装包与 Docker 摘要仍作为 release artifact 上传。
 
 同一阶段提交的远端结果由 GitHub check suite 按提交 SHA 保存，避免在该提交内写入自引用结果。
