@@ -1,0 +1,1 @@
+var e=e=>String(e).padStart(2,`0`),t=t=>{if(t==null||t===``)return`-`;let n=t instanceof Date?t:new Date(t);return Number.isNaN(n.getTime())?`-`:[n.getFullYear(),e(n.getMonth()+1),e(n.getDate())].join(`-`)+` `+[e(n.getHours()),e(n.getMinutes()),e(n.getSeconds())].join(`:`)};export{t};

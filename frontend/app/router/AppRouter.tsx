@@ -1,45 +1,40 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { readSidebarCollapsed, writeSidebarCollapsed } from '../../shared/browser/sidebarState';
 import { SessionGate } from '../features/session/pages/SessionGate';
 import { useSession } from '../providers/SessionProvider';
 import AuthenticatedShell, { type DeliveryRuleTarget } from '../shell/AuthenticatedShell';
-import { pathByRoute, routeFromLocation, type AppRoute } from './routes';
+import { pathByRoute, routeFromPath, type AppRoute } from './routes';
 
 /** AppRouter 管理认证后的浏览器路由、侧边栏偏好与跨页面规则配置载荷。 */
 export const AppRouter: React.FC = () => {
   // isLoggedIn 与 isAdmin 是 Provider 拥有的认证服务端状态，仅用于选择应用壳和授权路由。
   const { isLoggedIn, isAdmin, signOut } = useSession();
-  // activeRoute 是当前 URL 对应的短暂导航状态，浏览器前进后退会同步更新。
-  const [activeRoute, setActiveRoute] = useState<AppRoute>(routeFromLocation);
+  // location 是 React Router 7 提供的当前浏览器地址快照。
+  const location = useLocation();
+  // navigateTo 将业务路由写入浏览器历史并支持 replace 权限回退。
+  const navigateTo = useNavigate();
+  // activeRoute 是当前 URL 对应的业务路由，浏览器前进后退由 React Router 自动同步。
+  const activeRoute = routeFromPath(location.pathname);
   // deliveryRuleTarget 是商品页发起、规则页消费后即清除的短暂跨页面载荷。
   const [deliveryRuleTarget, setDeliveryRuleTarget] = useState<DeliveryRuleTarget | undefined>();
   // sidebarCollapsed 是用户本地偏好，不属于服务端业务数据。
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
 
-  /** effect 同步浏览器历史事件，并在路由退回时拒绝非管理员设置页。 */
-  useEffect(/* historyEffect 负责订阅并在卸载时移除浏览器历史监听。 */ () => {
-    /** handlePopState 读取历史记录对应的路由，不从异步请求恢复旧状态。 */
-    const handlePopState = (): void => setActiveRoute(routeFromLocation());
-    window.addEventListener('popstate', handlePopState);
-    return /* historyCleanup 在路由组件卸载时释放全局历史监听。 */ () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  /** effect 在权限变化时将设置页改写为仪表盘，防止地址栏绕过客户端展示限制。 */
+  /** effect 在权限变化时将管理员页面改写为仪表盘，防止地址栏绕过客户端展示限制。 */
   useEffect(/* authorizationEffect 负责将失效的管理员页面安全回退。 */ () => {
-    if (isLoggedIn && !isAdmin && activeRoute === 'settings') {
-      window.history.replaceState({}, '', pathByRoute.dashboard);
-      setActiveRoute('dashboard');
+    if (isLoggedIn && !isAdmin && (activeRoute === 'settings' || activeRoute === 'brain')) {
+      navigateTo(pathByRoute.dashboard, { replace: true });
     }
-  }, [activeRoute, isAdmin, isLoggedIn]);
+  }, [activeRoute, isAdmin, isLoggedIn, navigateTo]);
 
   /** navigate 由侧边栏用户操作触发，写入规范 URL 并更新当前路由。 */
   const navigate = (route: AppRoute): void => {
     // permittedRoute 是应用当前权限允许的最终路由。
-    const permittedRoute = route === 'settings' && !isAdmin ? 'dashboard' : route;
+    const permittedRoute = (route === 'settings' || route === 'brain') && !isAdmin ? 'dashboard' : route;
     // nextPath 是最终路由对应的规范浏览器地址。
     const nextPath = pathByRoute[permittedRoute];
-    if (nextPath !== window.location.pathname) window.history.pushState({}, '', nextPath);
-    setActiveRoute(permittedRoute);
+    if (nextPath !== location.pathname) navigateTo(nextPath);
   };
 
   /** handleShellNavigation 接收侧边栏的字符串标识，并拒绝不在应用路由表中的遗留值。 */

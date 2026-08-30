@@ -1,4 +1,14 @@
-import React,{ lazy,Suspense,useEffect,useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
+import MenuIcon from '@mui/icons-material/Menu';
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import AppBar from '@mui/material/AppBar';
 import type { Item } from '../features/items/api';
 import Sidebar from '../../shared/ui/Sidebar';
 import { useChatTitleNotification } from '../features/chat/titleNotification';
@@ -55,12 +65,14 @@ const Rules = lazy(/* Rules 页面按路由激活时加载。 */ () => import('.
 const Notifications = lazy(/* Notifications 页面按路由激活时加载。 */ () => import('../features/notifications/pages/Notifications'));
 // Chat 是按需加载的聊天页面，避免未访问时载入聊天历史和 WebSocket 视图。
 const Chat = lazy(/* Chat 页面按路由激活时加载。 */ () => import('../features/chat/pages/Chat'));
+// BrainCenter 是按需加载的 Harness 运行台，仅在管理员打开时载入管理代码。
+const BrainCenter = lazy(/* BrainCenter 页面按路由激活时加载。 */ () => import('../features/brain/pages/BrainCenter'));
 
 // PageLoading 展示路由页面代码加载期间的统一占位状态。
 const PageLoading: React.FC = () => (
-  <div className="flex min-h-[24rem] items-center justify-center" role="status" aria-label="正在加载页面">
-    <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand/20 border-t-brand" />
-  </div>
+  <Box sx={{ minHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }} role="status" aria-label="正在加载页面">
+    <CircularProgress size={28} thickness={4} />
+  </Box>
 );
 
 // AppContentProps 描述页面组合器接收的路由和跨页面联动状态。
@@ -73,7 +85,7 @@ export interface AppContentProps {
   deliveryRuleTarget?: DeliveryRuleTarget;
   // onConfigureDelivery 负责接收商品页面发起的规则配置目标。
   onConfigureDelivery: (target: DeliveryRuleTarget) => void;
-  // onDeliveryTargetHandled 负责确认规则页已经消费跳转目标。
+  // onDeliveryTargetHandled 负责确认规则页面已经消费跳转目标。
   onDeliveryTargetHandled: () => void;
 }
 
@@ -108,6 +120,7 @@ export const AppContent: React.FC<AppContentProps> = ({
         onDeliveryTargetHandled={onDeliveryTargetHandled}
       />;
       case 'notifications': return <Notifications isAdmin={isAdmin} />;
+      case 'brain': return isAdmin ? <BrainCenter /> : <Dashboard />;
       case 'settings': return isAdmin ? <Settings /> : <Dashboard />;
       default: return <Dashboard />;
     }
@@ -120,7 +133,7 @@ export const AppContent: React.FC<AppContentProps> = ({
   );
 };
 
-// AuthenticatedShell 组合认证后的侧边栏、主内容区域和页面动态加载边界。
+// AuthenticatedShell 组合认证后的响应式导航、顶栏、主内容区域和页面动态加载边界。
 const AuthenticatedShell: React.FC<AuthenticatedShellProps> = ({
   activeTab,
   isAdmin,
@@ -134,6 +147,10 @@ const AuthenticatedShell: React.FC<AuthenticatedShellProps> = ({
 }) => {
   // buildInfo 保存壳层加载的公开构建版本，侧边栏保持为无请求的共享展示组件。
   const [buildInfo, setBuildInfo] = useState<BuildInfo>({ version: 'dev', commit: 'unknown' });
+  // mobileOpen 保存窄屏临时导航状态，桌面端不渲染该 Drawer。
+  const [mobileOpen, setMobileOpen] = useState(false);
+  // isMobile 控制顶栏菜单按钮，仅用于响应式布局，不改变业务路由。
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('md'));
   // hasUnreadChatMessage 保存侧边栏在线聊天入口的服务端/实时聚合未读状态，不因导航动作改变。
   const { hasUnreadChatMessage } = useChatTitleNotification();
 
@@ -151,34 +168,74 @@ const AuthenticatedShell: React.FC<AuthenticatedShellProps> = ({
     return /* cleanup 在壳层卸载时释放健康检查请求。 */ () => controller.abort();
   }, []);
 
+  useEffect(/* mobileRouteEffect 在切换到桌面尺寸时收起临时导航。 */ () => {
+    if (!isMobile) setMobileOpen(false);
+  }, [isMobile]);
+
+  // pageTitle 将当前路由映射为顶栏可扫描的页面名称。
+  const pageTitle: Record<string, string> = {
+    dashboard: '仪表盘',
+    accounts: '账号管理',
+    chat: '在线聊天',
+    orders: '订单管理',
+    cards: '卡密库存',
+    items: '商品列表',
+    rules: '自动化规则',
+    notifications: '通知设置',
+    brain: 'Brain Center',
+    settings: '系统与 AI',
+  };
+
   return (
-    <div className="flex min-h-screen bg-canvas text-ink">
-    <Sidebar
-      activeTab={activeTab}
-      isAdmin={isAdmin}
-      collapsed={collapsed}
-      onToggleCollapsed={onToggleCollapsed}
-      onNavigate={onNavigate}
-      onLogout={onLogout}
-      buildInfo={buildInfo}
-      hasUnreadChatMessage={hasUnreadChatMessage}
-    />
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary' }}>
+      <Sidebar
+        activeTab={activeTab}
+        isAdmin={isAdmin}
+        collapsed={collapsed}
+        mobileOpen={mobileOpen}
+        onMobileClose={/* mobileCloseAction 关闭窄屏导航并保留当前业务路由。 */ () => setMobileOpen(false)}
+        onToggleCollapsed={onToggleCollapsed}
+        onNavigate={onNavigate}
+        onLogout={onLogout}
+        buildInfo={buildInfo}
+        hasUnreadChatMessage={hasUnreadChatMessage}
+      />
 
-    <main className={`h-screen min-w-0 flex-1 overflow-x-hidden overflow-y-auto scroll-smooth transition-[margin] duration-300 ${collapsed ? 'ml-16' : 'ml-64'} ${activeTab === 'chat' ? 'p-4 md:p-6' : 'p-8 md:p-12'}`}>
-      {/* 主内容区域的背景装饰不参与交互，避免遮挡业务页面。 */}
-      <div className="fixed top-0 right-0 -z-10 h-[800px] w-[800px] pointer-events-none rounded-full bg-gradient-to-bl from-blue-50 to-transparent opacity-60 blur-[120px]" />
-
-      <div className={`${activeTab === 'chat' ? 'mx-auto max-w-[1680px]' : 'mx-auto max-w-[1400px] pb-10'}`}>
-        <AppContent
-          activeTab={activeTab}
-          isAdmin={isAdmin}
-          deliveryRuleTarget={deliveryRuleTarget}
-          onConfigureDelivery={onConfigureDelivery}
-          onDeliveryTargetHandled={onDeliveryTargetHandled}
-        />
-      </div>
-    </main>
-    </div>
+      <Box component="main" className="h-screen min-w-0 flex-1 overflow-x-hidden overflow-y-auto" sx={{ flex: 1, minWidth: 0, ml: { xs: 0, md: collapsed ? '72px' : '248px' }, transition: 'margin-left 180ms ease' }}>
+        <AppBar position="sticky" sx={{ display: { xs: 'block', md: 'none' }, bgcolor: 'background.paper' }}>
+          <Toolbar sx={{ minHeight: 58, px: 1.5, gap: 1 }}>
+            <IconButton aria-label="打开主导航" onClick={/* mobileOpenAction 打开窄屏临时导航。 */ () => setMobileOpen(true)} size="small" edge="start">
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, flex: 1 }} noWrap>
+              {pageTitle[activeTab] || '仪表盘'}
+            </Typography>
+            <IconButton aria-label="通知" size="small">
+              <NotificationsNoneOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Toolbar>
+        </AppBar>
+        <Box sx={{ px: { xs: 1.5, sm: 3, lg: 4 }, py: { xs: 2, sm: 3, lg: 4 }, maxWidth: 1600, mx: 'auto' }}>
+          <Stack direction="row" sx={{ mb: { xs: 2, sm: 3 }, alignItems: 'baseline', justifyContent: 'space-between' }}>
+            <Box>
+              <Typography variant="h2" sx={{ fontSize: { xs: '1.35rem', sm: '1.6rem' } }}>
+                {pageTitle[activeTab] || '仪表盘'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                DH闲不下来 · 运营工作台
+              </Typography>
+            </Box>
+          </Stack>
+          <AppContent
+            activeTab={activeTab}
+            isAdmin={isAdmin}
+            deliveryRuleTarget={deliveryRuleTarget}
+            onConfigureDelivery={onConfigureDelivery}
+            onDeliveryTargetHandled={onDeliveryTargetHandled}
+          />
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

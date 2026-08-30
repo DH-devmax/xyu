@@ -46,12 +46,16 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, '.'),
+      '@': path.resolve(import.meta.dirname, '.'),
     },
   },
   build: {
     outDir: '../internal/webui/static',
     sourcemap: false,
+    modulePreload: {
+      // resolveModulePreloadDependencies 保留 React/MUI 首屏运行时，避免图表和聊天低频代码提前下载。
+      resolveDependencies: /* resolveModulePreloadDependencies 过滤首屏不需要的低频分片。 */ (_filename, deps) => deps.filter(/* preloadDependencyFilter 保留首屏真正使用的共享依赖。 */ dependency => !dependency.includes('charts-vendor-') && !dependency.includes('chat-metadata-')),
+    },
     rollupOptions: {
       output: {
         // manualChunks 按依赖领域拆分生产构建文件，控制首屏资源体积。
@@ -71,6 +75,13 @@ export default defineConfig({
             modulePath.includes('/scheduler/')
           ) {
             return 'react-vendor';
+          }
+          // mui-vendor 将 Minimal 参考采用的 MUI/Emotion 依赖与业务页面隔离，避免首屏重复解析样式运行时。
+          if (
+            modulePath.includes('/@mui/') ||
+            modulePath.includes('/@emotion/')
+          ) {
+            return 'mui-vendor';
           }
           if (
             modulePath.includes('/recharts/') ||

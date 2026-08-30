@@ -62,6 +62,7 @@ const featureNameFromPath = (relativePath: string): string | null => {
 // canonicalPageEntrypoints 是当前应用由路由壳按需加载的业务页和认证页清单。
 const canonicalPageEntrypoints = [
   'app/features/accounts/pages/AccountList.tsx',
+  'app/features/brain/pages/BrainCenter.tsx',
   'app/features/cards/pages/CardList.tsx',
   'app/features/chat/pages/Chat.tsx',
   'app/features/dashboard/pages/Dashboard.tsx',
