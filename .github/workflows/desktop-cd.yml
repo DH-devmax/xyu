@@ -99,6 +99,14 @@ jobs:
           go build -trimpath -ldflags="$version_ldflags" -o "$package_dir/xianyu-server" ./cmd/server
           go build -trimpath -ldflags='-s -w' -o "$package_dir/browser-install" ./cmd/browser-install
 
+      - name: 验证 Linux 品牌数据迁移与回滚
+        env:
+          PRODUCT_ARCH: ${{ matrix.arch }}
+        run: |
+          set -Eeuo pipefail
+          MIGRATION_VALIDATOR="$PWD/dist/dh-xianyu-agentpanel-linux-${PRODUCT_ARCH}/xianyu-server" \
+            bash scripts/migrate-product-data.test.sh
+
       - name: 构建 Linux Harness runtime
         working-directory: brain/vendor/deepseek-harness
         env:
@@ -252,19 +260,27 @@ jobs:
         shell: pwsh
         run: |
           go test ./cmd/tray
-          $serviceScript = (Resolve-Path 'packaging/windows/service-control.ps1').Path
-          $tokens = $null
-          $parseErrors = $null
-          [void][System.Management.Automation.Language.Parser]::ParseFile(
-            $serviceScript,
-            [ref]$tokens,
-            [ref]$parseErrors
+          node --check packaging/windows/migrate-data.fixture.cjs
+          $powerShellScripts = @(
+            'packaging/windows/service-control.ps1',
+            'packaging/windows/migrate-data.ps1',
+            'packaging/windows/migrate-data.test.ps1'
           )
-          if ($parseErrors.Count -gt 0) {
-            $parseErrors | ForEach-Object { Write-Error $_.Message }
-            throw 'Windows 服务安装脚本在 PowerShell 7 下语法检查失败'
+          foreach ($powerShellScript in $powerShellScripts) {
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $powerShellScript).Path,
+              [ref]$tokens,
+              [ref]$parseErrors
+            )
+            if ($parseErrors.Count -gt 0) {
+              $parseErrors | ForEach-Object { Write-Error $_.Message }
+              throw "Windows 安装脚本在 PowerShell 7 下语法检查失败: $powerShellScript"
+            }
           }
 
+          $serviceScript = (Resolve-Path 'packaging/windows/service-control.ps1').Path
           & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
             -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
             -File $serviceScript -Mode stop -ServiceName "DhSyntaxCheck-$PID"
@@ -281,6 +297,17 @@ jobs:
           go build -trimpath -ldflags $versionLdflags -o dist/windows/xianyu-server.exe ./cmd/server
           go build -trimpath -ldflags "-s -w" -o dist/windows/browser-install.exe ./cmd/browser-install
           go build -trimpath -ldflags "-s -w -H=windowsgui" -o dist/windows/xianyu-tray.exe ./cmd/tray
+
+      - name: 验证 Windows 品牌数据迁移与回滚
+        shell: pwsh
+        run: |
+          & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
+            -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+            -File (Resolve-Path 'packaging/windows/migrate-data.test.ps1') `
+            -Validator (Resolve-Path 'dist/windows/xianyu-server.exe')
+          if ($LASTEXITCODE -ne 0) {
+            throw "Windows 数据迁移与回滚验证失败，错误码: $LASTEXITCODE"
+          }
 
       - name: 恢复 Windows Chromium runtime 缓存
         id: cache-windows-playwright
@@ -526,7 +553,28 @@ jobs:
           $installLog = Join-Path $env:RUNNER_TEMP 'dh-xianyu-agentpanel-windows-installer.log'
           $installDir = Join-Path $env:ProgramFiles 'DH Xianyu AgentPanel'
           $uninstaller = Join-Path $installDir 'unins000.exe'
+          $legacyData = Join-Path $env:ProgramData 'YdisksXianyuHelper'
+          $currentData = Join-Path $env:ProgramData 'DhXianyuAgentPanel'
+          $migrationEvidence = Join-Path $env:ProgramData 'DhXianyuAgentPanel-migration'
+          $fixtureServer = (Resolve-Path 'dist/windows/xianyu-server.exe').Path
           try {
+            foreach ($fixturePath in @($legacyData, $currentData, $migrationEvidence)) {
+              if (Test-Path -LiteralPath $fixturePath) {
+                Get-ChildItem -LiteralPath $fixturePath -File -Recurse -Force -ErrorAction SilentlyContinue |
+                  ForEach-Object { $_.IsReadOnly = $false }
+                Remove-Item -LiteralPath $fixturePath -Recurse -Force
+              }
+            }
+            New-Item -ItemType Directory -Force -Path (Join-Path $legacyData 'data') | Out-Null
+            Set-Content -LiteralPath (Join-Path $legacyData 'data-key') -Value 'installer-upgrade-fixture-key' -Encoding ASCII
+            & $fixtureServer `
+              -verify-data `
+              -workdir $legacyData `
+              -db (Join-Path $legacyData 'data\xianyu_data.db') `
+              -data-key-file (Join-Path $legacyData 'data-key') | Out-Host
+            if ($LASTEXITCODE -ne 0) { throw "创建安装器旧版数据样本失败: $LASTEXITCODE" }
+            Set-Content -LiteralPath (Join-Path $legacyData 'upgrade-marker.txt') -Value 'legacy' -Encoding ASCII
+
             $installerProcess = Start-Process -FilePath $installer `
               -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$installLog") `
               -Wait -PassThru
@@ -580,10 +628,51 @@ jobs:
             if ($null -eq $health -or $health.status -ne 'ok' -or $health.database -ne 'ok') {
               throw "安装器服务健康检查失败: $($health | ConvertTo-Json -Compress)"
             }
+            $currentMarker = Join-Path $currentData 'upgrade-marker.txt'
+            $legacyMarker = Join-Path $legacyData 'upgrade-marker.txt'
+            $migrationRecord = Join-Path $migrationEvidence 'migration.env'
+            if ((Get-Content -Raw -LiteralPath $currentMarker).Trim() -ne 'legacy') {
+              throw 'Windows 安装器没有迁移旧版数据标记'
+            }
+            if (-not (Get-Item -LiteralPath $legacyMarker).IsReadOnly) {
+              throw 'Windows 安装器没有把旧版副本设为只读'
+            }
+            if ((Get-Content -Raw -LiteralPath $migrationRecord) -notmatch '(?m)^database_decryption=ok\r?$') {
+              throw 'Windows 安装器迁移记录缺少数据库解密成功状态'
+            }
             if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
               throw "Windows 卸载器不存在: $uninstaller"
             }
             $expectedTray = Join-Path $installDir 'xianyu-tray.exe'
+            & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
+              -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+              -File (Resolve-Path 'packaging/windows/service-control.ps1') `
+              -Mode stop -TrayPath $expectedTray
+            if ($LASTEXITCODE -ne 0) { throw "回滚前停止 Windows 服务失败: $LASTEXITCODE" }
+            Set-Content -LiteralPath $currentMarker -Value 'changed-after-upgrade' -Encoding ASCII
+            & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
+              -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+              -File (Join-Path $migrationEvidence 'rollback-data.ps1')
+            if ($LASTEXITCODE -ne 0) { throw "Windows 安装数据回滚失败: $LASTEXITCODE" }
+            if ((Get-Content -Raw -LiteralPath $currentMarker).Trim() -ne 'legacy') {
+              throw 'Windows 安装数据回滚没有恢复旧版内容'
+            }
+            & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
+              -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+              -File (Resolve-Path 'packaging/windows/service-control.ps1') -Mode start
+            if ($LASTEXITCODE -ne 0) { throw "回滚后重启 Windows 服务失败: $LASTEXITCODE" }
+            $health = $null
+            $deadline = [DateTime]::UtcNow.AddSeconds(60)
+            while ([DateTime]::UtcNow -lt $deadline -and $null -eq $health) {
+              try {
+                $health = Invoke-RestMethod -Uri 'http://127.0.0.1:59188/health' -TimeoutSec 2
+              } catch {
+                Start-Sleep -Seconds 1
+              }
+            }
+            if ($null -eq $health -or $health.status -ne 'ok' -or $health.database -ne 'ok') {
+              throw "Windows 回滚后服务健康检查失败: $($health | ConvertTo-Json -Compress)"
+            }
             $startMenuRoots = @(
               (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'),
               (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs')
@@ -628,6 +717,18 @@ jobs:
             }
             if ($null -ne (Get-CimInstance -ClassName Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue)) {
               throw 'Windows 安装器卸载后服务仍然存在'
+            }
+            $cleanupPaths = @($legacyData, $currentData, $migrationEvidence)
+            $cleanupPaths += @(
+              Get-ChildItem -LiteralPath $env:ProgramData -Directory -Filter 'DhXianyuAgentPanel.v2-before-rollback-*' -ErrorAction SilentlyContinue |
+                Select-Object -ExpandProperty FullName
+            )
+            foreach ($cleanupPath in $cleanupPaths) {
+              if (Test-Path -LiteralPath $cleanupPath) {
+                Get-ChildItem -LiteralPath $cleanupPath -File -Recurse -Force -ErrorAction SilentlyContinue |
+                  ForEach-Object { $_.IsReadOnly = $false }
+                Remove-Item -LiteralPath $cleanupPath -Recurse -Force
+              }
             }
           }
 
@@ -712,6 +813,13 @@ jobs:
             GOOS=darwin GOARCH="$arch" CGO_ENABLED=1 go build -trimpath -ldflags='-s -w' -o "dist/macos/$arch/browser-install" ./cmd/browser-install
             GOOS=darwin GOARCH="$arch" CGO_ENABLED=1 go build -trimpath -ldflags='-s -w' -o "dist/macos/$arch/xianyu-tray" ./cmd/tray
           done
+
+      - name: 验证 macOS 品牌数据迁移与回滚
+        run: |
+          set -Eeuo pipefail
+          native_arch="$(go env GOARCH)"
+          MIGRATION_VALIDATOR="$PWD/dist/macos/${native_arch}/xianyu-server" \
+            bash scripts/migrate-product-data.test.sh
 
       - name: 缓存 macOS Chromium runtime
         id: cache-macos-playwright

@@ -10,7 +10,7 @@ const frontendRoot = path.resolve(import.meta.dirname, '..');
 // repositoryRoot 是包含 OpenAPI 单一契约源的仓库根目录。
 const repositoryRoot = path.resolve(frontendRoot, '..');
 // temporaryDirectory 保存本次生成的临时 TypeScript 契约，校验完成后必须删除。
-const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'ydisks-openapi-'));
+const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'dh-xianyu-agentpanel-openapi-'));
 // temporarySchema 是临时 OpenAPI 生成文件的绝对路径。
 const temporarySchema = path.join(temporaryDirectory, 'schema.ts');
 // checkedInSchema 是仓库中受版本控制的 OpenAPI 生成文件。

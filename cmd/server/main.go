@@ -1,4 +1,4 @@
-// Package main 是闲鱼管家 Go 主进程入口。
+// Package main 是 DH闲不下来 Go 主进程入口。
 // 启动：DB 迁移 → 加载账号引擎 → HTTP API 服务。
 package main
 
@@ -58,6 +58,7 @@ type serverOptions struct {
 	ensureAdmin           bool
 	adminEmail            string
 	adminPassword         string
+	verifyData            bool
 	service               bool
 	showVersion           bool
 }
@@ -102,7 +103,7 @@ type serverInfrastructure struct {
 	logWriter io.Writer
 	// closeLog 释放服务日志文件；标准输出场景下该函数为空操作。
 	closeLog func()
-	// initializationOnly 表示本次调用仅完成 -init-admin 管理员初始化，调用方不得继续启动运行时。
+	// initializationOnly 表示本次调用仅完成管理员初始化或数据验证，调用方不得继续启动运行时。
 	initializationOnly bool
 }
 
@@ -164,6 +165,11 @@ func main() {
 	product.ApplyEnvironmentAliases()
 	// opts 是命令行解析出的服务启动选项。
 	opts := parseOptions()
+	// optionErr 表示互斥运行模式被同时启用；必须在修改工作目录或数据库前失败。
+	if optionErr := validateOptions(opts); optionErr != nil {
+		fmt.Fprintf(os.Stderr, "启动参数无效: %s\n", logsafe.Error(optionErr))
+		os.Exit(2)
+	}
 	if opts.showVersion {
 		fmt.Printf("DH闲不下来 %s (commit %s, built %s)\n", appversion.Version, appversion.ShortCommit(), appversion.BuildTime)
 		return
@@ -194,6 +200,9 @@ func main() {
 	if err := run(ctx); err != nil {
 		slog.Error("服务退出", "err", logsafe.Error(err))
 		os.Exit(1)
+	}
+	if opts.verifyData {
+		fmt.Println("data-verification: ok")
 	}
 }
 
@@ -226,10 +235,19 @@ func parseOptions() serverOptions {
 	flag.BoolVar(&opts.ensureAdmin, "ensure-admin", false, "仅在 admin 管理员不存在时初始化；已存在时不修改密码")
 	flag.StringVar(&opts.adminEmail, "admin-email", "admin@example.com", "初始化 admin 的邮箱")
 	flag.StringVar(&opts.adminPassword, "admin-password", "", "初始化/重置 admin 密码；也可用 XIANYU_ADMIN_PASSWORD 环境变量")
+	flag.BoolVar(&opts.verifyData, "verify-data", false, "迁移并校验数据库敏感字段后退出，不启动 HTTP 或业务 runtime")
 	flag.BoolVar(&opts.service, "service", false, "以 Windows Service 模式运行")
 	flag.BoolVar(&opts.showVersion, "version", false, "显示版本和构建信息后退出")
 	flag.Parse()
 	return opts
+}
+
+// validateOptions 拒绝会让一次进程同时承担服务运行和离线数据验证的互斥模式。
+func validateOptions(opts serverOptions) error {
+	if opts.verifyData && (opts.service || opts.initAdmin || opts.ensureAdmin) {
+		return errors.New("-verify-data 不能与 -service、-init-admin 或 -ensure-admin 同时使用")
+	}
+	return nil
 }
 
 // runServer 按准备、基础设施、运行时装配和生命周期四个阶段启动服务，并在退出时逆序释放资源。
@@ -380,6 +398,16 @@ func openServerInfrastructure(ctx context.Context, startup serverStartupConfig, 
 		_ = database.Close()
 		closeLog()
 		return serverInfrastructure{}, fmt.Errorf("迁移 Harness 设置失败: %w", err)
+	}
+	if opts.verifyData {
+		// integrityErr 表示迁移副本存在页、索引或连接完整性问题，切换数据目录前必须失败。
+		if integrityErr := store.VerifyIntegrity(ctx); integrityErr != nil {
+			_ = database.Close()
+			closeLog()
+			return serverInfrastructure{}, fmt.Errorf("校验数据库完整性失败: %w", integrityErr)
+		}
+		logger.Info("数据库迁移与敏感字段解密验证完成")
+		return serverInfrastructure{database: database, store: store, logger: logger, logWriter: logWriter, closeLog: closeLog, initializationOnly: true}, nil
 	}
 	// outboundPublicOnly 保存用户可配置 HTTP 请求的启动期公网限制快照。
 	if raw, settingErr := store.Settings.Get(ctx, "outbound_http_public_only"); settingErr == nil {

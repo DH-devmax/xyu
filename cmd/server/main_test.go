@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -62,7 +63,7 @@ func TestParseOptionsReadsAllOperationalFlags(t *testing.T) {
 		os.Args = oldArgs
 		flag.CommandLine = oldCommandLine
 	})
-	os.Args = []string{"server", "-db", "custom.db", "-db-url", "sqlite://override.db", "-addr", "127.0.0.1:1", "-web", "web", "-workdir", "data", "-product-root", "product", "-brain-runtime-root", "brain-runtime", "-brain-node-binary", "node24", "-brain-dsh-runtime", "dsh", "-brain-dsh-entry", "dsh-entry", "-brain-sdk-client-entry", "sdk", "-brain-data-root", "brain-data", "-playwright-runtime-root", "runtime", "-playwright-driver-dir", "driver", "-playwright-browser-dir", "browsers", "-data-key-file", "key", "-secure", "-no-browser", "-v", "-log-level", "debug", "-log-format", "json", "-init-admin", "-ensure-admin", "-admin-email", "a@example.com", "-admin-password", "secret", "-service", "-version"}
+	os.Args = []string{"server", "-db", "custom.db", "-db-url", "sqlite://override.db", "-addr", "127.0.0.1:1", "-web", "web", "-workdir", "data", "-product-root", "product", "-brain-runtime-root", "brain-runtime", "-brain-node-binary", "node24", "-brain-dsh-runtime", "dsh", "-brain-dsh-entry", "dsh-entry", "-brain-sdk-client-entry", "sdk", "-brain-data-root", "brain-data", "-playwright-runtime-root", "runtime", "-playwright-driver-dir", "driver", "-playwright-browser-dir", "browsers", "-data-key-file", "key", "-secure", "-no-browser", "-v", "-log-level", "debug", "-log-format", "json", "-init-admin", "-ensure-admin", "-admin-email", "a@example.com", "-admin-password", "secret", "-verify-data", "-service", "-version"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 	flag.CommandLine.SetOutput(io.Discard)
 	// opts 保存解析后的服务启动选项。
@@ -70,8 +71,29 @@ func TestParseOptionsReadsAllOperationalFlags(t *testing.T) {
 	if opts.dbPath != "custom.db" || opts.dbURL != "sqlite://override.db" || opts.addr != "127.0.0.1:1" || opts.webDir != "web" || opts.workDir != "data" || opts.productRoot != "product" || opts.brainRuntimeRoot != "brain-runtime" || opts.brainNodeBinary != "node24" || opts.brainDSHRuntime != "dsh" || opts.brainDSHEntry != "dsh-entry" || opts.brainSDKClientEntry != "sdk" || opts.brainDataRoot != "brain-data" || opts.playwrightRuntimeRoot != "runtime" || opts.playwrightDriverDir != "driver" || opts.playwrightBrowserDir != "browsers" || opts.dataKeyFile != "key" {
 		t.Fatalf("路径参数解析错误：%+v", opts)
 	}
-	if !opts.secure || !opts.noBrowser || !opts.verbose || !opts.initAdmin || !opts.ensureAdmin || !opts.service || !opts.showVersion || opts.logLevel != "debug" || opts.logFormat != "json" || opts.adminEmail != "a@example.com" || opts.adminPassword != "secret" {
+	if !opts.secure || !opts.noBrowser || !opts.verbose || !opts.initAdmin || !opts.ensureAdmin || !opts.verifyData || !opts.service || !opts.showVersion || opts.logLevel != "debug" || opts.logFormat != "json" || opts.adminEmail != "a@example.com" || opts.adminPassword != "secret" {
 		t.Fatalf("布尔或日志参数解析错误：%+v", opts)
+	}
+}
+
+// TestValidateOptionsRejectsMixedOfflineModes 验证离线数据校验不会被注册成持续重启的系统服务或同时修改管理员。
+func TestValidateOptionsRejectsMixedOfflineModes(t *testing.T) {
+	// invalidOptions 是所有必须拒绝的互斥模式组合。
+	invalidOptions := []serverOptions{
+		{verifyData: true, service: true},
+		{verifyData: true, initAdmin: true},
+		{verifyData: true, ensureAdmin: true},
+	}
+	// options 是当前接受校验的模式组合。
+	for _, options := range invalidOptions {
+		// validationErr 是当前互斥组合必须产生的参数错误。
+		if validationErr := validateOptions(options); validationErr == nil {
+			t.Fatalf("互斥模式应被拒绝：%+v", options)
+		}
+	}
+	// validationErr 是单独验证模式不应产生的参数错误。
+	if validationErr := validateOptions(serverOptions{verifyData: true}); validationErr != nil {
+		t.Fatalf("单独数据验证模式不应失败：%v", validationErr)
 	}
 }
 
@@ -203,6 +225,52 @@ func TestRunServerInitAdminStopsBeforeRuntimeStartup(t *testing.T) {
 	user, matched, verifyErr := store.Users.VerifyAndUpgrade(context.Background(), "admin", "initial-password")
 	if verifyErr != nil || !matched || user == nil {
 		t.Fatalf("admin initialization user=%v matched=%t err=%v", user, matched, verifyErr)
+	}
+}
+
+// TestRunServerVerifyDataChecksEncryptedSecrets 验证离线模式使用真实启动链路校验密钥，并在业务 runtime 启动前退出。
+func TestRunServerVerifyDataChecksEncryptedSecrets(t *testing.T) {
+	// dataRoot 是本测试隔离的迁移副本目录。
+	dataRoot := t.TempDir()
+	// databasePath 是迁移副本中的 SQLite 文件。
+	databasePath := filepath.Join(dataRoot, "data", "xianyu_data.db")
+	// mkdirErr 表示创建迁移副本数据库父目录的失败原因。
+	if mkdirErr := os.MkdirAll(filepath.Dir(databasePath), 0o700); mkdirErr != nil {
+		t.Fatalf("create data directory: %v", mkdirErr)
+	}
+	// correctKey 是写入测试密文和首次验证共用的数据密钥。
+	const correctKey = "brand-migration-verification-key"
+	t.Setenv("XIANYU_DATA_KEY", correctKey)
+	t.Setenv("DATABASE_URL", "")
+	// database、dialect、openErr 是建立已加密迁移样本时使用的数据库连接、方言和错误。
+	database, dialect, openErr := db.Open(context.Background(), "sqlite://"+databasePath)
+	if openErr != nil {
+		t.Fatalf("open encrypted fixture database: %v", openErr)
+	}
+	// store 使用正式敏感设置仓储写入可验证密文，避免测试伪造加密格式。
+	store := db.NewStore(database, dialect)
+	// setErr 表示写入已加密样本设置的失败原因。
+	if setErr := store.Settings.Set(context.Background(), "ai_api_key", "fixture-secret"); setErr != nil {
+		_ = database.Close()
+		t.Fatalf("write encrypted fixture: %v", setErr)
+	}
+	// closeErr 表示关闭样本数据库并落盘 WAL 的失败原因。
+	if closeErr := database.Close(); closeErr != nil {
+		t.Fatalf("close encrypted fixture database: %v", closeErr)
+	}
+
+	// verificationOptions 指向隔离副本，并使用不可监听地址证明成功不依赖 HTTP runtime。
+	verificationOptions := serverOptions{dbPath: databasePath, workDir: dataRoot, addr: "invalid-listen-address", verifyData: true}
+	// verifyErr 表示正确密钥下离线验证的失败原因。
+	if verifyErr := runServer(context.Background(), verificationOptions); verifyErr != nil {
+		t.Fatalf("verify encrypted fixture: %v", verifyErr)
+	}
+
+	t.Setenv("XIANYU_DATA_KEY", "wrong-brand-migration-key")
+	// wrongKeyErr 必须来自敏感字段解密，错误密钥不得被当作一次成功迁移。
+	wrongKeyErr := runServer(context.Background(), verificationOptions)
+	if wrongKeyErr == nil || !strings.Contains(wrongKeyErr.Error(), "敏感字段解密失败") {
+		t.Fatalf("错误密钥应阻止数据验证：%v", wrongKeyErr)
 	}
 }
 
@@ -369,7 +437,7 @@ func TestOpenServerLogWriterUsesConfiguredDirectory(t *testing.T) {
 // TestResolveDataDirKeepsExplicitDirectory 封装TestResolve数据DirKeepsExplicitDirectory业务协调。
 func TestResolveDataDirKeepsExplicitDirectory(t *testing.T) {
 	// explicit 用于本次流程后续判断的explicit
-	explicit := filepath.Join(t.TempDir(), "ydisks-data")
+	explicit := filepath.Join(t.TempDir(), "dh-xianyu-agentpanel-data")
 	// got、err 用于本次流程后续判断的got、err
 	got, err := resolveDataDir(explicit)
 	if err != nil {

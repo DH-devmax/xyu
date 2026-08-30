@@ -94,7 +94,7 @@ packaging-check:
 brand-assets-check:
 	node scripts/check-brand-assets.mjs
 
-## product-data-migration-check: 执行复制、哈希、只读和回滚验证
+## product-data-migration-check: 执行复制、哈希、数据库解密、失败原子性、只读和回滚验证
 product-data-migration-check:
 	bash scripts/migrate-product-data.test.sh
 

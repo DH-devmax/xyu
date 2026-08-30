@@ -212,10 +212,11 @@ Playwright driver 与 Chromium runtime，安装后无需用户再下载浏览器
 | macOS | `com.dhdevmax.xianyu-agentpanel.server` LaunchAgent | `DH闲不下来.app` 内的菜单栏程序 | `~/Library/Application Support/DhXianyuAgentPanel`、`~/Library/Logs/DhXianyuAgentPanel` |
 | Linux | `dh-xianyu-agentpanel.service` systemd unit | 无桌面托盘 | `/var/lib/dh-xianyu-agentpanel`、`/var/log/dh-xianyu-agentpanel` |
 
-升级 v1 时，安装器会先复制并校验旧数据，再切换到上述目录。旧版目录
+升级 v1 时，安装器会先复制并校验旧数据的哈希，再由待安装的新版服务器在隔离副本上执行
+数据库迁移、完整性检查和敏感字段解密验证。任一步失败都不会切换新目录。旧版目录
 `C:\ProgramData\YdisksXianyuHelper`、`~/Library/Application Support/YdisksXianyuHelper`、
 `/var/lib/ydisks-xianyu-helper` 会保留为只读回滚副本；迁移记录和可执行回滚脚本位于新数据目录旁的
-`*-migration` 或 `*-rollback` 目录。
+`*-migration` 或 `*-rollback` 目录。回滚前会校验只读副本哈希，并先备份当前 v2 数据。
 
 Windows 和 macOS 托盘启动时会自动启动后台服务，并显示检查中、启动中、运行正常、正在停止
 等状态。选择“退出托盘”时，只有确认后台服务已经停止后托盘才会退出；“打开日志目录”可直接

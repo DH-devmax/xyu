@@ -1,0 +1,135 @@
+# DH闲不下来 v2 品牌迁移验证记录
+
+## 变更身份
+
+- 基线提交：`2bb0cd20a016fe9e3104f860ae0b7568bb0fb508`
+- 基线含义：仓库接管与工程治理完成，品牌数据迁移尚未使用新二进制验证。
+- 目标分支：`main`
+- 产品身份：`DH闲不下来` / `dh-xianyu-agentpanel` / `github.com/DH-devmax/xyu`
+- 服务身份：`dh-xianyu-agentpanel.service` / `DhXianyuAgentPanel` /
+  `com.dhdevmax.xianyu-agentpanel`
+
+## 四个验证角色
+
+| 角色 | 路径 | 验证方式 |
+| --- | --- | --- |
+| 修改后制品 | `dist/verification/dh-xianyu-agentpanel-server` | 执行 `-version` 及真实加密数据迁移回归 |
+| 可分发补丁 | `artifacts/v2-brand/brand-migration-completion-from-2bb0cd.patch` | 基线临时 worktree 中 `git apply --check` 和正向应用 |
+| 验证记录 | `artifacts/v2-brand/brand-migration-verification.md` | 重新打开并检查基线、命令、输入、输出和退出码 |
+| 仓库回滚 | `artifacts/v2-brand/rollback-brand-migration.sh` | `--check` 验证；`--apply` 创建普通 `git revert` 提交 |
+
+修改后制品为本地可重建验证输出，受 `.gitignore` 的 `/dist/` 规则管理，不作为源码提交或发布包。
+
+## 基线与修改后行为
+
+### 基线
+
+命令：
+
+```bash
+git worktree add --detach /tmp/xyu-brand-baseline 2bb0cd20a016fe9e3104f860ae0b7568bb0fb508
+bash /tmp/xyu-brand-baseline/scripts/migrate-product-data.sh --help
+```
+
+字面输出：
+
+```text
+用法：migrate-product-data.sh --source DIR --destination DIR [--rollback-dir DIR] [--record FILE]
+```
+
+退出码：`0`。输入中没有新版数据验证器、旧环境文件或敏感字段解密契约。
+
+命令：
+
+```bash
+git -C /tmp/xyu-brand-baseline grep -n -- '-verify-data' -- cmd/server/main.go
+```
+
+字面输出为空，退出码：`1`。
+
+### 修改后
+
+命令：
+
+```bash
+bash scripts/migrate-product-data.sh --help
+```
+
+字面输出：
+
+```text
+用法：migrate-product-data.sh --source DIR --destination DIR --validator FILE [--environment-file FILE] [--rollback-dir DIR] [--record FILE]
+```
+
+退出码：`0`。
+
+命令：
+
+```bash
+dist/verification/dh-xianyu-agentpanel-server -version
+```
+
+字面输出：
+
+```text
+DH闲不下来 dev (commit unknown, built unknown)
+```
+
+退出码：`0`。制品 SHA-256：
+`8a2c0f705b50b2ad8ad8c703d1ad0a4e6b9e5b7bf7159afc1915b94a194fa5b4`。
+
+迁移回归输入为 SQLite v38、`system_settings.ai_api_key` 真实 AES-256-GCM 密文、
+AAD `system-setting\0ai_api_key`、正确测试密钥、错误测试密钥及一个回滚后应恢复的
+`settings.env`。测试值均为仓库内固定 fixture，不包含生产凭证。
+
+命令：
+
+```bash
+MIGRATION_VALIDATOR="$PWD/dist/verification/dh-xianyu-agentpanel-server" \
+  bash scripts/migrate-product-data.test.sh
+```
+
+关键字面输出：
+
+```text
+data-verification: ok
+product-data-migration: 通过（哈希、解密、失败原子性、只读副本、回滚）
+```
+
+退出码：`0`。错误密钥分支在目标目录切换前返回非零；正确密钥分支记录
+`database_integrity=ok`、`database_decryption=ok` 和 `legacy_readonly=true`，随后真实执行回滚脚本并恢复旧内容。
+
+## 本地门禁
+
+以下命令于 2026-08-30 执行，退出码均为 `0`：
+
+| 命令 | 关键字面输出 |
+| --- | --- |
+| `make check` | `0 issues.`；Go 全量测试、Harness 结果插件、runtime package、allowlist、架构、OpenAPI 和中文注释通过 |
+| `make cover` | `total: (statements) 70.3%` |
+| `npm run typecheck --prefix frontend` | `tsc --noEmit` |
+| `npm test --prefix frontend` | `Test Files 73 passed (73)`；`Tests 426 passed (426)` |
+| `npm run test:coverage --prefix frontend` | Statements `77.41%`；Branches `54.84%`；Functions `66.24%`；Lines `79.73%` |
+| `npm run api:check --prefix frontend` | OpenAPI 生成到 `dh-xianyu-agentpanel-openapi-*`并通过 |
+| `npm run build --prefix frontend` | Vite `8.2.2`；`2983 modules transformed`；`built in 685ms` |
+| `node scripts/check-packaging-manifest.mjs` | `packaging-manifest: 通过` |
+| Windows 加密 fixture 语法与本地密钥回归 | `windows-encrypted-fixture: ok` |
+| `make product-data-migration-check` | `product-data-migration: 通过（哈希、解密、失败原子性、只读副本、回滚）` |
+| `git diff --check` | 无输出 |
+
+`make cover` 未设置 `RUN_BROWSER_INTEGRATION=1`。实账号、外部闲鱼平台、外部通知渠道、
+MySQL/PostgreSQL 实例和真实浏览器风控仍是环境依赖例外。本阶段新增的数据验证、错误密钥、
+失败原子性、前端兼容键和回滚均使用本地确定性 fixture。
+
+## 跨平台门禁
+
+`.github/workflows/desktop-cd.yml` 在 `main` 提交上必须完成：
+
+- Linux amd64/arm64 分别用当前架构新服务器运行共享的真实加密迁移与回滚回归。
+- macOS 根据 `go env GOARCH` 选择本机可执行新服务器，运行同一回归。
+- Windows 使用 Windows PowerShell 5.1、Node 24 `node:sqlite` 和 `node:crypto` 构造真实密文，
+  验证错误密钥、验证器崩溃、成功切换、只读副本和真实回滚。
+- Windows Inno Setup 安装器将待安装的服务器作为临时验证器，完成 v1 数据升级、
+  服务健康检查、安装后数据回滚和回滚后再次健康检查。
+
+同一阶段提交的远端结果由 GitHub check suite 按提交 SHA 保存，避免在该提交内写入自引用结果。

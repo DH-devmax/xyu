@@ -76,7 +76,8 @@ if [ -d "$LEGACY_DATA_DIR" ] && [ ! -e "$DATA_DIR" ]; then
     --source "$LEGACY_DATA_DIR" \
     --destination "$DATA_DIR" \
     --rollback-dir "$MIGRATION_ROLLBACK_DIR" \
-    --record "$MIGRATION_ROLLBACK_DIR/migration.env"
+    --record "$MIGRATION_ROLLBACK_DIR/migration.env" \
+    --validator "$SERVER"
   chown -R "$CONSOLE_USER" "$MIGRATION_ROLLBACK_DIR"
 fi
 mkdir -p "$DATA_DIR" "$LOG_DIR" "$AGENT_DIR"

@@ -3,6 +3,7 @@ import { useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState } from 'r
 import { emojiURL,renderXianyuText,xianyuEmojis } from '../../../chatEmojis';
 import type { AccountDetail,ChatMessage,ChatSession } from './api';
 import { getAccountDetails,getAccountRuntimeStatuses,getChatMessagePage,getChatSessionPage,markChatRead,sendChatImage,sendChatMessage } from './api';
+import { readStoredChatAccountID,writeStoredChatAccountID } from './accountSelectionStorage';
 import { publishChatUnreadStatus,subscribeToChatLiveEvents } from './liveEvents';
 import { collectChatReadReceipts,filterChatSessions,formatClock,isChatAbortError,isCurrentChatRequest,markOutgoingMessagesReadByIncoming,mergeLiveMessage,mergeOlderMessages,messageTime } from './state';
 import type { ChatFeatureState,ChatLiveState,SessionsByAccount } from './types';
@@ -221,7 +222,7 @@ export const useChat = (): UseChatResult => {
         setContactCursors(Object.fromEntries(sessionPages.map(/* 当前回调处理集合中的单个元素。 */ ([id, page]) => [id, page.next_cursor])));
         setHasMoreContacts(Object.fromEntries(sessionPages.map(/* 当前回调处理集合中的单个元素。 */ ([id, page]) => [id, page.has_more])));
         // stored 已保存数据。
-        const stored = window.localStorage.getItem('ydisks.chat.account.v1') || '';
+        const stored = readStoredChatAccountID();
         // first 首项。
         const first = enabled.some(/* 当前回调处理集合中的单个元素。 */ account => account.id === stored) ? stored : enabled[0]?.id || '';
         setActiveAccountID(first);
@@ -269,7 +270,7 @@ export const useChat = (): UseChatResult => {
 
   useEffect(/* 当前回调同步 React 副作用和资源生命周期。 */ () => {
     if (!activeAccountID) return;
-    window.localStorage.setItem('ydisks.chat.account.v1', activeAccountID);
+    writeStoredChatAccountID(activeAccountID);
     // sessions 会话列表。
     const sessions = sessionsByAccount[activeAccountID] || [];
     setActiveChatID(/* 当前回调处理集合中的单个元素。 */ current => sessions.some(/* 当前回调处理集合中的单个元素。 */ session => session.chat_id === current) ? current : sessions[0]?.chat_id || '');

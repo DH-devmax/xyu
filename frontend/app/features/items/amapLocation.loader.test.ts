@@ -2,7 +2,7 @@
 import { afterEach,beforeEach,describe,expect,test,vi } from 'vitest';
 
 // SCRIPT_ID 是高德脚本加载器使用的固定 DOM 标识。
-const SCRIPT_ID = 'ydisks-amap-js-api';
+const SCRIPT_ID = 'dh-xianyu-agentpanel-amap-js-api';
 
 // createAmapStub 创建可完成地点查询的高德 API 替身。
 function createAmapStub() {
@@ -28,14 +28,14 @@ describe('AMap 脚本加载边界', /* describeCallback 组织高德脚本加载
     // AMap 是浏览器全局高德对象。
     Reflect.deleteProperty(window, 'AMap');
     // loadedCallback 是上一用例遗留的脚本回调。
-    Reflect.deleteProperty(window, '__ydisksAmapLoaded');
+    Reflect.deleteProperty(window, '__dhXianyuAgentPanelAmapLoaded');
   });
 
   afterEach(/* afterEachCallback 恢复高德脚本测试环境。 */ () => {
     vi.useRealTimers();
     document.getElementById(SCRIPT_ID)?.remove();
     Reflect.deleteProperty(window, 'AMap');
-    Reflect.deleteProperty(window, '__ydisksAmapLoaded');
+    Reflect.deleteProperty(window, '__dhXianyuAgentPanelAmapLoaded');
   });
 
   test('脚本回调完成后解析高德对象', /* successCallback 验证脚本成功加载。 */ async () => {
@@ -49,7 +49,7 @@ describe('AMap 脚本加载边界', /* describeCallback 组织高德脚本加载
     expect(script.src).toContain('webapi.amap.com/maps');
     // amapStub 是脚本加载完成后暴露的高德对象。
     window.AMap = createAmapStub() as NonNullable<Window['AMap']>;
-    window.__ydisksAmapLoaded?.();
+    window.__dhXianyuAgentPanelAmapLoaded?.();
     await expect(pending).resolves.toMatchObject([{ poi_id: 'poi-1' }]);
   });
 
@@ -62,7 +62,7 @@ describe('AMap 脚本加载边界', /* describeCallback 组织高德脚本加载
     const secondPending = amapModule.getPublishLocations(120, 30);
     expect(document.querySelectorAll(`#${SCRIPT_ID}`)).toHaveLength(1);
     window.AMap = createAmapStub() as NonNullable<Window['AMap']>;
-    window.__ydisksAmapLoaded?.();
+    window.__dhXianyuAgentPanelAmapLoaded?.();
     await expect(Promise.all([firstPending, secondPending])).resolves.toHaveLength(2);
   });
 
@@ -96,7 +96,7 @@ describe('AMap 脚本加载边界', /* describeCallback 组织高德脚本加载
     const amapModule = await import('./amapLocation');
     // pending 是等待无对象回调结果的地点查询。
     const pending = amapModule.getPublishLocations(120, 30);
-    window.__ydisksAmapLoaded?.();
+    window.__dhXianyuAgentPanelAmapLoaded?.();
     await expect(pending).rejects.toThrow('未找到 AMap 对象');
   });
 });

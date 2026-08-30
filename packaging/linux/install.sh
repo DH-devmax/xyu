@@ -77,11 +77,17 @@ systemctl stop "$LEGACY_SERVICE_NAME" >/dev/null 2>&1 || true
 
 # 新安装目录为空时迁移旧版本数据；迁移脚本会校验哈希并生成可执行回滚记录。
 if [[ -d "/var/lib/$LEGACY_APP_NAME" && ! -e "$DATA_DIR" ]]; then
-  "$MIGRATION_SOURCE" \
+  migration_args=(
     --source "/var/lib/$LEGACY_APP_NAME" \
     --destination "$DATA_DIR" \
     --rollback-dir "/var/lib/${APP_NAME}-rollback" \
-    --record "/var/lib/${APP_NAME}-rollback/migration.env"
+    --record "/var/lib/${APP_NAME}-rollback/migration.env" \
+    --validator "$SERVER_SOURCE"
+  )
+  if [[ -r "/etc/$LEGACY_APP_NAME/config.env" ]]; then
+    migration_args+=(--environment-file "/etc/$LEGACY_APP_NAME/config.env")
+  fi
+  "$MIGRATION_SOURCE" "${migration_args[@]}"
 fi
 if [[ ! -f "$CONFIG_DIR/config.env" && -f "/etc/$LEGACY_APP_NAME/config.env" ]]; then
   install -d -m 0750 "$CONFIG_DIR"

@@ -134,7 +134,7 @@ describe('AudioMessage', /* 当前测试套件覆盖语音组件的主要交互�
     const playButtons = screen.getAllByRole('button', { name: '播放语音消息' });
     fireEvent.click(playButtons[0]);
     await waitFor(/* 当前轮询回调等待首条语音进入播放态。 */ () => expect(recorderHarness.play).toHaveBeenCalledTimes(1));
-    act(/* 当前回调模拟另一条语音取得播放权。 */ () => window.dispatchEvent(new CustomEvent('ydisks:chat-audio-play', { detail: 'voice-b' })));
+    act(/* 当前回调模拟另一条语音取得播放权。 */ () => window.dispatchEvent(new CustomEvent('dh-xianyu-agentpanel:chat-audio-play', { detail: 'voice-b' })));
     expect(recorderHarness.pause).toHaveBeenCalledTimes(1);
   });
 });

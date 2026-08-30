@@ -1,5 +1,6 @@
 import { access, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -47,6 +48,8 @@ const requiredFiles = [
   'packaging/windows/installer.iss',
   'packaging/windows/service-control.ps1',
   'packaging/windows/migrate-data.ps1',
+  'packaging/windows/migrate-data.test.ps1',
+  'packaging/windows/migrate-data.fixture.cjs',
   'packaging/macos/Info.plist',
   'packaging/macos/component.plist',
   'packaging/macos/com.dhdevmax.xianyu-agentpanel.server.plist.template',
@@ -59,6 +62,10 @@ const requiredFiles = [
 for (const relativePath of requiredFiles) {
   await access(join(rootDir, relativePath), constants.R_OK);
 }
+// Windows 加密 fixture 在 PowerShell 运行前先由当前 Node 完成纯语法校验。
+execFileSync(process.execPath, ['--check', join(rootDir, 'packaging/windows/migrate-data.fixture.cjs')], {
+  stdio: 'pipe',
+});
 try {
   await access(join(rootDir, 'icon/macos/Assets.car'), constants.R_OK);
   throw new Error('打包 manifest 校验失败: icon/macos/Assets.car 不应再作为输入');
@@ -79,10 +86,18 @@ await assertText('packaging/linux/install.sh', [
   `APP_NAME="${expected.slug}"`,
   `SERVICE_NAME="$APP_NAME.service"`,
   'migrate-product-data.sh',
+  '--validator "$SERVER_SOURCE"',
+  '--environment-file',
   'BRAIN_SOURCE=',
   'BRAIN_SOURCE/runtime/runtime.json',
   'BRAIN_SOURCE/runtime/node-carrier',
   'BRAIN_SOURCE/runtime/result-tool.mjs',
+]);
+await assertText('scripts/migrate-product-data.sh', [
+  '--validator FILE',
+  '-verify-data',
+  'database_integrity=$DATABASE_CHECK',
+  'database_decryption=$DATABASE_DECRYPTION',
 ]);
 await assertText('packaging/linux/uninstall.sh', [
   `APP_NAME="${expected.slug}"`,
@@ -93,6 +108,8 @@ await assertText('packaging/windows/installer.iss', [
   'OutputBaseFilename=DH-Xianyu-AgentPanel-Setup',
   `AppDataDir "{commonappdata}\\DhXianyuAgentPanel"`,
   `Source: "migrate-data.ps1"`,
+  `DestName: "data-validator.exe"`,
+  `-Validator "`,
   `Source: "{#WindowsBrainDir}\\*"`,
   '-BrainRuntimeRoot',
   expected.windowsService,
@@ -103,6 +120,11 @@ await assertText('packaging/windows/service-control.ps1', [
   '[string]$BrainRuntimeRoot =',
   '-brain-runtime-root',
   expected.displayName,
+]);
+await assertText('packaging/windows/migrate-data.ps1', [
+  '-verify-data',
+  "('database_integrity=' + $databaseVerification)",
+  "('database_decryption=' + $databaseVerification)",
 ]);
 
 await assertText('packaging/macos/Info.plist', [
@@ -123,6 +145,10 @@ await assertText('packaging/macos/build-pkg.sh', [
   'runtime/node-carrier',
   'runtime/result-tool.mjs',
 ]);
+await assertText('packaging/macos/scripts/postinstall', [
+  'migrate-product-data.sh',
+  '--validator "$SERVER"',
+]);
 await assertText('packaging/macos/com.dhdevmax.xianyu-agentpanel.tray.plist.template', [
   expected.macBundleID,
   '__TRAY__',
@@ -137,6 +163,10 @@ await assertText('.github/workflows/desktop-cd.yml', [
   'build-brain-runtime.mjs',
   'check-brain-runtime-package.mjs',
   'brain/vendor/deepseek-harness',
+  '验证 Windows 品牌数据迁移与回滚',
+  'migrate-data.test.ps1',
+  '验证 macOS 品牌数据迁移与回滚',
+  '验证 Linux 品牌数据迁移与回滚',
   "Extension -in '.exe', '.dll', '.node'",
 ]);
 await assertText('Dockerfile.debian13', [
@@ -154,5 +184,31 @@ await assertText('.github/workflows/release.yml', [
   'DH-Xianyu-AgentPanel-Setup.exe',
   'DH-Xianyu-AgentPanel-',
 ]);
+await assertText('cmd/server/main.go', [
+  '"verify-data"',
+  'data-verification: ok',
+]);
+await assertText('frontend/shared/browser/sidebarState.ts', [
+  'dh-xianyu-agentpanel.sidebar.v2',
+  'ydisks.sidebar.v1',
+]);
+await assertText('frontend/app/features/chat/accountSelectionStorage.ts', [
+  'dh-xianyu-agentpanel.chat.account.v2',
+  'ydisks.chat.account.v1',
+]);
+await assertText('frontend/app/features/chat/components/AudioMessage.tsx', [
+  'dh-xianyu-agentpanel:chat-audio-play',
+]);
+await assertText('frontend/app/features/items/amapLocation.ts', [
+  'dh-xianyu-agentpanel-amap-js-api',
+  '__dhXianyuAgentPanelAmapLoaded',
+]);
+
+try {
+  await access(join(rootDir, 'docs/CNAME'), constants.R_OK);
+  throw new Error('打包 manifest 校验失败: docs/CNAME 不应继续声明上游域名');
+} catch (error) {
+  if (error?.code !== 'ENOENT') throw error;
+}
 
 console.log('packaging-manifest: 通过');

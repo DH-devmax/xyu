@@ -50,6 +50,7 @@ chinesetraditional.StartTray=启动托盘控制器
 
 [Files]
 Source: "{#WindowsDistDir}\xianyu-server.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#WindowsDistDir}\xianyu-server.exe"; DestName: "data-validator.exe"; Flags: dontcopy
 Source: "{#WindowsDistDir}\xianyu-tray.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#WindowsIconDir}\icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#WindowsRuntimeDir}\*"; DestDir: "{app}\playwright-runtime"; Flags: recursesubdirs createallsubdirs ignoreversion
@@ -118,6 +119,7 @@ begin
   if Result = '' then
   begin
     ExtractTemporaryFile('migrate-data.ps1');
+    ExtractTemporaryFile('data-validator.exe');
     if DirExists(ExpandConstant('{commonappdata}\YdisksXianyuHelper')) and
        (not DirExists(ExpandConstant('{commonappdata}\DhXianyuAgentPanel')))
     then
@@ -128,7 +130,8 @@ begin
           ExpandConstant('{commonappdata}\YdisksXianyuHelper') + '" -Destination "' +
           ExpandConstant('{commonappdata}\DhXianyuAgentPanel') + '" -RollbackDir "' +
           ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration') + '" -Record "' +
-          ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration\migration.env') + '"',
+          ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration\migration.env') + '" -Validator "' +
+          ExpandConstant('{tmp}\data-validator.exe') + '"',
         '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
       then
         Result := '无法执行数据迁移脚本。'

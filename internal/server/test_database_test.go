@@ -40,7 +40,7 @@ func serverTestDatabasePath(t *testing.T) string {
 	t.Helper()
 	serverTestTemplateOnce.Do(func() {
 		// templateDir 是共享模板的临时目录，生命周期覆盖整个测试进程。
-		templateDir, err := os.MkdirTemp("", "ydisks-server-test-db-")
+		templateDir, err := os.MkdirTemp("", "dh-xianyu-agentpanel-server-test-db-")
 		if err != nil {
 			serverTestTemplateErr = err
 			return

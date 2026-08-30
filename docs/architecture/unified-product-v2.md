@@ -17,6 +17,20 @@ dh-xianyu-agentpanel-server (Go)
 Go 与 brain 通过仅绑定 `127.0.0.1` 的随机端口和临时 bearer token 通信。Harness 通过
 MCP 调用 Go application ports，不直连数据库、Cookie、MTOP、Chromium 或消息发送实现。
 
+## 品牌身份与升级边界
+
+- 产品显示名是 `DH闲不下来`，slug 是 `dh-xianyu-agentpanel`，Go module 是
+  `github.com/DH-devmax/xyu`。Linux service、Windows Service 和 macOS Bundle ID 分别是
+  `dh-xianyu-agentpanel.service`、`DhXianyuAgentPanel` 和 `com.dhdevmax.xianyu-agentpanel`。
+- `internal/xianyu` 是稳定业务包名，不属于需要替换的对外品牌标识。Ydisks 名称只保留在上游来源、
+  合作文档、v1 数据目录和兼容键中。
+- v1 数据升级使用“源目录 -> staging -> 隔离验证副本”流程。新版 Go 服务器以
+  `-verify-data` 执行 schema 迁移、完整性检查和加密字段解密，验证失败时不切换目标。
+- 成功切换后旧数据保留为只读回滚副本。回滚会拒绝哈希漂移的旧副本，先保存当前 v2
+  数据，再恢复 v1 副本。
+- 前端 localStorage、全局事件和脚本节点使用新品牌命名。v1 localStorage 键保留一个主版本的
+  读取与双写，保证升级不丢失侧栏和聊天账号选择。
+
 ## 数据所有权
 
 | 数据 | 唯一所有者 | Harness 使用方式 |

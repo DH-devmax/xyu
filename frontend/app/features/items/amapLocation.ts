@@ -1,6 +1,6 @@
 import type { PublishLocation } from './api';
 
-const AMAP_SCRIPT_ID = 'ydisks-amap-js-api'; /* AMAP_SCRIPT_ID 表示AMAPSCRIPTID。 */
+const AMAP_SCRIPT_ID = 'dh-xianyu-agentpanel-amap-js-api'; /* AMAP_SCRIPT_ID 标识当前产品注入的唯一高德脚本节点。 */
 // 高德 JS API 的 Key 是前端公开 Key；部署时可通过 VITE_AMAP_JS_KEY 覆盖。
 const DEFAULT_AMAP_JS_KEY = 'c9b68d4ce9a2a97f22a4a439404488ca';
 
@@ -65,8 +65,8 @@ declare global {
   interface Window {
 // AMap 表示AMap。
         AMap?: AMapAPI;
-// __ydisksAmapLoaded 表示ydisksAmapLoaded。
-        __ydisksAmapLoaded?: () => void;
+// __dhXianyuAgentPanelAmapLoaded 是当前产品高德脚本完成后的全局回调。
+        __dhXianyuAgentPanelAmapLoaded?: () => void;
   }
 
   interface ImportMetaEnv {
@@ -95,7 +95,7 @@ const loadAMap = (): Promise<AMapAPI> => {
     const existing = document.getElementById(AMAP_SCRIPT_ID) as HTMLScriptElement | null; /* existing 表示existing。 */
     const script = existing || document.createElement('script'); /* script 表示script。 */
     const cleanup = () => {
-      window.__ydisksAmapLoaded = undefined;
+      window.__dhXianyuAgentPanelAmapLoaded = undefined;
       window.clearTimeout(timeout);
     }; /* cleanup 表示cleanup。 */
     const finish = () => {
@@ -112,10 +112,10 @@ const loadAMap = (): Promise<AMapAPI> => {
       reject(new Error('高德地图 API 加载超时，请检查网络或 VITE_AMAP_JS_KEY 配置'));
     } /* 定时器到期时终止脚本加载并返回网络配置错误。 */, 15_000); /* timeout 是高德脚本加载的毫秒上限。 */
 
-    window.__ydisksAmapLoaded = finish;
+    window.__dhXianyuAgentPanelAmapLoaded = finish;
     script.id = AMAP_SCRIPT_ID;
     script.async = true;
-    script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(configuredAmapKey())}&plugin=AMap.PlaceSearch&callback=__ydisksAmapLoaded`;
+    script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(configuredAmapKey())}&plugin=AMap.PlaceSearch&callback=__dhXianyuAgentPanelAmapLoaded`;
     script.onerror = () => {
       cleanup();
       reject(new Error('高德地图 API 加载失败，请检查网络或 VITE_AMAP_JS_KEY 配置'));

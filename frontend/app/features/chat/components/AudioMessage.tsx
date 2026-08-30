@@ -19,7 +19,7 @@ interface AudioMessageProps {
 type AudioPlaybackState = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
 
 /** audioPlaybackEventName 是同页语音播放器之间广播互斥播放请求的事件名称。 */
-const audioPlaybackEventName = 'ydisks:chat-audio-play';
+const audioPlaybackEventName = 'dh-xianyu-agentpanel:chat-audio-play';
 
 /** waveformBars 保存紧凑语音波形的相对高度，避免用随机布局造成每次渲染跳动。 */
 const waveformBars = [6, 10, 15, 8, 17, 12, 7, 16, 11, 6, 14, 9];

@@ -154,7 +154,7 @@
   --tw-shadow-colored: 0 0 0 var(--color-transparent);
 }
 
-/* Ydisks 超椭圆 logo 容器：用 squircle mask 实现真超椭圆（比圆角矩形更鼓）。
+/* DH闲不下来超椭圆 logo 容器：用 squircle mask 实现真超椭圆（比圆角矩形更鼓）。
    mask 让容器背景色（蓝）也裁成超椭圆形状。
    shadow 改用 filter:drop-shadow，跟随 mask 后的实际形状（box-shadow 会被 mask 裁掉）。 */
 .squircle {
