@@ -1,9 +1,9 @@
-# Ydisks-Xianyu-Helper 常用命令入口。详见各 target 注释。
+# DH闲不下来常用命令入口。详见各 target 注释。
 
 GO ?= go
 GOLANGCI_LINT ?= golangci-lint
 
-.PHONY: build build-int build-browser-install build-tray brain-check brain-profile-integration test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
+.PHONY: build build-int build-browser-install build-tray brain-check brain-profile-integration test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check brand-assets-check packaging-check product-data-migration-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
 
 ## build: 编译 server（默认，跳过 integration build tag）
 build:
@@ -77,9 +77,24 @@ api-check:
 	$(GO) test ./internal/server -run '^TestOpenAPISuccessContractCoverage$$' -count=1
 	$(GO) test ./internal/server -run '^(TestOpenAPIPasswordLoginDisabledOperations|TestDownloadItemPublishBatchResultExportsRows|TestChatEventDTOUsesFrontendContract|TestChatWebSocketStreamsOnlyAuthenticatedAccountEvents)$$' -count=1
 
-## product-check: 校验品牌、契约版本和上游组件锁定信息
+## packaging-check: 校验跨平台安装器、服务和发布工作流使用统一产品身份
+packaging-check:
+	node scripts/check-packaging-manifest.mjs
+
+## brand-assets-check: 校验源图哈希、派生尺寸和平台资源一致性
+brand-assets-check:
+	node scripts/check-brand-assets.mjs
+
+## product-data-migration-check: 执行复制、哈希、只读和回滚验证
+product-data-migration-check:
+	bash scripts/migrate-product-data.test.sh
+
+## product-check: 校验品牌、契约版本、上游组件和打包输入
 product-check:
 	node scripts/check-product-manifest.mjs
+	$(MAKE) brand-assets-check
+	$(MAKE) packaging-check
+	$(MAKE) product-data-migration-check
 
 ## preflight: 在直接推送 main 前从干净工作树运行全部本地门禁
 preflight:

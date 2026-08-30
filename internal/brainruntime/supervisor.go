@@ -208,6 +208,13 @@ func (supervisor *Supervisor) Start(ctx context.Context) error {
 	if supervisor.running(ctx) {
 		return nil
 	}
+	// 健康探测失败时先回收旧进程，避免下一次启动与失联实例并存并继续占用业务端口。
+	if supervisor.hasProcess() {
+		// stopErr 是回收失联 gateway 进程时返回的错误。
+		if stopErr := supervisor.stopLocked(ctx, defaultGatewayStopTimeout); stopErr != nil {
+			return fmt.Errorf("回收失联 Brain gateway 失败: %w", stopErr)
+		}
+	}
 	return supervisor.startLocked(ctx)
 }
 
@@ -461,6 +468,13 @@ func (supervisor *Supervisor) running(ctx context.Context) bool {
 	// err 保存当前步骤的中间结果。
 	_, err := supervisor.health(ctx)
 	return err == nil
+}
+
+// hasProcess 在锁内读取当前 gateway 是否仍登记为活动进程。
+func (supervisor *Supervisor) hasProcess() bool {
+	supervisor.mu.RLock()
+	defer supervisor.mu.RUnlock()
+	return supervisor.process != nil
 }
 
 // health 调用当前 gateway 健康接口并同步状态字段。

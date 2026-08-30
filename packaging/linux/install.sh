@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-APP_NAME="ydisks-xianyu-helper"
+APP_NAME="dh-xianyu-agentpanel"
+LEGACY_APP_NAME="ydisks-xianyu-helper"
 INSTALL_DIR="/opt/$APP_NAME"
 DATA_DIR="/var/lib/$APP_NAME"
 CONFIG_DIR="/etc/$APP_NAME"
 LOG_DIR="/var/log/$APP_NAME"
 SERVICE_NAME="$APP_NAME.service"
+LEGACY_SERVICE_NAME="$LEGACY_APP_NAME.service"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
 if [[ "$(id -u)" -ne 0 ]]; then
@@ -19,10 +21,11 @@ if ! command -v systemctl >/dev/null 2>&1; then
   exit 1
 fi
 
-SERVER_SOURCE="${XIANYU_SERVER_SOURCE:-$SCRIPT_DIR/xianyu-server}"
-BROWSER_SOURCE="${XIANYU_BROWSER_INSTALL_SOURCE:-$SCRIPT_DIR/browser-install}"
-RUNTIME_SOURCE="${XIANYU_PLAYWRIGHT_RUNTIME_SOURCE:-$SCRIPT_DIR/playwright-runtime}"
-ICON_SOURCE="${XIANYU_ICON_SOURCE:-$SCRIPT_DIR/icon.png}"
+SERVER_SOURCE="${DH_XIANYU_AGENTPANEL_SERVER_SOURCE:-${XIANYU_SERVER_SOURCE:-$SCRIPT_DIR/xianyu-server}}"
+BROWSER_SOURCE="${DH_XIANYU_AGENTPANEL_BROWSER_INSTALL_SOURCE:-${XIANYU_BROWSER_INSTALL_SOURCE:-$SCRIPT_DIR/browser-install}}"
+RUNTIME_SOURCE="${DH_XIANYU_AGENTPANEL_PLAYWRIGHT_RUNTIME_SOURCE:-${XIANYU_PLAYWRIGHT_RUNTIME_SOURCE:-$SCRIPT_DIR/playwright-runtime}}"
+ICON_SOURCE="${DH_XIANYU_AGENTPANEL_ICON_SOURCE:-${XIANYU_ICON_SOURCE:-$SCRIPT_DIR/icon.png}}"
+MIGRATION_SOURCE="${DH_XIANYU_AGENTPANEL_MIGRATION_SOURCE:-$SCRIPT_DIR/migrate-product-data.sh}"
 if [[ ! -x "$SERVER_SOURCE" ]]; then
   echo "找不到 xianyu-server：$SERVER_SOURCE" >&2
   exit 1
@@ -45,6 +48,10 @@ if [[ ! -f "$ICON_SOURCE" ]]; then
   echo "找不到应用图标：$ICON_SOURCE" >&2
   exit 1
 fi
+if [[ ! -x "$MIGRATION_SOURCE" ]]; then
+  echo "找不到数据迁移脚本：$MIGRATION_SOURCE" >&2
+  exit 1
+fi
 
 if ! getent group "$APP_NAME" >/dev/null; then
   groupadd --system "$APP_NAME"
@@ -54,6 +61,20 @@ if ! id "$APP_NAME" >/dev/null 2>&1; then
 fi
 
 systemctl stop "$SERVICE_NAME" >/dev/null 2>&1 || true
+systemctl stop "$LEGACY_SERVICE_NAME" >/dev/null 2>&1 || true
+
+# 新安装目录为空时迁移旧版本数据；迁移脚本会校验哈希并生成可执行回滚记录。
+if [[ -d "/var/lib/$LEGACY_APP_NAME" && ! -e "$DATA_DIR" ]]; then
+  "$MIGRATION_SOURCE" \
+    --source "/var/lib/$LEGACY_APP_NAME" \
+    --destination "$DATA_DIR" \
+    --rollback-dir "/var/lib/${APP_NAME}-rollback" \
+    --record "/var/lib/${APP_NAME}-rollback/migration.env"
+fi
+if [[ ! -f "$CONFIG_DIR/config.env" && -f "/etc/$LEGACY_APP_NAME/config.env" ]]; then
+  install -d -m 0750 "$CONFIG_DIR"
+  install -m 0600 "/etc/$LEGACY_APP_NAME/config.env" "$CONFIG_DIR/config.env"
+fi
 install -d -m 0755 "$INSTALL_DIR"
 install -d -o "$APP_NAME" -g "$APP_NAME" -m 0750 "$DATA_DIR"
 install -d -o "$APP_NAME" -g "$APP_NAME" -m 0750 "$LOG_DIR"
@@ -65,7 +86,7 @@ install -d -m 0750 "$CONFIG_DIR"
 install -m 0755 "$SERVER_SOURCE" "$INSTALL_DIR/xianyu-server"
 install -m 0755 "$BROWSER_SOURCE" "$INSTALL_DIR/browser-install"
 install -D -m 0644 "$ICON_SOURCE" "/usr/share/icons/hicolor/512x512/apps/$APP_NAME.png"
-install -m 0644 "$SCRIPT_DIR/ydisks-xianyu-helper.service" "/etc/systemd/system/$SERVICE_NAME"
+install -m 0644 "$SCRIPT_DIR/dh-xianyu-agentpanel.service" "/etc/systemd/system/$SERVICE_NAME"
 
 if [[ ! -f "$CONFIG_DIR/config.env" ]]; then
   umask 077
@@ -75,7 +96,8 @@ if [[ ! -f "$CONFIG_DIR/config.env" ]]; then
     data_key="$(head -c 48 /dev/urandom | base64 | tr -d '\n')"
   fi
   {
-    printf 'XIANYU_DATA_KEY=%s\n' "$data_key"
+    printf 'DH_XIANYU_AGENTPANEL_DATA_KEY=%s\n' "$data_key"
+    printf 'DH_XIANYU_AGENTPANEL_LOG_DIR=%s\n' "$LOG_DIR"
     printf 'LOG_FORMAT=json\n'
   } > "$CONFIG_DIR/config.env"
 fi
@@ -83,7 +105,7 @@ fi
 chown -R "$APP_NAME:$APP_NAME" "$DATA_DIR"
 chmod 0600 "$CONFIG_DIR/config.env"
 
-if [[ "${XIANYU_SKIP_BROWSER_DEPS:-0}" != "1" ]]; then
+if [[ "${DH_XIANYU_AGENTPANEL_SKIP_BROWSER_DEPS:-${XIANYU_SKIP_BROWSER_DEPS:-0}}" != "1" ]]; then
   "$INSTALL_DIR/browser-install" \
     -driver-dir "$INSTALL_DIR/playwright-runtime/$RUNTIME_ARCH/playwright-driver" \
     -deps-only
@@ -92,4 +114,4 @@ fi
 systemctl daemon-reload
 systemctl enable --now "$SERVICE_NAME"
 systemctl --no-pager --full status "$SERVICE_NAME" || true
-echo "安装完成：systemctl status $SERVICE_NAME"
+echo "DH闲不下来安装完成：systemctl status $SERVICE_NAME"

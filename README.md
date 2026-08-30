@@ -1,11 +1,11 @@
-# Ydisks闲鱼助手
+# DH闲不下来
 
 基于 Go 与 React 构建的闲鱼多账号管理、消息回复与自动发货系统
 
 [![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)](go.mod)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](frontend/package.json)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](compose.yml)
-[![正式发布](https://github.com/Christ9038/Ydisks-Xianyu-Helper/actions/workflows/release.yml/badge.svg)](https://github.com/Christ9038/Ydisks-Xianyu-Helper/actions/workflows/release.yml)
+[![正式发布](https://github.com/DH-devmax/xyu/actions/workflows/release.yml/badge.svg)](https://github.com/DH-devmax/xyu/actions/workflows/release.yml)
 
 [功能特性](#功能特性) · [快速开始](#快速开始) · [配置说明](#配置说明) ·
 [Docker 部署](#docker-部署) · [开发指南](#开发指南) · [开源协议](#开源协议)
@@ -30,7 +30,7 @@
 
 ## 项目简介
 
-Ydisks闲鱼助手是一个面向闲鱼卖家的自托管管理系统。它将账号运行、即时消息、订单、
+DH闲不下来是一个面向闲鱼卖家的自托管管理系统。它将账号运行、即时消息、订单、
 商品、卡密库存、自动化规则、AI 回复和异常通知整合到同一个 Web 管理后台，适合需要
 同时维护多个闲鱼账号或交付虚拟商品的个人与小型团队。
 
@@ -43,7 +43,7 @@ Ydisks闲鱼助手是一个面向闲鱼卖家的自托管管理系统。它将�
 如果你通过网盘资料、教程包或数字资源做闲鱼推广，推荐搭配
 [Ydisks 网盘拉新助手](https://www.ydisks.com) 使用：先为不同商品、渠道或推广账号
 创建独立短链，再在 Ydisks 控制台查看短链与目标页面的 PV、UV、趋势、排行及渠道/账号报表。
-这样，Ydisks 负责识别“链接从哪里带来访问与转化线索”，Ydisks闲鱼助手负责承接账号消息、
+这样，Ydisks 负责识别“链接从哪里带来访问与转化线索”，DH闲不下来负责承接账号消息、
 订单和自动发货，帮助你把投放复盘与日常交付放进一套更清晰的运营流程。
 
 Ydisks 支持管理渠道、推广账号、原始链接、推广短链与域名，适用于网盘拉新和推广投放场景；
@@ -56,7 +56,7 @@ Ydisks 支持管理渠道、推广账号、原始链接、推广短链与域名�
 - 数字商品、兑换码、链接或图片内容的自动交付
 - 付款后发货、评价赠品、超时求评价等自动化流程
 - 商品与订单同步、单商品发布及支持逐行/默认类目、自动识别和最终兜底的表格批量铺货
-- 接入 OpenAI 兼容接口实现可控的 AI 客服回复
+- 通过 DeepSeek Harness 实现可控的 AI 客服回复，保留 provider/model 适配配置
 
 ## 功能特性
 
@@ -70,7 +70,7 @@ Ydisks 支持管理渠道、推广账号、原始链接、推广短链与域名�
 | 卡密库存 | 文本、批量卡密和图片三种交付类型，库存追加、批量导入、规格与延迟发送 |
 | 商品管理 | 商品同步、手工关联、单商品发布、CSV + ZIP 批量铺货、关键词获取默认类目、逐行类目优先、自动识别与“电子资料”最终兜底、任务恢复与结果导出 |
 | 订单管理 | 订单同步、插入、编辑、平台发货、补发卡密、仅确认发货及异常状态处理 |
-| AI 回复 | OpenAI 兼容 API、模型发现、自定义提示词、议价轮次和让价范围控制 |
+| AI 回复 | DeepSeek Harness 客服 profile、受控 provider/model、自定义提示词、议价轮次和让价范围控制 |
 | 数据看板 | 活跃账号、订单、营收、库存、商品销量与金额统计 |
 | 通知告警 | Bark、钉钉、飞书、企业微信、Telegram、邮件和自定义 Webhook |
 | 数据存储 | SQLite、MySQL、PostgreSQL，内置按方言执行的 Goose 数据库迁移 |
@@ -105,12 +105,12 @@ flowchart LR
 
 ## 页面预览
 
-![Ydisks闲鱼助手预览](https://raw.githubusercontent.com/Christ9038/Ydisks-Xianyu-Helper/main/docs/img/preview_account.png)
+![DH闲不下来预览](https://raw.githubusercontent.com/DH-devmax/xyu/main/docs/img/preview_account.png)
 
-![Ydisks闲鱼助手预览](https://raw.githubusercontent.com/Christ9038/Ydisks-Xianyu-Helper/main/docs/img/preview_im.png)
+![DH闲不下来预览](https://raw.githubusercontent.com/DH-devmax/xyu/main/docs/img/preview_im.png)
 
 
-![Ydisks闲鱼助手预览](https://raw.githubusercontent.com/Christ9038/Ydisks-Xianyu-Helper/main/docs/img/preview_auto.png)
+![DH闲不下来预览](https://raw.githubusercontent.com/DH-devmax/xyu/main/docs/img/preview_auto.png)
 
 
 ## 快速开始
@@ -123,8 +123,8 @@ Docker Desktop，并使用 Docker Compose v2。
 Docker 部署会使用容器内 Chromium 的原生 Linux 指纹执行官网静默续期；续期是否成功由闲鱼响应决定，不会因宿主系统是 Linux 而跳过。
 
 ```bash
-git clone https://github.com/Christ9038/Ydisks-Xianyu-Helper.git
-cd Ydisks-Xianyu-Helper
+git clone https://github.com/DH-devmax/xyu.git
+cd xyu
 cp .env.example .env
 ```
 
@@ -138,6 +138,10 @@ DATABASE_URL=postgres://xianyu:替换为URL编码后的数据库密码@postgres:
 XIANYU_DATA_KEY=替换为长期固定的随机密钥
 XIANYU_ADMIN_PASSWORD=替换为管理员密码
 ```
+
+桌面安装包和直接运行的 v2 服务也接受 `DH_XIANYU_AGENTPANEL_DATA_KEY`、
+`DH_XIANYU_AGENTPANEL_ADMIN_PASSWORD`、`DH_XIANYU_AGENTPANEL_UPLOAD_DIR` 等新前缀变量，
+新前缀优先于旧的 `XIANYU_*` 变量；Compose 保留旧变量名以兼容现有 `.env`。
 
 推荐使用以下命令生成随机值：
 
@@ -157,7 +161,7 @@ docker compose up -d
 `XIANYU_ADMIN_PASSWORD` 登录。
 
 > GHCR 镜像公开时可以匿名拉取。若镜像仍为私有，请先执行
-> `docker login ghcr.io -u Christ9038`，并使用具有 `read:packages` 权限的
+> `docker login ghcr.io -u DH-devmax`，并使用具有 `read:packages` 权限的
 > Personal Access Token 登录。
 
 ### 方式二：从源码运行
@@ -172,8 +176,8 @@ docker compose up -d
 构建前端：
 
 ```bash
-git clone https://github.com/Christ9038/Ydisks-Xianyu-Helper.git
-cd Ydisks-Xianyu-Helper
+git clone https://github.com/DH-devmax/xyu.git
+cd xyu
 npm --prefix frontend ci
 npm --prefix frontend run build
 ```
@@ -188,21 +192,26 @@ npm --prefix frontend run build
 Chromium 不打进 Go 二进制，但 Linux、Windows 和 macOS 独立安装包会内置对应架构的
 Playwright driver 与 Chromium runtime，安装后无需用户再下载浏览器。
 
-- Windows：安装器注册 `YdisksXianyuHelper` Windows Service，并将托盘控制器加入当前用户登录启动项。安装阶段会为交互式登录用户授予该服务的状态查询、启动和停止权限；安装完成后从托盘启动、停止、重启或退出服务不再触发 UAC，也不会获得修改或删除服务的权限。
+- Windows：安装器注册 `DhXianyuAgentPanel` Windows Service，并将托盘控制器加入当前用户登录启动项。安装阶段会为交互式登录用户授予该服务的状态查询、启动和停止权限；安装完成后从托盘启动、停止、重启或退出服务不再触发 UAC，也不会获得修改或删除服务的权限。
 - macOS：安装器注册当前登录用户的两个 LaunchAgent，分别运行后台服务和菜单栏控制器。
 - Linux：下载对应架构的 tar 包后，以 root 执行 `./install.sh`；安装包已经包含对应架构的
   Playwright driver 与 Chromium，脚本只通过 Playwright 安装系统依赖，不会再下载浏览器。
   脚本创建专用系统用户并安装 systemd unit。安装完成后打开管理页面，首次设置管理员密码。
   卸载时执行 `./uninstall.sh`，
-  默认保留 `/var/lib/ydisks-xianyu-helper` 数据。
+  默认保留 `/var/lib/dh-xianyu-agentpanel` 数据。
 
 桌面端安装后的固定位置和服务标识如下：
 
 | 平台 | 后台服务 | 托盘/菜单栏程序 | 数据与日志 |
 | --- | --- | --- | --- |
-| Windows | `YdisksXianyuHelper` Windows Service | 当前用户登录启动的 `xianyu-tray.exe` | `C:\ProgramData\YdisksXianyuHelper\data`、`C:\ProgramData\YdisksXianyuHelper\logs` |
-| macOS | `com.ydisks.xianyu-helper.server` LaunchAgent | `Ydisks闲鱼助手.app` 内的菜单栏程序 | `~/Library/Application Support/YdisksXianyuHelper`、`~/Library/Logs/YdisksXianyuHelper` |
-| Linux | `ydisks-xianyu-helper.service` systemd unit | 无桌面托盘 | `/var/lib/ydisks-xianyu-helper`、`/var/log/ydisks-xianyu-helper` |
+| Windows | `DhXianyuAgentPanel` Windows Service | 当前用户登录启动的 `xianyu-tray.exe` | `C:\ProgramData\DhXianyuAgentPanel\data`、`C:\ProgramData\DhXianyuAgentPanel\logs` |
+| macOS | `com.dhdevmax.xianyu-agentpanel.server` LaunchAgent | `DH闲不下来.app` 内的菜单栏程序 | `~/Library/Application Support/DhXianyuAgentPanel`、`~/Library/Logs/DhXianyuAgentPanel` |
+| Linux | `dh-xianyu-agentpanel.service` systemd unit | 无桌面托盘 | `/var/lib/dh-xianyu-agentpanel`、`/var/log/dh-xianyu-agentpanel` |
+
+升级 v1 时，安装器会先复制并校验旧数据，再切换到上述目录。旧版目录
+`C:\ProgramData\YdisksXianyuHelper`、`~/Library/Application Support/YdisksXianyuHelper`、
+`/var/lib/ydisks-xianyu-helper` 会保留为只读回滚副本；迁移记录和可执行回滚脚本位于新数据目录旁的
+`*-migration` 或 `*-rollback` 目录。
 
 Windows 和 macOS 托盘启动时会自动启动后台服务，并显示检查中、启动中、运行正常、正在停止
 等状态。选择“退出托盘”时，只有确认后台服务已经停止后托盘才会退出；“打开日志目录”可直接
@@ -210,10 +219,10 @@ Windows 和 macOS 托盘启动时会自动启动后台服务，并显示检查�
 安装完成后托盘控制服务不需要重复确认 UAC；修改服务配置或删除服务仍需管理员权限。
 
 托盘菜单中的“退出托盘”会先停止后台服务，再退出托盘程序；“打开日志目录”可直接打开当前平台的日志目录：Windows
-为 `C:\ProgramData\YdisksXianyuHelper\logs`，macOS 为
-`~/Library/Logs/YdisksXianyuHelper`。Linux 服务日志同时写入
-`/var/log/ydisks-xianyu-helper/server.log`，也可以使用
-`journalctl -u ydisks-xianyu-helper.service` 查看。
+为 `C:\ProgramData\DhXianyuAgentPanel\logs`，macOS 为
+`~/Library/Logs/DhXianyuAgentPanel`。Linux 服务日志同时写入
+`/var/log/dh-xianyu-agentpanel/server.log`，也可以使用
+`journalctl -u dh-xianyu-agentpanel.service` 查看。
 
 桌面端安装包由 `.github/workflows/desktop-cd.yml` 在 `dev`、`main` 分支上持续构建；正式版本由统一的
 `.github/workflows/release.yml` 在 `v1.2.3` 格式的版本标签上协调构建：
@@ -354,20 +363,20 @@ Docker Compose 还支持：
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `COMPOSE_PROJECT_NAME` | `ydisks-xianyu-helper` | Compose 项目名及命名卷前缀 |
+| `COMPOSE_PROJECT_NAME` | `dh-xianyu-agentpanel` | Compose 项目名及命名卷前缀 |
 | `POSTGRES_IMAGE` | `postgres:17-trixie` | PostgreSQL 镜像 |
 | `POSTGRES_DB` | 必填 | 数据库名 |
 | `POSTGRES_USER` | 必填 | 数据库用户 |
 | `POSTGRES_PASSWORD` | 必填 | 数据库密码 |
-| `XIANYU_IMAGE` | `ghcr.io/christ9038/ydisks-xianyu-helper:latest` | 应用镜像与标签 |
+| `XIANYU_IMAGE` | `ghcr.io/dh-devmax/xyu:latest` | 应用镜像与标签 |
 | `XIANYU_BIND_ADDRESS` | `0.0.0.0` | 应用在宿主机上的绑定地址 |
 | `XIANYU_HTTP_PORT` | `59188` | 应用在宿主机上的端口 |
 
 默认 `compose.yml` 直接拉取 GHCR 的 `:latest` 多架构镜像；如需固定版本，请把
 `XIANYU_IMAGE` 设置为完整镜像地址，例如
-`ghcr.io/christ9038/ydisks-xianyu-helper:v1.2.3`、
-`ghcr.io/christ9038/ydisks-xianyu-helper:main` 或
-`ghcr.io/christ9038/ydisks-xianyu-helper:sha-<完整提交号>`。
+`ghcr.io/dh-devmax/xyu:v1.2.3`、
+`ghcr.io/dh-devmax/xyu:main` 或
+`ghcr.io/dh-devmax/xyu:sha-<完整提交号>`。
 
 `XIANYU_DATA_KEY` 用于加密 Cookie、账号密码、设备令牌、访问令牌、AI/SMTP 密钥和
 通知凭证。启用后，服务会自动升级历史明文数据。密钥丢失或更换后，已有加密数据将
@@ -422,15 +431,15 @@ DATABASE_URL="postgres://user:pass@127.0.0.1:5432/xianyu?sslmode=disable" ./xian
 - **账号自动任务**：自动评价开关、统一好评文案（最多 500 个字符）、每日擦亮开关、北京时间执行时间和最近执行记录
 - **自动化规则**：触发条件、商品、规格、卡密组、发送数量、延迟和后续动作
 - **回复规则**：关键词、文本或图片回复、默认回复及回复次数限制
-- **AI 设置**：OpenAI 兼容 API 地址、API Key、模型和全局提示词
+- **Brain 设置**：Harness provider、模型、Base URL、推理强度、超时和密钥状态；旧 AI 字段只用于一次性迁移
 - **议价策略**：最大折扣比例、最大折扣金额和最多议价轮次
 - **通知设置**：Bark、钉钉、飞书、企业微信、Telegram、邮件和 Webhook
 - **日志设置**：日志等级、输出格式和续期日志保留天数
 - **管理凭据**：管理员用户名、密码和邮箱
 
-AI Base URL 支持 OpenAI 兼容接口，可连接 OpenAI、通义千问、Ollama、vLLM、
-LocalAI 或兼容网关。只有在明确了解数据流向时才应向外部 AI 或远程验证服务传递
-消息内容与账号数据。
+Brain Base URL 由受控 Harness provider 使用，可连接官方 DeepSeek 或管理员配置的兼容网关。
+Harness 只生成结构化草案，消息发送、价格校验和落库仍由 Go 服务完成。只有在明确了解
+数据流向时才应向外部模型服务传递消息内容与账号数据。
 
 ## Docker 部署
 
@@ -439,7 +448,7 @@ LocalAI 或兼容网关。只有在明确了解数据流向时才应向外部 AI
 GitHub Actions 会将同一标签发布为多架构镜像：
 
 ```text
-ghcr.io/christ9038/ydisks-xianyu-helper:latest
+ghcr.io/dh-devmax/xyu:latest
 ├── linux/amd64
 └── linux/arm64
 ```
@@ -477,7 +486,7 @@ docker compose up -d
 | 服务 | 用途 |
 | --- | --- |
 | `postgres` | PostgreSQL 17 数据库，仅在 Compose 内部网络开放 5432 |
-| `app` | Ydisks闲鱼助手主服务、前端和 Chromium |
+| `app` | DH闲不下来主服务、前端和 Chromium |
 
 `app` 会在首次启动时自动创建 `admin`；如果管理员已存在，后续 `up`、重启或升级均不会
 修改其密码。
@@ -496,8 +505,8 @@ docker compose up -d
 ### 完整部署步骤
 
 ```bash
-git clone https://github.com/Christ9038/Ydisks-Xianyu-Helper.git
-cd Ydisks-Xianyu-Helper
+git clone https://github.com/DH-devmax/xyu.git
+cd xyu
 cp .env.example .env
 ```
 
@@ -747,7 +756,7 @@ go run ./cmd/server -init-admin -db data/xianyu_data.db -admin-password '新密�
 
 ## 开源协议
 
-本项目采用 [Apache License 2.0](LICENSE) 开源，版权所有 © 2026 Christ9038。
+本项目采用 [Apache License 2.0](LICENSE) 开源，版权所有 © 2026 DH-devmax。
 
 完整许可条款见 [LICENSE](LICENSE)，
 原项目名称、版权与署名声明见 [NOTICE](NOTICE)。分发原始或衍生作品时，请保留这两个

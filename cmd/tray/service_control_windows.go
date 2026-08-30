@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/DH-devmax/xyu/internal/product"
 	"golang.org/x/sys/windows"
 )
 
@@ -36,7 +37,7 @@ func serviceAction(action string) error {
 	}
 
 	// name 用于本次流程后续判断的名称
-	name := envOr("XIANYU_SERVICE_NAME", "YdisksXianyuHelper")
+	name := product.EnvironmentValue("XIANYU_SERVICE_NAME", product.WindowsServiceName)
 	// controller、err 用于本次流程后续判断的controller、err
 	controller, err := openWindowsServiceController(name)
 	if err != nil {
@@ -217,5 +218,5 @@ func logDirectoryPath() (string, error) {
 			return "", fmt.Errorf("获取 Windows 数据目录失败: %w", err)
 		}
 	}
-	return filepath.Join(base, "YdisksXianyuHelper", "logs"), nil
+	return filepath.Join(base, product.DesktopDataDirName, "logs"), nil
 }

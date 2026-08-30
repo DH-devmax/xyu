@@ -2,7 +2,7 @@
 
 ## 决策
 
-`Ydisks-Xianyu-Helper` 是唯一产品根仓库。Go 服务继续拥有账号运行时、业务数据、
+`xyu` 是唯一产品根仓库。Go 服务继续拥有账号运行时、业务数据、
 自动化、消息发送、价格策略、HTTP/OpenAPI 和 WebSocket。DeepSeek Harness 是内部
 `brain` 子系统，只生成结构化回复草案和决策建议。
 

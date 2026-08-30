@@ -137,30 +137,32 @@ const Settings: React.FC = () => {
             </div>
           </section>
 
-          {/* AI Configuration */}
+          {/* Legacy AI Configuration */}
           <section className="space-y-4">
             <h3 className="text-lg font-extrabold text-gray-800 flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-brand text-white">
                     <Sparkles className="w-4 h-4" />
                 </div>
-                AI 智能回复配置
+                旧版 AI 设置（迁移兼容）
             </h3>
+
+            <p className="text-xs text-gray-500">v2 的客服请求统一由 Brain Center 中的 Harness runtime 处理；这里仅保留旧字段，供升级迁移和回滚核对。</p>
 
             <div className="ios-card rounded-xl p-6 bg-white space-y-6">
               <div className="space-y-3">
-                <label className="block text-sm font-bold text-gray-800">API 地址</label>
+                <label className="block text-sm font-bold text-gray-800">旧版 API 地址</label>
                 <input
                   type="text"
                   value={settings.ai_api_url || DEFAULT_AI_API_URL}
                   onChange={/* 当前回调处理用户交互或异步状态变化。 */ e => setSettings({...settings, ai_api_url: e.target.value})}
                   className="w-full ios-input px-4 py-3 rounded-xl text-sm"
-                  placeholder="https://api.openai.com/v1"
+                  placeholder="https://provider.example/v1"
                 />
                 <p className="text-xs text-gray-500">无需补全 /chat/completions</p>
               </div>
 
               <div className="space-y-3">
-                <label className="block text-sm font-bold text-gray-800">API Key</label>
+                <label className="block text-sm font-bold text-gray-800">旧版 API Key</label>
                 <div className="relative">
                   <input
                     type={showApiKey ? 'text' : 'password'}
@@ -180,7 +182,7 @@ const Settings: React.FC = () => {
               </div>
 
               <div className="space-y-3">
-                <label className="block text-sm font-bold text-gray-800">模型</label>
+                <label className="block text-sm font-bold text-gray-800">旧版模型</label>
                 <div ref={modelPickerRef} className="relative flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
                     <input
@@ -236,23 +238,23 @@ const Settings: React.FC = () => {
                     className="px-4 py-3 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-60 font-bold flex items-center justify-center gap-2 whitespace-nowrap"
                   >
                     <RefreshCw className={`w-4 h-4 ${modelsLoading ? 'animate-spin' : ''}`} />
-                    读取模型
+                    读取旧模型
                   </button>
                 </div>
                 {modelError ? (
                   <p className="text-xs text-red-500">{modelError}</p>
                 ) : (
                   <p className="text-xs text-gray-500">
-                    {aiModels.length > 0 ? `已从当前 API 地址读取到 ${aiModels.length} 个模型` : '模型列表从当前 API 地址读取，也可以手动输入模型名'}
+                    {aiModels.length > 0 ? `已从旧版地址读取到 ${aiModels.length} 个模型` : '旧版模型字段仅用于兼容迁移；新的模型配置请在 Brain Center 完成'}
                   </p>
                 )}
               </div>
 
               <div className="p-3 bg-blue-50 rounded-xl text-xs text-blue-700">
-                <strong>常见 AI 服务:</strong>
+                <strong>v2 配置入口:</strong>
                 <ul className="list-disc list-inside mt-1 space-y-0.5">
-                  <li>阿里云通义千问: https://dashscope.aliyuncs.com/compatible-mode/v1</li>
-                  <li>OpenAI: https://api.openai.com/v1</li>
+                  <li>打开管理员侧栏中的 Brain Center</li>
+                  <li>选择 Harness provider 并保存脱敏设置</li>
                 </ul>
               </div>
             </div>

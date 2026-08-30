@@ -1,25 +1,35 @@
 import { contractClient, runContractRequest } from '../../../shared/api-contract/client';
 import type { RequestControlOptions } from '../../../shared/http/client';
-import type { components } from '../../../shared/api-contract/generated/schema';
+import type {
+  BrainReplyDraftTransport,
+  BrainSessionDetailTransport,
+  BrainSessionTransport,
+  BrainSettingsTransport,
+  BrainSettingsUpdateTransport,
+  BrainStatusTransport,
+  BrainTestTurnRequestTransport,
+  BrainTurnTransport,
+  BrainToolTransport,
+} from '../../../shared/api-contract/brain';
 
 // BrainStatus 是 Brain runtime 状态接口的前端只读模型。
-export type BrainStatus = components['schemas']['BrainStatusResponse'];
+export type BrainStatus = BrainStatusTransport;
 // BrainSettings 是脱敏后的 Brain provider 配置模型。
-export type BrainSettings = components['schemas']['BrainSettingsResponse'];
+export type BrainSettings = BrainSettingsTransport;
 // BrainSettingsUpdate 是管理员保存 Brain provider 配置时使用的请求模型。
-export type BrainSettingsUpdate = components['schemas']['BrainSettingsUpdateRequest'];
+export type BrainSettingsUpdate = BrainSettingsUpdateTransport;
 // BrainTool 是客服 profile 暴露的单个工具描述。
-export type BrainTool = components['schemas']['BrainTool'];
+export type BrainTool = BrainToolTransport;
 // BrainSession 是 Brain 会话列表中的稳定摘要模型。
-export type BrainSession = components['schemas']['BrainSession'];
+export type BrainSession = BrainSessionTransport;
 // BrainSessionDetail 是会话详情及其轮次账本。
-export type BrainSessionDetail = components['schemas']['BrainSessionDetailResponse'];
+export type BrainSessionDetail = BrainSessionDetailTransport;
 // BrainTurn 是 Brain 幂等账本中的单轮执行记录。
-export type BrainTurn = components['schemas']['BrainTurn'];
+export type BrainTurn = BrainTurnTransport;
 // BrainTestTurnRequest 是隔离测试台提交的最小消息载荷。
-export type BrainTestTurnRequest = components['schemas']['BrainTestTurnRequest'];
+export type BrainTestTurnRequest = BrainTestTurnRequestTransport;
 // BrainReplyDraft 是 Harness 返回的草案结果。
-export type BrainReplyDraft = components['schemas']['BrainReplyDraftResponse'];
+export type BrainReplyDraft = BrainReplyDraftTransport;
 
 /** 读取 Brain runtime 状态和最近一次错误摘要。 */
 export const getBrainStatus = (options?: RequestControlOptions): Promise<BrainStatus> =>

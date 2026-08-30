@@ -12,6 +12,9 @@ const requiredValues = new Map([
   ['display_name', manifest.product?.display_name === 'DH闲不下来'],
   ['slug', manifest.product?.slug === 'dh-xianyu-agentpanel'],
   ['repository', manifest.product?.repository === 'https://github.com/DH-devmax/xyu'],
+  ['branding_source', manifest.branding?.source === 'branding/logo.jpg'],
+  ['branding_source_sha256', manifest.branding?.source_sha256 === '726ee78d1a0d4f8979358ca2cae128fcf74aa73b5a24fe3d211e0c05b13da1ea'],
+  ['branding_crop', manifest.branding?.crop === '520x520+250+245'],
   ['harness_tag', manifest.components?.deepseek_harness?.tag === 'dsh-v0.1.2-alpha.1'],
   ['harness_commit', manifest.components?.deepseek_harness?.commit === 'cd5ef8148158c3a752a658978873241fdf8e2bbc'],
 ]);

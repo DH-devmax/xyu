@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Ydisks 闲鱼助手 API
+  title: DH闲不下来 API
   version: 1.0.0
   description: 版本化 HTTP API 的唯一契约源。
 servers:

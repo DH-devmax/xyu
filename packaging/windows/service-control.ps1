@@ -3,7 +3,8 @@
     [ValidateSet('stop', 'register', 'start', 'install', 'uninstall')]
     [string]$Mode,
 
-    [string]$ServiceName = 'YdisksXianyuHelper',
+    [string]$ServiceName = 'DhXianyuAgentPanel',
+    [string]$LegacyServiceName = 'YdisksXianyuHelper',
     [string]$ExePath = '',
     [string]$TrayPath = '',
     [string]$WorkDir = '',
@@ -72,6 +73,22 @@ function Stop-InstalledTray {
 function Stop-InstalledComponents {
     Stop-InstalledTray
     Stop-InstalledService
+    if (-not [string]::IsNullOrWhiteSpace($LegacyServiceName) -and $LegacyServiceName -ne $ServiceName) {
+        $legacyService = Get-Service -Name $LegacyServiceName -ErrorAction SilentlyContinue
+        if ($null -ne $legacyService) {
+            try {
+                if ($legacyService.Status -ne [System.ServiceProcess.ServiceControllerStatus]::Stopped) {
+                    Stop-Service -Name $LegacyServiceName -ErrorAction Stop
+                    $legacyService.WaitForStatus(
+                        [System.ServiceProcess.ServiceControllerStatus]::Stopped,
+                        [TimeSpan]::FromSeconds(30)
+                    )
+                }
+            } finally {
+                $legacyService.Dispose()
+            }
+        }
+    }
 }
 
 function Wait-ServiceDeleted {
@@ -145,7 +162,7 @@ function Register-InstalledService {
         }
         New-Service -Name $ServiceName `
             -BinaryPathName $binaryPath `
-            -DisplayName 'Ydisks Xianyu Helper' `
+            -DisplayName 'DH闲不下来' `
             -StartupType Automatic `
             -ErrorAction Stop | Out-Null
     } else {
@@ -153,7 +170,7 @@ function Register-InstalledService {
     }
 
     Invoke-ScChecked config $ServiceName 'start=' 'delayed-auto'
-    Invoke-ScChecked description $ServiceName 'Ydisks Xianyu Helper background service'
+    Invoke-ScChecked description $ServiceName 'DH闲不下来 background service'
     Grant-InteractiveUserServiceControl
 
     if (-not (Test-ServiceInstalled)) {

@@ -6,6 +6,13 @@
     "version": "2.0.0-alpha.0",
     "repository": "https://github.com/DH-devmax/xyu"
   },
+  "branding": {
+    "source": "branding/logo.jpg",
+    "source_sha256": "726ee78d1a0d4f8979358ca2cae128fcf74aa73b5a24fe3d211e0c05b13da1ea",
+    "crop": "520x520+250+245",
+    "master": "branding/app-icon.png",
+    "web_favicon": "branding/favicon.png"
+  },
   "identifiers": {
     "go_module": "github.com/DH-devmax/xyu",
     "linux_service": "dh-xianyu-agentpanel.service",

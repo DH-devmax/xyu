@@ -9,12 +9,14 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/DH-devmax/xyu/internal/product"
 )
 
 // serviceAction 封装service动作业务协调。
 func serviceAction(action string) error {
 	// label 用于本次流程后续判断的label
-	label := envOr("XIANYU_SERVICE_NAME", "com.ydisks.xianyu-helper.server")
+	label := product.EnvironmentValue("XIANYU_SERVICE_NAME", product.MacOSServerLabel)
 	// uid 用于本次流程后续判断的uid
 	uid := fmt.Sprint(os.Getuid())
 	// domain 用于本次流程后续判断的domain
@@ -110,7 +112,7 @@ func logDirectoryPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("获取用户目录失败: %w", err)
 	}
-	return filepath.Join(home, "Library", "Logs", "YdisksXianyuHelper"), nil
+	return filepath.Join(home, "Library", "Logs", product.DesktopDataDirName), nil
 }
 
 // launchctl 封装launchctl业务协调。

@@ -29,6 +29,10 @@ const profilePath = process.env.DH_BRAIN_PROFILE_PATH ?? join(productRoot, 'brai
 const dataRoot = process.env.DH_BRAIN_DATA_ROOT ?? join(productRoot, 'data/brain')
 const mcpBackendURL = String(process.env.DH_BRAIN_MCP_BACKEND_URL ?? '').trim()
 const mcpBackendToken = String(process.env.DH_BRAIN_MCP_BACKEND_TOKEN ?? '').trim()
+// mcpClientURL/mcpClientToken 是 gateway 暴露给 Harness profile 的一次性地址和凭证。
+// 随机监听端口在模块加载后才确定，因此使用可更新变量保存最终值。
+let mcpClientURL = String(process.env.DH_BRAIN_MCP_URL ?? '').trim()
+let mcpClientToken = String(process.env.DH_BRAIN_MCP_TOKEN ?? '').trim()
 const maxConcurrency = boundedInteger(process.env.DH_BRAIN_MAX_CONCURRENCY, 4, 1, 16)
 const queueTimeoutMS = boundedInteger(process.env.DH_BRAIN_QUEUE_TIMEOUT_MS, 5_000, 100, 30_000)
 const requestTimeoutMS = boundedInteger(process.env.DH_BRAIN_TIMEOUT_MS, 30_000, 1_000, 90_000)
@@ -161,7 +165,7 @@ function createHarness() {
   const provider = process.env.DH_BRAIN_PROVIDER ?? 'deepseek-official'
   const model = process.env.DH_BRAIN_MODEL ?? 'deepseek-v4-flash'
   const reasoningEffort = process.env.DH_BRAIN_REASONING_EFFORT ?? 'high'
-  const childEnvironment = { ...process.env, DH_BRAIN_MCP_URL: process.env.DH_BRAIN_MCP_URL }
+  const childEnvironment = { ...process.env, DH_BRAIN_MCP_URL: mcpClientURL, DH_BRAIN_MCP_TOKEN: mcpClientToken }
   return new DeepSeekHarness({
     profile: 'sdk',
     patches: [profilePath],
@@ -193,6 +197,8 @@ function makeState() {
 }
 
 const state = makeState()
+// harnessStartPromise 合并并发 session 的首次启动，避免多个请求同时拉起 SDK 子进程。
+let harnessStartPromise
 
 /** setState 更新状态快照并保持时间单调可观察。 */
 function setState(nextState, errorMessage = '') {
@@ -204,20 +210,30 @@ function setState(nextState, errorMessage = '') {
 
 /** ensureHarness 延迟启动 Harness，并在首次握手失败时清理实例。 */
 async function ensureHarness() {
-  if (state.harness === undefined) state.harness = createHarness()
-  try {
-    await state.harness.start()
-    setState('running')
-    return state.harness
-  } catch (error) {
-    setState('degraded', String(error))
-    await closeHarness()
-    throw error
-  }
+  if (harnessStartPromise !== undefined) return harnessStartPromise
+  harnessStartPromise = (async () => {
+    if (state.harness === undefined) state.harness = createHarness()
+    try {
+      await state.harness.start()
+      setState('running')
+      return state.harness
+    } catch (error) {
+      setState('degraded', String(error))
+      // 当前 promise 不能通过 closeHarness 再次等待自己；在此处直接回收失败实例。
+      const failedHarness = state.harness
+      state.harness = undefined
+      if (failedHarness !== undefined) await Promise.allSettled([failedHarness.close()])
+      throw error
+    } finally {
+      harnessStartPromise = undefined
+    }
+  })()
+  return harnessStartPromise
 }
 
 /** closeHarness 回收当前 SDK 实例及其 dsh 子进程。 */
 async function closeHarness() {
+  if (harnessStartPromise !== undefined) await Promise.allSettled([harnessStartPromise])
   const harness = state.harness
   state.harness = undefined
   if (harness !== undefined) await Promise.allSettled([harness.close()])
@@ -363,9 +379,11 @@ const server = createServer((request, response) => {
 server.listen(0, host, () => {
   const address = server.address()
   if (address === null || typeof address === 'string') throw new Error('gateway did not bind TCP')
-  process.env.DH_BRAIN_MCP_URL = `http://${host}:${address.port}/internal/v1/mcp`
-  process.env.DH_BRAIN_MCP_TOKEN = bearerToken
-  setState('running')
+  mcpClientURL = `http://${host}:${address.port}/internal/v1/mcp`
+  mcpClientToken = bearerToken
+  process.env.DH_BRAIN_MCP_URL = mcpClientURL
+  process.env.DH_BRAIN_MCP_TOKEN = mcpClientToken
+  setState('starting')
   process.stdout.write(`${JSON.stringify({ ready: true, host, port: address.port, contract_version: contractVersion })}\n`)
 })
 

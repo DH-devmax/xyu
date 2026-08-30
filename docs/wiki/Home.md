@@ -1,4 +1,4 @@
-# Ydisks闲鱼助手 Wiki
+# DH闲不下来 Wiki
 
 本 Wiki 面向管理后台操作人员。先完成“部署与数据库”和“账号接入”，再配置库存、商品、
 在线聊天、账号自动任务、交易自动化与 AI。
@@ -14,7 +14,7 @@
 6. 同步已有商品，或通过“商品管理”发布商品。
 7. 在“在线聊天”确认账号会话和历史消息正常，必要时发送测试文本或图片。
 8. 在“账号自动任务”配置自动评价和每日擦亮；在“自动化规则”建立付款发货、评价赠品或求评价规则。
-9. 可选：在“系统与 AI”配置模型，再为每个账号启用 AI。
+9. 可选：在“系统与 AI”配置 Harness provider，再为每个账号启用 Brain。
 10. 建立通知渠道并绑定到账号；用测试通知验证。
 11. 用小额测试订单验证“卡密发送 → 确认发货”全过程后，再开放正式商品。
 
@@ -25,10 +25,10 @@
 管理后台侧边栏底部会显示当前运行版本和短提交号。源码运行默认显示 `dev`/`unknown`；正式安装包和
 Docker 镜像会显示构建时注入的正式版本与提交信息。
 
-Windows 安装包注册 `YdisksXianyuHelper` 服务；macOS 安装包分别提供 Apple Silicon（arm64）和
-Intel（amd64）版本，并注册 `com.ydisks.xianyu-helper.server` 与
-`com.ydisks.xianyu-helper.tray` 两个 LaunchAgent。Linux 安装包按 amd64/arm64 分发，执行
-`sudo ./install.sh` 后注册 `ydisks-xianyu-helper.service`。三种独立安装包都在构建阶段准备匹配架构
+Windows 安装包注册 `DhXianyuAgentPanel` 服务；macOS 安装包分别提供 Apple Silicon（arm64）和
+Intel（amd64）版本，并注册 `com.dhdevmax.xianyu-agentpanel.server` 与
+`com.dhdevmax.xianyu-agentpanel.tray` 两个 LaunchAgent。Linux 安装包按 amd64/arm64 分发，执行
+`sudo ./install.sh` 后注册 `dh-xianyu-agentpanel.service`。三种独立安装包都在构建阶段准备匹配架构
 的 Chromium，不依赖 Debian 仓库版本。
 
 ## 先读这些页面

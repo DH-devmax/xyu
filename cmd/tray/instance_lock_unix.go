@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/DH-devmax/xyu/internal/product"
 	"golang.org/x/sys/unix"
 )
 
@@ -18,7 +19,7 @@ func acquireTrayInstance() (release func(), acquired bool, err error) {
 		return nil, false, fmt.Errorf("获取用户缓存目录失败: %w", err)
 	}
 	// lockDirectory 用于本次流程后续判断的锁Directory
-	lockDirectory := filepath.Join(cacheDirectory, "YdisksXianyuHelper")
+	lockDirectory := filepath.Join(cacheDirectory, product.DesktopDataDirName)
 	if // err 用于本次流程后续判断的err
 	err := os.MkdirAll(lockDirectory, 0o755); err != nil {
 		return nil, false, fmt.Errorf("创建托盘锁目录失败: %w", err)

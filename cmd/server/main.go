@@ -27,6 +27,7 @@ import (
 	"github.com/DH-devmax/xyu/internal/logging"
 	"github.com/DH-devmax/xyu/internal/logsafe"
 	"github.com/DH-devmax/xyu/internal/netguard"
+	"github.com/DH-devmax/xyu/internal/product"
 	appversion "github.com/DH-devmax/xyu/internal/version"
 )
 
@@ -57,7 +58,7 @@ type serverOptions struct {
 // defaultDBPath 保存默认 SQLite 数据库的相对路径；桌面运行时会根据 dataDir 重定位。
 const (
 	defaultDBPath      = "data/xianyu_data.db"
-	userDataDirName    = "YdisksXianyuHelper"
+	userDataDirName    = product.DesktopDataDirName
 	defaultDataKeyName = "data-key"
 	// httpShutdownTimeout 限制 HTTP 请求排空和 Server 自有后台任务等待时长。
 	httpShutdownTimeout = 10 * time.Second
@@ -152,10 +153,12 @@ var platformServiceRunner = runPlatformService
 
 // main 封装main业务协调。
 func main() {
+	// 新产品前缀先映射到旧业务读取点，保证升级后的密钥和管理员配置立即生效。
+	product.ApplyEnvironmentAliases()
 	// opts 是命令行解析出的服务启动选项。
 	opts := parseOptions()
 	if opts.showVersion {
-		fmt.Printf("Ydisks Xianyu Helper %s (commit %s, built %s)\n", appversion.Version, appversion.ShortCommit(), appversion.BuildTime)
+		fmt.Printf("DH闲不下来 %s (commit %s, built %s)\n", appversion.Version, appversion.ShortCommit(), appversion.BuildTime)
 		return
 	}
 	if opts.workDir != "" {
@@ -170,7 +173,7 @@ func main() {
 	run := func(ctx context.Context) error { return runServer(ctx, opts) }
 	if opts.service {
 		// err 表示平台注册或运行服务失败。
-		if err := platformServiceRunner("YdisksXianyuHelper", run); err != nil {
+		if err := platformServiceRunner(product.WindowsServiceName, run); err != nil {
 			fmt.Fprintf(os.Stderr, "服务运行失败: %s\n", logsafe.Error(err))
 			os.Exit(1)
 		}
@@ -244,6 +247,8 @@ func runServer(parent context.Context, opts serverOptions) error {
 
 // prepareServerStartup 解析数据目录、Playwright 路径、数据密钥、数据库地址和日志启动策略，并把必需环境变量写入当前进程。
 func prepareServerStartup(opts *serverOptions) (serverStartupConfig, error) {
+	// 测试或嵌入式调用可能绕过 main，仍需在读取配置前完成新旧变量兼容映射。
+	product.ApplyEnvironmentAliases()
 	// dataDir 是显式 workdir 或桌面平台默认用户数据目录。
 	dataDir, err := resolveDataDir(opts.workDir)
 	if err != nil {

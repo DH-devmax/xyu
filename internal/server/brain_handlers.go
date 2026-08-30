@@ -250,8 +250,13 @@ func (s *Server) brainSettings(w http.ResponseWriter, r *http.Request) {
 		writeErrRequest(w, r, http.StatusUnauthorized, "未授权访问")
 		return
 	}
+	// application、available 保存 Brain Port 及其装配状态，兼容未启用 Brain 的旧组合测试。
+	application, available := s.requireBrainApplication(w, r)
+	if !available {
+		return
+	}
 	// settings、err 保存脱敏设置及应用层错误。
-	settings, err := s.brainApplication().GetSettings(r.Context(), identity.UserID, true)
+	settings, err := application.GetSettings(r.Context(), identity.UserID, true)
 	if err != nil {
 		writeBrainError(w, r, err)
 		return
@@ -267,6 +272,11 @@ func (s *Server) updateBrainSettings(w http.ResponseWriter, r *http.Request) {
 		writeErrRequest(w, r, http.StatusUnauthorized, "未授权访问")
 		return
 	}
+	// application、available 保存 Brain Port 及其装配状态。
+	application, available := s.requireBrainApplication(w, r)
+	if !available {
+		return
+	}
 	// request 保存具名设置更新 DTO。
 	var request brainSettingsUpdateRequest
 	// err 保存当前步骤的中间结果。
@@ -279,7 +289,7 @@ func (s *Server) updateBrainSettings(w http.ResponseWriter, r *http.Request) {
 		BaseURL: request.BaseURL, ReasoningEffort: request.ReasoningEffort, TimeoutMS: request.TimeoutMS, QueueTimeoutMS: request.QueueTimeoutMS,
 		MaxConcurrency: request.MaxConcurrency}, APIKeyAction: request.APIKeyAction, APIKeyValue: request.APIKeyValue}
 	// settings、err 保存保存后重新读取的脱敏设置及错误。
-	settings, err := s.brainApplication().UpdateSettings(r.Context(), identity.UserID, true, update)
+	settings, err := application.UpdateSettings(r.Context(), identity.UserID, true, update)
 	if err != nil {
 		writeBrainError(w, r, err)
 		return
@@ -295,6 +305,11 @@ func (s *Server) brainSessions(w http.ResponseWriter, r *http.Request) {
 		writeErrRequest(w, r, http.StatusUnauthorized, "未授权访问")
 		return
 	}
+	// application、available 保存 Brain Port 及其装配状态。
+	application, available := s.requireBrainApplication(w, r)
+	if !available {
+		return
+	}
 	// limit、limitErr 保存查询分页上限及解析错误。
 	limit, limitErr := queryLimit(r, 50)
 	if limitErr != nil {
@@ -302,7 +317,7 @@ func (s *Server) brainSessions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// sessions、err 保存授权会话列表及错误。
-	sessions, err := s.brainApplication().ListSessions(r.Context(), identity.UserID, identity.Admin, limit)
+	sessions, err := application.ListSessions(r.Context(), identity.UserID, identity.Admin, limit)
 	if err != nil {
 		writeBrainError(w, r, err)
 		return
@@ -324,6 +339,11 @@ func (s *Server) brainSession(w http.ResponseWriter, r *http.Request) {
 		writeErrRequest(w, r, http.StatusUnauthorized, "未授权访问")
 		return
 	}
+	// application、available 保存 Brain Port 及其装配状态。
+	application, available := s.requireBrainApplication(w, r)
+	if !available {
+		return
+	}
 	// limit、limitErr 保存 turn 查询上限及解析错误。
 	limit, limitErr := queryLimit(r, 50)
 	if limitErr != nil {
@@ -331,7 +351,7 @@ func (s *Server) brainSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// detail、err 保存授权会话详情及错误。
-	detail, err := s.brainApplication().GetSession(r.Context(), identity.UserID, identity.Admin, chi.URLParam(r, "id"), limit)
+	detail, err := application.GetSession(r.Context(), identity.UserID, identity.Admin, chi.URLParam(r, "id"), limit)
 	if err != nil {
 		writeBrainError(w, r, err)
 		return
@@ -353,8 +373,13 @@ func (s *Server) brainTools(w http.ResponseWriter, r *http.Request) {
 		writeErrRequest(w, r, http.StatusUnauthorized, "未授权访问")
 		return
 	}
+	// application、available 保存 Brain Port 及其装配状态。
+	application, available := s.requireBrainApplication(w, r)
+	if !available {
+		return
+	}
 	// tools、err 保存固定工具目录及应用错误。
-	tools, err := s.brainApplication().Tools(r.Context(), identity.UserID)
+	tools, err := application.Tools(r.Context(), identity.UserID)
 	if err != nil {
 		writeBrainError(w, r, err)
 		return
@@ -376,6 +401,11 @@ func (s *Server) brainTestTurn(w http.ResponseWriter, r *http.Request) {
 		writeErrRequest(w, r, http.StatusUnauthorized, "未授权访问")
 		return
 	}
+	// application、available 保存 Brain Port 及其装配状态。
+	application, available := s.requireBrainApplication(w, r)
+	if !available {
+		return
+	}
 	// request 保存具名测试请求 DTO。
 	var request brainTestTurnRequest
 	// err 保存当前步骤的中间结果。
@@ -390,7 +420,7 @@ func (s *Server) brainTestTurn(w http.ResponseWriter, r *http.Request) {
 		SessionID: strings.TrimSpace(request.SessionID), UserID: identity.UserID, AccountID: strings.TrimSpace(request.AccountID), ChatID: strings.TrimSpace(request.ChatID),
 		BuyerID: strings.TrimSpace(request.BuyerID), ItemID: strings.TrimSpace(request.ItemID), Message: strings.TrimSpace(request.Message), DeadlineAt: now + 30_000}}
 	// draft、err 保存测试草案及应用错误。
-	draft, err := s.brainApplication().TestTurn(r.Context(), identity.UserID, true, input)
+	draft, err := application.TestTurn(r.Context(), identity.UserID, true, input)
 	if err != nil {
 		writeBrainError(w, r, err)
 		return
@@ -406,12 +436,28 @@ func (s *Server) brainRestart(w http.ResponseWriter, r *http.Request) {
 		writeErrRequest(w, r, http.StatusUnauthorized, "未授权访问")
 		return
 	}
+	// application、available 保存 Brain Port 及其装配状态。
+	application, available := s.requireBrainApplication(w, r)
+	if !available {
+		return
+	}
 	// err 保存当前步骤的中间结果。
-	if err := s.brainApplication().Restart(r.Context(), identity.UserID, true); err != nil {
+	if err := application.Restart(r.Context(), identity.UserID, true); err != nil {
 		writeBrainError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, operationResponse{Success: true})
+}
+
+// requireBrainApplication 返回已装配的 Brain Port；未启用时统一给出 503，而不是让 handler 触发空接口 panic。
+func (s *Server) requireBrainApplication(w http.ResponseWriter, r *http.Request) (BrainPort, bool) {
+	// application 保存组合根注入的 Brain Port。
+	application := s.brainApplication()
+	if application == nil {
+		writeErrRequest(w, r, http.StatusServiceUnavailable, "Brain 服务未启用")
+		return nil, false
+	}
+	return application, true
 }
 
 // brainIdentity 从认证上下文提取最小用户身份和管理员标记。

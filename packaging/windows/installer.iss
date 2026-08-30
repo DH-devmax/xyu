@@ -1,7 +1,8 @@
 #define AppVersion GetEnv("APP_VERSION")
-#define AppPublisher "Christ9038"
+#define AppPublisher "DH-devmax"
 #define AppExeName "xianyu-server.exe"
-#define AppDataDir "{commonappdata}\YdisksXianyuHelper"
+#define AppDataDir "{commonappdata}\DhXianyuAgentPanel"
+#define LegacyAppDataDir "{commonappdata}\YdisksXianyuHelper"
 #define RepoRoot AddBackslash(SourcePath) + "..\.."
 #define WindowsDistDir AddBackslash(RepoRoot) + "dist\windows"
 #define WindowsRuntimeDir AddBackslash(WindowsDistDir) + "playwright-runtime\amd64"
@@ -15,7 +16,7 @@ AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
 DefaultDirName={autopf}\{cm:ProductName}
 DefaultGroupName={cm:ProductName}
-OutputBaseFilename=Ydisks-Xianyu-Helper-Setup
+OutputBaseFilename=DH-Xianyu-AgentPanel-Setup
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
@@ -30,9 +31,9 @@ Name: "chinesesimplified"; MessagesFile: "{#WindowsLanguageDir}\ChineseSimplifie
 Name: "chinesetraditional"; MessagesFile: "{#WindowsLanguageDir}\ChineseTraditional.isl"
 
 [CustomMessages]
-english.ProductName=Ydisks Xianyu Helper
-chinesesimplified.ProductName=Ydisks闲鱼助手
-chinesetraditional.ProductName=Ydisks闲鱼助手
+english.ProductName=DH Xianyu AgentPanel
+chinesesimplified.ProductName=DH闲不下来
+chinesetraditional.ProductName=DH闲不下来
 english.StartMenuShortcut=Create a Start Menu shortcut
 chinesesimplified.StartMenuShortcut=创建开始菜单快捷方式
 chinesetraditional.StartMenuShortcut=创建开始菜单快捷方式
@@ -53,6 +54,8 @@ Source: "{#WindowsIconDir}\icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#WindowsRuntimeDir}\*"; DestDir: "{app}\playwright-runtime"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "service-control.ps1"; Flags: dontcopy
 Source: "service-control.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "migrate-data.ps1"; Flags: dontcopy
+Source: "migrate-data.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
 [Dirs]
 Name: "{#AppDataDir}"
@@ -60,7 +63,7 @@ Name: "{#AppDataDir}\data"
 Name: "{#AppDataDir}\logs"; Permissions: users-modify
 
 [Registry]
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "YdisksXianyuHelperTray"; ValueData: """{app}\xianyu-tray.exe"""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "DhXianyuAgentPanelTray"; ValueData: """{app}\xianyu-tray.exe"""; Flags: uninsdeletevalue
 
 [Tasks]
 Name: "startmenuicon"; Description: "{cm:StartMenuShortcut}"; GroupDescription: "{cm:ShortcutOptions}"
@@ -88,7 +91,7 @@ begin
     ScriptPath + '" -Mode ' + Mode +
     ' -ExePath "' + ExpandConstant('{app}\xianyu-server.exe') +
     '" -TrayPath "' + ExpandConstant('{app}\xianyu-tray.exe') +
-    '" -WorkDir "' + ExpandConstant('{commonappdata}\YdisksXianyuHelper') +
+    '" -WorkDir "' + ExpandConstant('{commonappdata}\DhXianyuAgentPanel') +
     '" -RuntimeRoot "' + ExpandConstant('{app}\playwright-runtime') + '"';
 end;
 
@@ -108,6 +111,26 @@ begin
     Result := '无法执行旧服务停止脚本。'
   else if ResultCode <> 0 then
     Result := '旧版后台服务停止失败，错误码：' + IntToStr(ResultCode) + '。';
+  if Result = '' then
+  begin
+    ExtractTemporaryFile('migrate-data.ps1');
+    if DirExists(ExpandConstant('{commonappdata}\YdisksXianyuHelper')) and
+       (not DirExists(ExpandConstant('{commonappdata}\DhXianyuAgentPanel')))
+    then
+      if not Exec(
+        ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+        '-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
+          ExpandConstant('{tmp}\migrate-data.ps1') + '" -Source "' +
+          ExpandConstant('{commonappdata}\YdisksXianyuHelper') + '" -Destination "' +
+          ExpandConstant('{commonappdata}\DhXianyuAgentPanel') + '" -RollbackDir "' +
+          ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration') + '" -Record "' +
+          ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration\migration.env') + '"',
+        '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
+      then
+        Result := '无法执行数据迁移脚本。'
+      else if ResultCode <> 0 then
+        Result := '旧数据迁移失败，错误码：' + IntToStr(ResultCode) + '。';
+  end;
 end;
 
 procedure RegisterWindowsService;

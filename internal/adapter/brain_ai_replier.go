@@ -65,7 +65,8 @@ func NewBrainAIReplierFactory(runtime BrainReplyRuntime) engine.AIReplierFactory
 
 // Reply 实现 engine.AIReplier：API 和关键词未命中后才进入 Harness。
 func (replier *brainAIReplier) Reply(ctx context.Context, message engine.ChatMessage) (*engine.ReplyResult, error) {
-	if replier == nil || replier.store == nil || replier.runtime == nil {
+	if replier == nil || replier.store == nil || replier.runtime == nil ||
+		replier.store.Settings == nil || replier.store.AIReply == nil || replier.store.Brain == nil {
 		return nil, nil
 	}
 	if !replier.brainEnabled(ctx) {
@@ -167,6 +168,9 @@ func (replier *brainAIReplier) Reply(ctx context.Context, message engine.ChatMes
 
 // brainEnabled 读取全局开关；空值兼容尚未执行 v2 迁移的旧数据库。
 func (replier *brainAIReplier) brainEnabled(ctx context.Context) bool {
+	if replier == nil || replier.store == nil || replier.store.Settings == nil {
+		return false
+	}
 	// err、value 保存当前步骤的中间结果。
 	value, err := replier.store.Settings.Get(ctx, "brain_enabled")
 	if err != nil || strings.TrimSpace(value) == "" {

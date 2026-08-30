@@ -1,8 +1,8 @@
 # Third-Party Notices
 
-## Ydisks-Xianyu-Helper baseline
+## DH闲不下来 baseline
 
-The product is derived from `Christ9038/Ydisks-Xianyu-Helper` v1.0.5 and retains its
+The product retains the v1.0.5 Ydisks-Xianyu-Helper baseline and its
 Apache License 2.0 license and notices in the repository history.
 
 ## DeepSeek Harness

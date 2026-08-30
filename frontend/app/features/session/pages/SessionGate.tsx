@@ -11,7 +11,7 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { YdisksBrandIcon } from '../../../../shared/ui/YdisksLogo';
+import { DHBrandIcon } from '../../../../shared/ui/DHBrandLogo';
 import { useSession } from '../../../providers/SessionProvider';
 
 // SessionGate 在会话校验完成前显示加载状态，并承载首次初始化和管理员登录表单。
@@ -92,14 +92,14 @@ export const SessionGate: React.FC = () => {
     <Box component="main" sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', bgcolor: 'background.default', p: { xs: 1.5, sm: 3 } }}>
       <Box sx={{ width: '100%', maxWidth: 960, display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 0.9fr) minmax(360px, 1fr)' }, gap: { xs: 2, md: 5 }, alignItems: 'center' }}>
         <Box sx={{ display: { xs: 'none', md: 'block' }, px: 3 }}>
-          <Box sx={{ width: 72, height: 72, mb: 2 }}><YdisksBrandIcon sizeClass="w-full h-full" gradientId="login-brand-desktop" /></Box>
+          <Box sx={{ width: 72, height: 72, mb: 2 }}><DHBrandIcon sizeClass="w-full h-full" /></Box>
           <Typography variant="h1" sx={{ fontSize: '2.35rem', maxWidth: 380 }}>DH闲不下来</Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 1.25, maxWidth: 380 }}>一个工作台管理账号运行、自动化规则、订单和 Harness 智能草案。</Typography>
         </Box>
         <Paper variant="outlined" sx={{ width: '100%', maxWidth: 480, justifySelf: 'center', p: { xs: 2.5, sm: 4 }, bgcolor: 'background.paper' }}>
           <Stack spacing={2.5}>
             <Stack spacing={0.75}>
-              <Box sx={{ display: { xs: 'flex', md: 'none' }, width: 50, height: 50, mb: 0.75 }}><YdisksBrandIcon sizeClass="w-full h-full" gradientId="login-brand-mobile" /></Box>
+              <Box sx={{ display: { xs: 'flex', md: 'none' }, width: 50, height: 50, mb: 0.75 }}><DHBrandIcon sizeClass="w-full h-full" /></Box>
               <Typography variant="h2" sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>{heading}</Typography>
               <Typography variant="body2" color="text.secondary">{description}</Typography>
             </Stack>

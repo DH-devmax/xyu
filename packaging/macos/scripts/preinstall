@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-INSTALL_LOG="/var/log/ydisks-xianyu-helper-install.log"
+INSTALL_LOG="/var/log/dh-xianyu-agentpanel-install.log"
 exec >>"$INSTALL_LOG" 2>&1
 trap 'exit_code=$?; printf "[%s] preinstall exit code: %s\\n" "$(date -u "+%Y-%m-%dT%H:%M:%SZ")" "$exit_code"' EXIT
 
@@ -9,9 +9,9 @@ printf '\n[%s] preinstall start; uid=%s; user=%s; args=%s\n' \
   "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$(id -u)" "$(id -un)" "$*"
 set -x
 
-EXPECTED_BUNDLE_ID="com.ydisks.xianyu-helper"
-CANONICAL_APP_DIR="/Applications/Ydisks闲鱼助手"
-CANONICAL_APP_PATH="$CANONICAL_APP_DIR/Ydisks闲鱼助手.app"
+EXPECTED_BUNDLE_ID="com.dhdevmax.xianyu-agentpanel"
+CANONICAL_APP_DIR="/Applications/DH闲不下来"
+CANONICAL_APP_PATH="$CANONICAL_APP_DIR/DH闲不下来.app"
 LEGACY_APP_PATH="/Applications/Ydisks Xianyu Helper.app"
 LEGACY_LOCALIZED_APP_DIR="/Applications/Ydisks Xianyu Helper.localized"
 LEGACY_LOCALIZED_APP_PATH="$LEGACY_LOCALIZED_APP_DIR/Ydisks Xianyu Helper.app"
@@ -20,6 +20,8 @@ CONSOLE_USER="$(stat -f '%Su' /dev/console)"
 if [ "$CONSOLE_USER" != "root" ] && [ -n "$CONSOLE_USER" ]; then
   UID_VALUE="$(id -u "$CONSOLE_USER")"
   for label in \
+    "com.dhdevmax.xianyu-agentpanel.server" \
+    "com.dhdevmax.xianyu-agentpanel.tray" \
     "com.ydisks.xianyu-helper.server" \
     "com.ydisks.xianyu-helper.tray" \
     "com.christ.ydisks-xianyu-helper.server" \

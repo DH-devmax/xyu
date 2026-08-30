@@ -13,10 +13,10 @@ import (
 	"strings"
 	"testing"
 
+	brainapp "github.com/DH-devmax/xyu/internal/application/brain"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers/legacy"
-	brainapp "github.com/DH-devmax/xyu/internal/application/brain"
 )
 
 // TestOpenAPISuccessContractCoverage 从唯一 OpenAPI 文档自动枚举普通 operation，确认每个 operation 都有真实成功响应断言记录。

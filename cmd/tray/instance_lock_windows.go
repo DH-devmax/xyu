@@ -5,13 +5,14 @@ package main
 import (
 	"fmt"
 
+	"github.com/DH-devmax/xyu/internal/product"
 	"golang.org/x/sys/windows"
 )
 
 // acquireTrayInstance 封装acquireTrayInstance业务协调。
 func acquireTrayInstance() (release func(), acquired bool, err error) {
 	// mutexName、err 用于本次流程后续判断的mutexName、err
-	mutexName, err := windows.UTF16PtrFromString(`Local\YdisksXianyuHelperTray`)
+	mutexName, err := windows.UTF16PtrFromString(`Local\` + product.WindowsServiceName + `Tray`)
 	if err != nil {
 		return nil, false, fmt.Errorf("生成托盘互斥锁名称失败: %w", err)
 	}

@@ -126,7 +126,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: .docker/playwright-runtime/${{ matrix.arch }}
-          key: ydisks-playwright-runtime-v6-docker-${{ matrix.arch }}-${{ matrix.playwright_platform }}-${{ hashFiles('go.mod', 'go.sum', 'cmd/browser-install/**') }}
+          key: dh-xianyu-agentpanel-playwright-runtime-v6-docker-${{ matrix.arch }}-${{ matrix.playwright_platform }}-${{ hashFiles('go.mod', 'go.sum', 'cmd/browser-install/**') }}
 
       - name: 准备 Docker Chromium runtime
         if: steps.cache-docker-playwright.outputs.cache-hit != 'true'
@@ -195,8 +195,8 @@ jobs:
             VCS_REF=${{ github.sha }}
             BUILD_TIME=${{ needs.verify.outputs.build_time }}
           outputs: type=image,name=${{ steps.image.outputs.name }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=ydisks-docker-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=ydisks-docker-${{ matrix.arch }}
+          cache-from: type=gha,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
           provenance: mode=max
           sbom: true
 
@@ -254,7 +254,7 @@ jobs:
       - name: 上传镜像摘要
         uses: actions/upload-artifact@v7
         with:
-          name: ydisks-docker-digest-${{ matrix.arch }}
+          name: dh-xianyu-agentpanel-docker-digest-${{ matrix.arch }}
           path: dist/digests/*
           if-no-files-found: error
           retention-days: 30
@@ -271,7 +271,7 @@ jobs:
       - name: 下载镜像摘要
         uses: actions/download-artifact@v8
         with:
-          pattern: ydisks-docker-digest-*
+          pattern: dh-xianyu-agentpanel-docker-digest-*
           path: dist/digests
           merge-multiple: true
 

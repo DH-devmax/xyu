@@ -24,7 +24,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { YdisksBrandIcon } from './YdisksLogo';
+import { DHBrandIcon } from './DHBrandLogo';
 
 // SidebarBuildInfo 描述应用壳传递给侧边栏的公开构建版本信息。
 export interface SidebarBuildInfo {
@@ -120,7 +120,7 @@ const SidebarContent: React.FC<{
         }}
       >
         <Box sx={{ width: 38, height: 38, flexShrink: 0 }} aria-label="DH闲不下来品牌">
-          <YdisksBrandIcon sizeClass="w-full h-full" />
+          <DHBrandIcon sizeClass="w-full h-full" />
         </Box>
         {!collapsed && (
           <Box sx={{ minWidth: 0 }}>

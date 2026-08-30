@@ -80,7 +80,7 @@ jobs:
       - name: 下载全部构建产物
         uses: actions/download-artifact@v8
         with:
-          pattern: ydisks-*
+          pattern: dh-xianyu-agentpanel-*
           path: dist/artifacts
           merge-multiple: true
 
@@ -96,11 +96,11 @@ jobs:
           find dist/artifacts -maxdepth 2 -type f -printf '%P\n' | sort
 
           expected_release_files=(
-            "ydisks-xianyu-helper-linux-amd64-$APP_VERSION.tar.gz"
-            "ydisks-xianyu-helper-linux-arm64-$APP_VERSION.tar.gz"
-            "Ydisks-Xianyu-Helper-Setup.exe"
-            "Ydisks-Xianyu-Helper-$APP_VERSION-arm64.pkg"
-            "Ydisks-Xianyu-Helper-$APP_VERSION-amd64.pkg"
+            "dh-xianyu-agentpanel-linux-amd64-$APP_VERSION.tar.gz"
+            "dh-xianyu-agentpanel-linux-arm64-$APP_VERSION.tar.gz"
+            "DH-Xianyu-AgentPanel-Setup.exe"
+            "DH-Xianyu-AgentPanel-$APP_VERSION-arm64.pkg"
+            "DH-Xianyu-AgentPanel-$APP_VERSION-amd64.pkg"
           )
           for release_file in "${expected_release_files[@]}"; do
             source_file="dist/artifacts/$release_file"
@@ -177,12 +177,12 @@ jobs:
           mapfile -t release_files < <(find dist/release -maxdepth 1 -type f -print | sort)
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release edit "$GITHUB_REF_NAME" \
-              --title "Ydisks 闲鱼助手 $APP_VERSION" \
+              --title "DH闲不下来 $APP_VERSION" \
               --notes-file "$release_notes_file"
             gh release upload "$GITHUB_REF_NAME" "${release_files[@]}" --clobber
           else
             gh release create "$GITHUB_REF_NAME" "${release_files[@]}" \
               --verify-tag \
               --notes-file "$release_notes_file" \
-              --title "Ydisks 闲鱼助手 $APP_VERSION"
+              --title "DH闲不下来 $APP_VERSION"
           fi

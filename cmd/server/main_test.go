@@ -387,7 +387,7 @@ func TestUserDataDirName(t *testing.T) {
 	// got 用于本次流程后续判断的got
 	got := filepath.Join(base, userDataDirName)
 	// want 用于本次流程后续判断的want
-	want := filepath.Join(base, "YdisksXianyuHelper")
+	want := filepath.Join(base, "DhXianyuAgentPanel")
 	if got != want {
 		t.Fatalf("unexpected user data directory: got %q want %q", got, want)
 	}
@@ -396,7 +396,7 @@ func TestUserDataDirName(t *testing.T) {
 // TestResolveDBPathUsesDataDirectoryForDefault 封装TestResolveDB路径Uses数据DirectoryForDefault业务协调。
 func TestResolveDBPathUsesDataDirectoryForDefault(t *testing.T) {
 	// dataDir 用于本次流程后续判断的数据Dir
-	dataDir := filepath.Join(t.TempDir(), "YdisksXianyuHelper")
+	dataDir := filepath.Join(t.TempDir(), "DhXianyuAgentPanel")
 	// got 用于本次流程后续判断的got
 	got := resolveDBPath(dataDir, defaultDBPath)
 	// want 用于本次流程后续判断的want
@@ -409,7 +409,7 @@ func TestResolveDBPathUsesDataDirectoryForDefault(t *testing.T) {
 // TestResolveDBPathPreservesCustomPath 封装TestResolveDB路径PreservesCustom路径业务协调。
 func TestResolveDBPathPreservesCustomPath(t *testing.T) {
 	// dataDir 用于本次流程后续判断的数据Dir
-	dataDir := filepath.Join(t.TempDir(), "YdisksXianyuHelper")
+	dataDir := filepath.Join(t.TempDir(), "DhXianyuAgentPanel")
 	// custom 用于本次流程后续判断的custom
 	custom := filepath.Join(t.TempDir(), "custom.db")
 	if // got 用于本次流程后续判断的got

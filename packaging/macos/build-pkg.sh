@@ -8,10 +8,10 @@ SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 PROJECT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)"
 BIN_DIR="$DIST_DIR/$ARCH"
 ROOT_DIR="$DIST_DIR/pkgroot-$ARCH"
-APP_DIR="$ROOT_DIR/Applications/Ydisks闲鱼助手"
-APP="$APP_DIR/Ydisks闲鱼助手.app"
-PACKAGE_PATH="$DIST_DIR/Ydisks-Xianyu-Helper-$VERSION-$ARCH.pkg"
-UNSIGNED_PACKAGE_PATH="$DIST_DIR/.Ydisks-Xianyu-Helper-$VERSION-$ARCH.unsigned.pkg"
+APP_DIR="$ROOT_DIR/Applications/DH闲不下来"
+APP="$APP_DIR/DH闲不下来.app"
+PACKAGE_PATH="$DIST_DIR/DH-Xianyu-AgentPanel-$VERSION-$ARCH.pkg"
+UNSIGNED_PACKAGE_PATH="$DIST_DIR/.DH-Xianyu-AgentPanel-$VERSION-$ARCH.unsigned.pkg"
 
 case "$ARCH" in
   arm64|amd64) ;;
@@ -52,13 +52,13 @@ fi
 rm -rf "$ROOT_DIR"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Helpers" "$APP/Contents/Resources"
 cp "$BIN_DIR/xianyu-server" "$APP/Contents/Helpers/xianyu-server"
-cp "$BIN_DIR/xianyu-tray" "$APP/Contents/MacOS/Ydisks闲鱼助手"
-cp "$SCRIPT_DIR/uninstall.command" "$APP_DIR/卸载 Ydisks闲鱼助手.command"
-cp "$SCRIPT_DIR/com.ydisks.xianyu-helper.server.plist.template" "$APP/Contents/Resources/"
-cp "$SCRIPT_DIR/com.ydisks.xianyu-helper.tray.plist.template" "$APP/Contents/Resources/"
+cp "$BIN_DIR/xianyu-tray" "$APP/Contents/MacOS/DH闲不下来"
+cp "$SCRIPT_DIR/uninstall.command" "$APP_DIR/卸载 DH闲不下来.command"
+cp "$SCRIPT_DIR/com.dhdevmax.xianyu-agentpanel.server.plist.template" "$APP/Contents/Resources/"
+cp "$SCRIPT_DIR/com.dhdevmax.xianyu-agentpanel.tray.plist.template" "$APP/Contents/Resources/"
+cp "$PROJECT_ROOT/scripts/migrate-product-data.sh" "$APP/Contents/Resources/migrate-product-data.sh"
 mkdir -p "$APP/Contents/Resources/playwright-runtime/$ARCH"
 cp -R "$DIST_DIR/playwright-runtime/$ARCH/." "$APP/Contents/Resources/playwright-runtime/$ARCH/"
-cp "$PROJECT_ROOT/icon/macos/Assets.car" "$APP/Contents/Resources/Assets.car"
 cp "$PROJECT_ROOT/icon/macos/icon.icns" "$APP/Contents/Resources/icon.icns"
 mkdir -p "$APP/Contents/Resources/en.lproj" \
   "$APP/Contents/Resources/zh-Hans.lproj" \
@@ -70,7 +70,7 @@ cp "$SCRIPT_DIR/Resources/zh-Hans.lproj/InfoPlist.strings" \
 cp "$SCRIPT_DIR/Resources/zh-Hant.lproj/InfoPlist.strings" \
   "$APP/Contents/Resources/zh-Hant.lproj/InfoPlist.strings"
 sed "s/__VERSION__/$VERSION/g" "$SCRIPT_DIR/Info.plist" > "$APP/Contents/Info.plist"
-chmod 0755 "$APP/Contents/MacOS/Ydisks闲鱼助手" "$APP/Contents/Helpers/xianyu-server" "$APP_DIR/卸载 Ydisks闲鱼助手.command"
+chmod 0755 "$APP/Contents/MacOS/DH闲不下来" "$APP/Contents/Helpers/xianyu-server" "$APP_DIR/卸载 DH闲不下来.command" "$APP/Contents/Resources/migrate-product-data.sh"
 
 # pkgbuild 会保留 runtime 文件的原始权限；Playwright 下载的 Node 和
 # Chromium Mach-O 可能只有所有者可执行。安装包由 root 安装后，普通用户
@@ -131,7 +131,7 @@ if [ -n "${MACOS_SIGNING_IDENTITY:-}" ]; then
 
   # macOS 代码签名必须从内部组件开始，最后再签名 App 包本身。
   sign_code "$APP/Contents/Helpers/xianyu-server"
-  sign_code "$APP/Contents/MacOS/Ydisks闲鱼助手"
+  sign_code "$APP/Contents/MacOS/DH闲不下来"
   sign_code "$APP"
   codesign --verify --deep --strict --verbose=2 "$APP"
 fi
@@ -147,7 +147,7 @@ pkgbuild \
   --root "$ROOT_DIR" \
   --component-plist "$SCRIPT_DIR/component.plist" \
   --scripts "$SCRIPT_DIR/scripts" \
-  --identifier com.ydisks.xianyu-helper \
+  --identifier com.dhdevmax.xianyu-agentpanel \
   --version "$VERSION" \
   --install-location / \
   "$UNSIGNED_PACKAGE_PATH"

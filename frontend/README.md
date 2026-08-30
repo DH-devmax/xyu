@@ -1,4 +1,4 @@
-# Ydisks闲鱼助手前端
+# DH闲不下来前端
 
 React 19、Vite 6 与 TypeScript 单页应用，是 Go 后端提供的管理界面。
 
@@ -28,7 +28,7 @@ frontend/
 ## 开发
 
 ```bash
-cd /Users/christ/Workspace/git/xianyu/Ydisks-Xianyu-Helper/frontend
+cd /path/to/xyu/frontend
 npm ci
 npm run dev
 ```

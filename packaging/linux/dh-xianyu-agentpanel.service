@@ -1,0 +1,22 @@
+[Unit]
+Description=DH闲不下来后台服务
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dh-xianyu-agentpanel
+Group=dh-xianyu-agentpanel
+WorkingDirectory=/var/lib/dh-xianyu-agentpanel
+EnvironmentFile=-/etc/dh-xianyu-agentpanel/config.env
+Environment=DH_XIANYU_AGENTPANEL_LOG_DIR=/var/log/dh-xianyu-agentpanel
+ExecStart=/opt/dh-xianyu-agentpanel/xianyu-server -addr 127.0.0.1:59188 -workdir /var/lib/dh-xianyu-agentpanel -data-key-file /var/lib/dh-xianyu-agentpanel/data-key -playwright-runtime-root /opt/dh-xianyu-agentpanel/playwright-runtime
+Restart=on-failure
+RestartSec=5s
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -314,7 +314,7 @@ func isLegacyAPIPath(path string) bool {
 
 // mountSPA 挂载前端静态资源与 SPA catch-all。
 //
-// 前端 vite base 为 /static/，构建后 index.html 引用 /static/assets/...、/static/favicon.svg。
+// 前端 vite base 为 /static/，构建后 index.html 引用 /static/assets/...、/static/favicon.png。
 // 故静态资源统一从 /static/ 前缀提供；非 API 的 GET 请求（/、/login 等客户端路由）
 // 返回 /static/index.html，交给 React Router 接管。
 // mountSPA 封装mountSPA业务协调。
@@ -335,7 +335,7 @@ func (s *Server) mountSPA(r chi.Router) {
 func (s *Server) mountDirSPA(r chi.Router) {
 	// indexFile 用于本次流程后续判断的index文件
 	indexFile := filepath.Join(s.WebDir, "index.html")
-	// /static/* 直接作为静态文件服务（assets/、favicon.svg 等）。
+	// /static/* 直接作为静态文件服务（assets/、favicon.png 等）。
 	// StripPrefix("/static/") 后，URL /static/assets/x.js → WebDir/assets/x.js。
 	// staticFiles 用于本次流程后续判断的static文件列表
 	staticFiles := http.StripPrefix("/static/", http.FileServer(http.Dir(s.WebDir)))

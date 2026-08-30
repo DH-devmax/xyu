@@ -5,6 +5,8 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+
+	"github.com/DH-devmax/xyu/internal/product"
 )
 
 // serviceAction 封装service动作业务协调。
@@ -17,5 +19,5 @@ func quitTray() error { return nil }
 
 // logDirectoryPath 封装logDirectory路径业务协调。
 func logDirectoryPath() (string, error) {
-	return filepath.Join("/var", "log", "ydisks-xianyu-helper"), nil
+	return filepath.Join("/var", "log", product.Slug), nil
 }

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-INSTALL_LOG="/var/log/ydisks-xianyu-helper-install.log"
+INSTALL_LOG="/var/log/dh-xianyu-agentpanel-install.log"
 exec >>"$INSTALL_LOG" 2>&1
 trap 'exit_code=$?; printf "[%s] postinstall exit code: %s\\n" "$(date -u "+%Y-%m-%dT%H:%M:%SZ")" "$exit_code"' EXIT
 
@@ -12,7 +12,7 @@ set -x
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 APP=""
 for app_path in \
-  "/Applications/Ydisks闲鱼助手/Ydisks闲鱼助手.app" \
+  "/Applications/DH闲不下来/DH闲不下来.app" \
   "/Applications/Ydisks Xianyu Helper.app" \
   "/Applications/Ydisks Xianyu Helper.localized/Ydisks Xianyu Helper.app"
 do
@@ -22,12 +22,12 @@ do
   fi
 done
 if [ -z "$APP" ]; then
-	echo "找不到已安装的 Ydisks闲鱼助手.app，无法继续注册服务。"
+  echo "找不到已安装的 DH闲不下来.app，无法继续注册服务。"
   exit 1
 fi
 
 SERVER="$APP/Contents/Helpers/xianyu-server"
-TRAY="$APP/Contents/MacOS/Ydisks闲鱼助手"
+TRAY="$APP/Contents/MacOS/DH闲不下来"
 RUNTIME_ROOT="$APP/Contents/Resources/playwright-runtime"
 CONSOLE_USER="$(stat -f '%Su' /dev/console)"
 
@@ -38,8 +38,9 @@ fi
 
 UID_VALUE="$(id -u "$CONSOLE_USER")"
 HOME_DIR="$(dscl . -read "/Users/$CONSOLE_USER" NFSHomeDirectory | awk '{print $2}')"
-DATA_DIR="$HOME_DIR/Library/Application Support/YdisksXianyuHelper"
-LOG_DIR="$HOME_DIR/Library/Logs/YdisksXianyuHelper"
+DATA_DIR="$HOME_DIR/Library/Application Support/DhXianyuAgentPanel"
+LEGACY_DATA_DIR="$HOME_DIR/Library/Application Support/YdisksXianyuHelper"
+LOG_DIR="$HOME_DIR/Library/Logs/DhXianyuAgentPanel"
 AGENT_DIR="$HOME_DIR/Library/LaunchAgents"
 
 RUNTIME_ARCH=""
@@ -55,6 +56,16 @@ if [ -z "$RUNTIME_ARCH" ]; then
 fi
 echo "使用 $RUNTIME_ARCH 架构的 Playwright runtime。"
 
+if [ -d "$LEGACY_DATA_DIR" ] && [ ! -e "$DATA_DIR" ]; then
+  MIGRATION_ROLLBACK_DIR="$HOME_DIR/Library/Application Support/DhXianyuAgentPanel-migration"
+  mkdir -p "$MIGRATION_ROLLBACK_DIR"
+  "$APP/Contents/Resources/migrate-product-data.sh" \
+    --source "$LEGACY_DATA_DIR" \
+    --destination "$DATA_DIR" \
+    --rollback-dir "$MIGRATION_ROLLBACK_DIR" \
+    --record "$MIGRATION_ROLLBACK_DIR/migration.env"
+  chown -R "$CONSOLE_USER" "$MIGRATION_ROLLBACK_DIR"
+fi
 mkdir -p "$DATA_DIR" "$LOG_DIR" "$AGENT_DIR"
 chown -R "$CONSOLE_USER" "$DATA_DIR" "$LOG_DIR"
 chown "$CONSOLE_USER" "$AGENT_DIR"
@@ -69,18 +80,18 @@ DATA_ESCAPED="$(escape_sed "$DATA_DIR")"
 LOG_ESCAPED="$(escape_sed "$LOG_DIR")"
 RUNTIME_ROOT_ESCAPED="$(escape_sed "$RUNTIME_ROOT")"
 
-SERVER_LABEL="com.ydisks.xianyu-helper.server"
-TRAY_LABEL="com.ydisks.xianyu-helper.tray"
+SERVER_LABEL="com.dhdevmax.xianyu-agentpanel.server"
+TRAY_LABEL="com.dhdevmax.xianyu-agentpanel.tray"
 server_plist="$AGENT_DIR/$SERVER_LABEL.plist"
 tray_plist="$AGENT_DIR/$TRAY_LABEL.plist"
 sed -e "s|__SERVER__|$SERVER_ESCAPED|g" \
     -e "s|__DATA_DIR__|$DATA_ESCAPED|g" \
     -e "s|__LOG_DIR__|$LOG_ESCAPED|g" \
     -e "s|__RUNTIME_ROOT__|$RUNTIME_ROOT_ESCAPED|g" \
-    "$APP/Contents/Resources/com.ydisks.xianyu-helper.server.plist.template" > "$server_plist"
+    "$APP/Contents/Resources/com.dhdevmax.xianyu-agentpanel.server.plist.template" > "$server_plist"
 sed -e "s|__TRAY__|$TRAY_ESCAPED|g" \
-	-e "s|__LOG_DIR__|$LOG_ESCAPED|g" \
-    "$APP/Contents/Resources/com.ydisks.xianyu-helper.tray.plist.template" > "$tray_plist"
+    -e "s|__LOG_DIR__|$LOG_ESCAPED|g" \
+    "$APP/Contents/Resources/com.dhdevmax.xianyu-agentpanel.tray.plist.template" > "$tray_plist"
 chown "$CONSOLE_USER" "$server_plist" "$tray_plist"
 chmod 0644 "$server_plist" "$tray_plist"
 
@@ -111,6 +122,12 @@ LEGACY_TRAY_LABEL="com.christ.ydisks-xianyu-helper.tray"
 launchctl bootout "gui/$UID_VALUE/$LEGACY_SERVER_LABEL" >/dev/null 2>&1 || true
 launchctl bootout "gui/$UID_VALUE/$LEGACY_TRAY_LABEL" >/dev/null 2>&1 || true
 rm -f "$AGENT_DIR/$LEGACY_SERVER_LABEL.plist" "$AGENT_DIR/$LEGACY_TRAY_LABEL.plist"
+# 清理 v1 官方 Bundle ID 的 LaunchAgent 文件，避免新旧服务同时运行。
+LEGACY_OFFICIAL_SERVER_LABEL="com.ydisks.xianyu-helper.server"
+LEGACY_OFFICIAL_TRAY_LABEL="com.ydisks.xianyu-helper.tray"
+launchctl bootout "gui/$UID_VALUE/$LEGACY_OFFICIAL_SERVER_LABEL" >/dev/null 2>&1 || true
+launchctl bootout "gui/$UID_VALUE/$LEGACY_OFFICIAL_TRAY_LABEL" >/dev/null 2>&1 || true
+rm -f "$AGENT_DIR/$LEGACY_OFFICIAL_SERVER_LABEL.plist" "$AGENT_DIR/$LEGACY_OFFICIAL_TRAY_LABEL.plist"
 
 launchctl bootstrap "gui/$UID_VALUE" "$server_plist"
 launchctl bootstrap "gui/$UID_VALUE" "$tray_plist"

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi/v5"
 	adminapp "github.com/DH-devmax/xyu/internal/application/admin"
+	"github.com/go-chi/chi/v5"
 )
 
 // mountAdminReal 管理员端点。

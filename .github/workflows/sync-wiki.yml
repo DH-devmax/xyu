@@ -25,7 +25,7 @@ jobs:
 
       - name: 克隆 GitHub Wiki 仓库
         env:
-          WIKI_REPOSITORY: https://x-access-token:${{ github.token }}@github.com/Christ9038/Ydisks-Xianyu-Helper.wiki.git
+          WIKI_REPOSITORY: https://x-access-token:${{ github.token }}@github.com/DH-devmax/xyu.wiki.git
         run: git clone "$WIKI_REPOSITORY" wiki
 
       - name: 镜像 Wiki 页面

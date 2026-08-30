@@ -194,6 +194,19 @@ func TestBrainReplierDropsUnsafeQuote(t *testing.T) {
 	}
 }
 
+// TestBrainReplierMissingRepositoriesFallsThrough 验证不完整的兼容 store 会按无 AI 结果继续默认回复。
+func TestBrainReplierMissingRepositoriesFallsThrough(t *testing.T) {
+	// runtime、replier 保存当前步骤的测试替身。
+	runtime := &brainRuntimeStub{draft: brainapp.ReplyDraft{RequestID: "msg:missing-repositories", Status: "reply", ReplyText: "回复", Intent: "other"}}
+	// replier 是缺少持久化仓储时创建的回复器。
+	replier := NewBrainAIReplierFactory(runtime)("account-without-repositories", &db.Store{}, nil)
+	// result、err 保存当前步骤的调用结果。
+	result, err := replier.Reply(context.Background(), engine.ChatMessage{MessageID: "missing-repositories", Text: "你好"})
+	if err != nil || result != nil {
+		t.Fatalf("result=%+v err=%v want nil result without repositories", result, err)
+	}
+}
+
 // ptrInt64 返回测试使用的可选报价指针。
 func ptrInt64(value int64) *int64 {
 	return &value

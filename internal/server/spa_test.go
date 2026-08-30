@@ -17,7 +17,7 @@ func TestSPAServing(t *testing.T) {
 	os.WriteFile(filepath.Join(webDir, "index.html"), []byte("<html>SPA</html>"), 0644)
 	os.MkdirAll(filepath.Join(webDir, "assets"), 0755)
 	os.WriteFile(filepath.Join(webDir, "assets", "app.js"), []byte("console.log(1)"), 0644)
-	os.WriteFile(filepath.Join(webDir, "favicon.svg"), []byte("<svg/>"), 0644)
+	os.WriteFile(filepath.Join(webDir, "favicon.png"), []byte("PNG"), 0644)
 
 	// srv、cleanup 用于本次流程后续判断的srv、cleanup
 	srv, _, cleanup := newTestServer(t)
@@ -50,9 +50,9 @@ func TestSPAServing(t *testing.T) {
 		t.Errorf("JS 内容异常: %q", rec2.Body.String())
 	}
 
-	// 3) /static/favicon.svg。
+	// 3) /static/favicon.png。
 	// req3 用于本次流程后续判断的req3
-	req3 := httptest.NewRequest(http.MethodGet, "/static/favicon.svg", nil)
+	req3 := httptest.NewRequest(http.MethodGet, "/static/favicon.png", nil)
 	// rec3 用于本次流程后续判断的rec3
 	rec3 := httptest.NewRecorder()
 	h.ServeHTTP(rec3, req3)
