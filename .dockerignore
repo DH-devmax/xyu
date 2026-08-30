@@ -14,6 +14,11 @@ init-admin
 *.sqlite
 *.sqlite3
 cover.out
+# Harness 源码只在 CI 载荷构建阶段使用；最终镜像从 .docker/brain-runtime
+# 复制已检查的 gateway、SDK 和 carrier，避免把本地依赖和构建缓存送入 Docker 上下文。
+brain/vendor/deepseek-harness/
 !/.docker/
+!/.docker/brain-runtime/
+!/.docker/brain-runtime/**
 !/.docker/playwright-runtime/
 !/.docker/playwright-runtime/**

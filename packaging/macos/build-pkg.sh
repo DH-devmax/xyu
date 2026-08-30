@@ -27,6 +27,7 @@ case "$ARCH" in
   amd64) PLATFORM_ARCH="x64" ;;
 esac
 runtime_dir="$DIST_DIR/playwright-runtime/$ARCH"
+brain_source="$DIST_DIR/brain/$ARCH"
 runtime_has_chromium() {
   find "$runtime_dir/playwright-browsers" -type f \
     -path "*/chrome-mac-$PLATFORM_ARCH/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing" \
@@ -48,6 +49,17 @@ if ! runtime_has_chromium || ! runtime_has_headless_shell; then
   echo "Playwright runtime 缺少 $ARCH 架构的 Chromium 或 headless shell。" >&2
   exit 1
 fi
+if [ ! -f "$brain_source/runtime/runtime.json" ] || \
+   [ ! -f "$brain_source/runtime/node-carrier" ] || \
+   [ ! -f "$brain_source/runtime/node/package.json" ] || \
+   [ ! -f "$brain_source/runtime/node/node_modules/@deepseek-ai/dsh/lib/bin.js" ] || \
+   [ ! -f "$brain_source/runtime/node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js" ] || \
+   [ ! -f "$brain_source/gateway/index.mjs" ] || \
+   [ ! -f "$brain_source/profile/customer-service.patch.yml" ] || \
+   [ ! -f "$brain_source/runtime/result-tool.mjs" ]; then
+  echo "未找到完整的 $ARCH Brain runtime 载荷：$brain_source" >&2
+  exit 1
+fi
 
 rm -rf "$ROOT_DIR"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Helpers" "$APP/Contents/Resources"
@@ -59,6 +71,8 @@ cp "$SCRIPT_DIR/com.dhdevmax.xianyu-agentpanel.tray.plist.template" "$APP/Conten
 cp "$PROJECT_ROOT/scripts/migrate-product-data.sh" "$APP/Contents/Resources/migrate-product-data.sh"
 mkdir -p "$APP/Contents/Resources/playwright-runtime/$ARCH"
 cp -R "$DIST_DIR/playwright-runtime/$ARCH/." "$APP/Contents/Resources/playwright-runtime/$ARCH/"
+mkdir -p "$APP/Contents/Resources/brain"
+cp -R "$brain_source/." "$APP/Contents/Resources/brain/"
 cp "$PROJECT_ROOT/icon/macos/icon.icns" "$APP/Contents/Resources/icon.icns"
 mkdir -p "$APP/Contents/Resources/en.lproj" \
   "$APP/Contents/Resources/zh-Hans.lproj" \
@@ -113,7 +127,7 @@ if [ -n "${MACOS_SIGNING_IDENTITY:-}" ]; then
   # 因此这里只签 bundle 外的独立 Mach-O，再按目录深度递归签名所有 bundle。
   signing_list="$runtime_files"
 
-  find "$APP/Contents/Resources/playwright-runtime" -type f -print > "$signing_list"
+  find "$APP/Contents/Resources/playwright-runtime" "$APP/Contents/Resources/brain/runtime" -type f -print > "$signing_list"
   while IFS= read -r executable; do
     case "$executable" in
       *.app/*|*.framework/*|*.xpc/*) continue ;;
@@ -123,7 +137,7 @@ if [ -n "${MACOS_SIGNING_IDENTITY:-}" ]; then
     fi
   done < "$signing_list"
 
-  find "$APP/Contents/Resources/playwright-runtime" -depth -type d \
+  find "$APP/Contents/Resources/playwright-runtime" "$APP/Contents/Resources/brain/runtime" -depth -type d \
     \( -name '*.framework' -o -name '*.xpc' -o -name '*.app' \) -print > "$signing_list"
   while IFS= read -r nested_bundle; do
     sign_nested_bundle "$nested_bundle"

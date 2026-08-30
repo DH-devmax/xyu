@@ -39,6 +39,11 @@ const requiredFiles = [
   'packaging/linux/uninstall.sh',
   'scripts/migrate-product-data.sh',
   'scripts/migrate-product-data.test.sh',
+  'scripts/build-brain-runtime.mjs',
+  'scripts/check-brain-runtime-package.mjs',
+  'scripts/brain-runtime-package.test.mjs',
+  'brain/gateway/index.mjs',
+  'brain/profile/customer-service.patch.yml',
   'packaging/windows/installer.iss',
   'packaging/windows/service-control.ps1',
   'packaging/windows/migrate-data.ps1',
@@ -66,11 +71,18 @@ await assertText(`packaging/linux/${expected.linuxService}`, [
   `User=${expected.slug}`,
   `WorkingDirectory=/var/lib/${expected.slug}`,
   `EnvironmentFile=-/etc/${expected.slug}/config.env`,
+  '-product-root /opt/dh-xianyu-agentpanel',
+  '-brain-runtime-root /opt/dh-xianyu-agentpanel/brain/runtime',
+  '-brain-data-root /var/lib/dh-xianyu-agentpanel/data/brain',
 ]);
 await assertText('packaging/linux/install.sh', [
   `APP_NAME="${expected.slug}"`,
   `SERVICE_NAME="$APP_NAME.service"`,
   'migrate-product-data.sh',
+  'BRAIN_SOURCE=',
+  'BRAIN_SOURCE/runtime/runtime.json',
+  'BRAIN_SOURCE/runtime/node-carrier',
+  'BRAIN_SOURCE/runtime/result-tool.mjs',
 ]);
 await assertText('packaging/linux/uninstall.sh', [
   `APP_NAME="${expected.slug}"`,
@@ -81,11 +93,15 @@ await assertText('packaging/windows/installer.iss', [
   'OutputBaseFilename=DH-Xianyu-AgentPanel-Setup',
   `AppDataDir "{commonappdata}\\DhXianyuAgentPanel"`,
   `Source: "migrate-data.ps1"`,
+  `Source: "{#WindowsBrainDir}\\*"`,
+  '-BrainRuntimeRoot',
   expected.windowsService,
 ]);
 await assertText('packaging/windows/service-control.ps1', [
   `[string]$ServiceName = '${expected.windowsService}'`,
   "[string]$LegacyServiceName = 'YdisksXianyuHelper'",
+  '[string]$BrainRuntimeRoot =',
+  '-brain-runtime-root',
   expected.displayName,
 ]);
 
@@ -99,6 +115,13 @@ await assertText('packaging/macos/component.plist', [
 await assertText('packaging/macos/com.dhdevmax.xianyu-agentpanel.server.plist.template', [
   expected.macBundleID,
   '__SERVER__',
+  '__PRODUCT_ROOT__',
+  '__BRAIN_RUNTIME_ROOT__',
+]);
+await assertText('packaging/macos/build-pkg.sh', [
+  'brain_source=',
+  'runtime/node-carrier',
+  'runtime/result-tool.mjs',
 ]);
 await assertText('packaging/macos/com.dhdevmax.xianyu-agentpanel.tray.plist.template', [
   expected.macBundleID,
@@ -111,6 +134,20 @@ await assertText('.github/workflows/desktop-cd.yml', [
   'DH-Xianyu-AgentPanel-Setup.exe',
   'DH-Xianyu-AgentPanel-',
   `packaging/linux/${expected.linuxService}`,
+  'build-brain-runtime.mjs',
+  'check-brain-runtime-package.mjs',
+  'brain/vendor/deepseek-harness',
+  "Extension -in '.exe', '.dll', '.node'",
+]);
+await assertText('Dockerfile.debian13', [
+  'COPY .docker/brain-runtime /app/brain',
+  '-brain-runtime-root',
+  '/app/brain/runtime',
+  'dsh-runtime-rg',
+]);
+await assertText('.github/workflows/docker-publish.yml', [
+  'build-brain-runtime.mjs',
+  '.docker/brain-runtime',
 ]);
 await assertText('.github/workflows/release.yml', [
   `${expected.slug}-linux-amd64-`,

@@ -10,7 +10,7 @@ Group=dh-xianyu-agentpanel
 WorkingDirectory=/var/lib/dh-xianyu-agentpanel
 EnvironmentFile=-/etc/dh-xianyu-agentpanel/config.env
 Environment=DH_XIANYU_AGENTPANEL_LOG_DIR=/var/log/dh-xianyu-agentpanel
-ExecStart=/opt/dh-xianyu-agentpanel/xianyu-server -addr 127.0.0.1:59188 -workdir /var/lib/dh-xianyu-agentpanel -data-key-file /var/lib/dh-xianyu-agentpanel/data-key -playwright-runtime-root /opt/dh-xianyu-agentpanel/playwright-runtime
+ExecStart=/opt/dh-xianyu-agentpanel/xianyu-server -addr 127.0.0.1:59188 -workdir /var/lib/dh-xianyu-agentpanel -data-key-file /var/lib/dh-xianyu-agentpanel/data-key -product-root /opt/dh-xianyu-agentpanel -brain-runtime-root /opt/dh-xianyu-agentpanel/brain/runtime -brain-data-root /var/lib/dh-xianyu-agentpanel/data/brain -playwright-runtime-root /opt/dh-xianyu-agentpanel/playwright-runtime
 Restart=on-failure
 RestartSec=5s
 KillSignal=SIGTERM

@@ -7,6 +7,9 @@
 	<array>
 		<string>__SERVER__</string>
 		<string>-addr</string><string>127.0.0.1:59188</string>
+		<string>-product-root</string><string>__PRODUCT_ROOT__</string>
+		<string>-brain-runtime-root</string><string>__BRAIN_RUNTIME_ROOT__</string>
+		<string>-brain-data-root</string><string>__DATA_DIR__/data/brain</string>
 		<string>-playwright-runtime-root</string><string>__RUNTIME_ROOT__</string>
 	</array>
 	<key>WorkingDirectory</key><string>__DATA_DIR__</string>

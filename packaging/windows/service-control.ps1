@@ -9,6 +9,8 @@
     [string]$TrayPath = '',
     [string]$WorkDir = '',
     [string]$RuntimeRoot = '',
+    [string]$ProductRoot = '',
+    [string]$BrainRuntimeRoot = '',
     [string]$CreatedMarkerPath = ''
 )
 
@@ -141,8 +143,10 @@ function Grant-InteractiveUserServiceControl {
 function Assert-ServiceInstallParameters {
     if ([string]::IsNullOrWhiteSpace($ExePath) -or
         [string]::IsNullOrWhiteSpace($WorkDir) -or
-        [string]::IsNullOrWhiteSpace($RuntimeRoot)) {
-        throw '安装服务缺少 ExePath、WorkDir 或 RuntimeRoot'
+        [string]::IsNullOrWhiteSpace($RuntimeRoot) -or
+        [string]::IsNullOrWhiteSpace($ProductRoot) -or
+        [string]::IsNullOrWhiteSpace($BrainRuntimeRoot)) {
+        throw '安装服务缺少 ExePath、WorkDir、RuntimeRoot、ProductRoot 或 BrainRuntimeRoot'
     }
 }
 
@@ -154,8 +158,8 @@ function Register-InstalledService {
     New-Item -ItemType Directory -Force -Path (Join-Path $WorkDir 'data') | Out-Null
     New-Item -ItemType Directory -Force -Path (Join-Path $WorkDir 'logs') | Out-Null
 
-    $binaryPath = '"{0}" -service -workdir "{1}" -data-key-file "{1}\data-key" -addr 127.0.0.1:59188 -playwright-runtime-root "{2}"' -f `
-        $ExePath, $WorkDir, $RuntimeRoot
+    $binaryPath = '"{0}" -service -workdir "{1}" -data-key-file "{1}\data-key" -addr 127.0.0.1:59188 -product-root "{2}" -brain-runtime-root "{3}" -brain-data-root "{1}\data\brain" -playwright-runtime-root "{4}"' -f `
+        $ExePath, $WorkDir, $ProductRoot, $BrainRuntimeRoot, $RuntimeRoot
     if (-not (Test-ServiceInstalled)) {
         if (-not [string]::IsNullOrWhiteSpace($CreatedMarkerPath)) {
             Set-Content -LiteralPath $CreatedMarkerPath -Value $ServiceName -Encoding ASCII

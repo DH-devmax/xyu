@@ -37,6 +37,8 @@
 /brain/vendor/deepseek-harness/node_modules/
 /brain/dist/
 /brain/.build/
+/dist/
+/.docker/brain-runtime/
 /internal/server/data/
 
 # Embedded frontend build assets (index.html references hashed files, so JS/CSS must be tracked)

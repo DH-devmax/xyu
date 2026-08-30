@@ -3,7 +3,7 @@
 GO ?= go
 GOLANGCI_LINT ?= golangci-lint
 
-.PHONY: build build-int build-browser-install build-tray brain-check brain-profile-integration test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check brand-assets-check packaging-check product-data-migration-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
+.PHONY: build build-int build-browser-install build-tray brain-check brain-profile-integration brain-runtime-build brain-runtime-check test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check brand-assets-check packaging-check product-data-migration-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
 
 ## build: 编译 server（默认，跳过 integration build tag）
 build:
@@ -20,11 +20,20 @@ build-tray:
 ## brain-check: 验证 Harness 客服 profile 、结果插件和发布工具白名单
 brain-check:
 	node --test brain/runtime/result-tool.test.mjs
+	node --test scripts/brain-runtime-package.test.mjs
 	node brain/profile/verify-tool-allowlist.mjs
 
 ## brain-profile-integration: 使用本地 MCP/模型 fixture 启动真实 DSH profile 并断言最终工具目录
 brain-profile-integration:
 	node brain/profile/verify-runtime-profile.mjs
+
+## brain-runtime-build: 组装指定平台的 Brain 安装载荷；必须显式提供 BRAIN_RUNTIME_OUTPUT、BRAIN_PLATFORM 和 BRAIN_ARCH
+brain-runtime-build:
+	node scripts/build-brain-runtime.mjs --output "$${BRAIN_RUNTIME_OUTPUT:?缺少 BRAIN_RUNTIME_OUTPUT}" --platform "$${BRAIN_PLATFORM:?缺少 BRAIN_PLATFORM}" --arch "$${BRAIN_ARCH:?缺少 BRAIN_ARCH}" $${BRAIN_RUNTIME_MODE:+--mode "$$BRAIN_RUNTIME_MODE"} $${BRAIN_NODE_BINARY:+--node-binary "$$BRAIN_NODE_BINARY"} $${BRAIN_DSH_RUNTIME:+--dsh-runtime "$$BRAIN_DSH_RUNTIME"}
+
+## brain-runtime-check: 检查已组装载荷；BRAIN_RUNTIME_ROOT 指向包含 gateway/profile/runtime 的 brain 目录
+brain-runtime-check:
+	node scripts/check-brain-runtime-package.mjs --root "$${BRAIN_RUNTIME_ROOT:?缺少 BRAIN_RUNTIME_ROOT}" --probe
 
 ## build-int: 带 integration tag 编译（含 browser 包，需要 Chromium 环境）
 build-int:

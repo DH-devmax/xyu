@@ -35,8 +35,16 @@ type RuntimeOptions struct {
 	Addr string
 	// ProductRoot 是包含 Brain gateway 与 vendored Harness 的产品根目录；空值使用当前工作目录。
 	ProductRoot string
+	// BrainRuntimeRoot 是安装包内 Brain runtime 载荷根目录；空值使用产品根 brain/runtime。
+	BrainRuntimeRoot string
 	// BrainNodeBinary 是安装包提供的 Node carrier；空值由 supervisor 查找 PATH。
 	BrainNodeBinary string
+	// BrainDSHRuntime 是原生平台的单文件 Harness runtime；空值由 supervisor 自动推导。
+	BrainDSHRuntime string
+	// BrainDSHEntry 是 Node carrier 模式下的构建 dsh 入口；空值由 supervisor 自动推导。
+	BrainDSHEntry string
+	// BrainSDKClientEntry 是构建 SDK 客户端入口；空值由 supervisor 自动推导。
+	BrainSDKClientEntry string
 	// BrainDataRoot 是 Harness 派生会话数据目录；空值位于产品根 data/brain。
 	BrainDataRoot string
 }
@@ -235,13 +243,20 @@ func buildBrainSupervisor(options RuntimeOptions, infrastructure RuntimeInfrastr
 			return nil, nil, fmt.Errorf("读取 Brain 产品根目录失败: %w", rootErr)
 		}
 	}
+	// rootErr 保存产品根目录绝对化失败原因，保证显式拼接的 gateway 路径不会重复相对前缀。
+	if absoluteRoot, rootErr := filepath.Abs(productRoot); rootErr == nil {
+		productRoot = absoluteRoot
+	} else {
+		return nil, nil, fmt.Errorf("解析 Brain 产品根目录失败: %w", rootErr)
+	}
 	// brainRepository 保存当前步骤的中间结果。
 	brainRepository := adapter.NewBrainRepository(infrastructure.Store)
 	// brainSupervisor、supervisorErr 保存当前步骤的中间结果。
 	brainSupervisor, supervisorErr := brainruntime.NewSupervisor(brainruntime.Options{
 		ProductRoot: productRoot, GatewayPath: filepath.Join(productRoot, "brain/gateway/index.mjs"),
-		HarnessRoot: filepath.Join(productRoot, "brain/vendor/deepseek-harness"), NodeBinary: options.BrainNodeBinary,
-		DataRoot: options.BrainDataRoot, Logger: infrastructure.Logger,
+		HarnessRoot: filepath.Join(productRoot, "brain/vendor/deepseek-harness"), RuntimeRoot: options.BrainRuntimeRoot,
+		NodeBinary: options.BrainNodeBinary, DSHRuntime: options.BrainDSHRuntime, DSHEntry: options.BrainDSHEntry,
+		SDKClientEntry: options.BrainSDKClientEntry, DataRoot: options.BrainDataRoot, Logger: infrastructure.Logger,
 		Settings:   func(ctx context.Context) (brainapp.Settings, error) { return brainRepository.GetSettings(ctx) },
 		APIKey:     func(ctx context.Context) (string, error) { return brainRepository.ReadAPIKey(ctx) },
 		MCPBackend: adapter.NewBrainMCPBackend(infrastructure.Store),

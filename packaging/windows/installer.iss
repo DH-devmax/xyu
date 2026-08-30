@@ -6,6 +6,7 @@
 #define RepoRoot AddBackslash(SourcePath) + "..\.."
 #define WindowsDistDir AddBackslash(RepoRoot) + "dist\windows"
 #define WindowsRuntimeDir AddBackslash(WindowsDistDir) + "playwright-runtime\amd64"
+#define WindowsBrainDir AddBackslash(WindowsDistDir) + "brain"
 #define WindowsIconDir AddBackslash(RepoRoot) + "icon\windows"
 #define WindowsLanguageDir AddBackslash(SourcePath) + "languages"
 
@@ -52,6 +53,7 @@ Source: "{#WindowsDistDir}\xianyu-server.exe"; DestDir: "{app}"; Flags: ignoreve
 Source: "{#WindowsDistDir}\xianyu-tray.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#WindowsIconDir}\icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#WindowsRuntimeDir}\*"; DestDir: "{app}\playwright-runtime"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "{#WindowsBrainDir}\*"; DestDir: "{app}\brain"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "service-control.ps1"; Flags: dontcopy
 Source: "service-control.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "migrate-data.ps1"; Flags: dontcopy
@@ -92,7 +94,9 @@ begin
     ' -ExePath "' + ExpandConstant('{app}\xianyu-server.exe') +
     '" -TrayPath "' + ExpandConstant('{app}\xianyu-tray.exe') +
     '" -WorkDir "' + ExpandConstant('{commonappdata}\DhXianyuAgentPanel') +
-    '" -RuntimeRoot "' + ExpandConstant('{app}\playwright-runtime') + '"';
+    '" -RuntimeRoot "' + ExpandConstant('{app}\playwright-runtime') +
+    '" -ProductRoot "' + ExpandConstant('{app}') +
+    '" -BrainRuntimeRoot "' + ExpandConstant('{app}\brain\runtime') + '"';
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;

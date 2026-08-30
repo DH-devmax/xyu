@@ -80,6 +80,7 @@ WORKDIR /app
 COPY --from=backend /out/xianyu-server /app/xianyu-server
 COPY --from=backend /out/xianyu-dbseed /app/xianyu-dbseed
 COPY --from=backend /out/xianyu-dbverify /app/xianyu-dbverify
+COPY .docker/brain-runtime /app/brain
 COPY --from=playwright-runtime /ms-playwright-go /ms-playwright-go
 COPY --from=playwright-runtime /ms-playwright /ms-playwright
 # 浏览器文件本身不包含 Linux 动态链接库。使用与 runtime 同捆的 Playwright
@@ -96,6 +97,16 @@ RUN set -eux; \
     find "$PLAYWRIGHT_BROWSERS_PATH" -type f -perm -111 \( -name chrome -o -name chrome-headless-shell -o -name headless_shell \) -print -quit | grep -q .; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/* /root/.cache /tmp/* /var/tmp/*; \
-    mkdir -p /app/data /app/browser_data
+    test -f /app/brain/runtime/runtime.json; \
+    test -x /app/brain/runtime/node-carrier; \
+    test -f /app/brain/runtime/node/package.json; \
+    test -f /app/brain/runtime/node/node_modules/@deepseek-ai/dsh/lib/bin.js; \
+    test -f /app/brain/runtime/node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js; \
+    test -f /app/brain/gateway/index.mjs; \
+    test -f /app/brain/profile/customer-service.patch.yml; \
+    test -f /app/brain/runtime/result-tool.mjs; \
+    test -x /app/brain/runtime/dsh-runtime; \
+    test -x /app/brain/runtime/dsh-runtime-rg; \
+    mkdir -p /app/data /app/data/brain /app/browser_data
 EXPOSE 59188
-CMD ["/app/xianyu-server", "-addr", ":59188"]
+CMD ["/app/xianyu-server", "-addr", ":59188", "-product-root", "/app", "-brain-runtime-root", "/app/brain/runtime", "-brain-data-root", "/app/data/brain"]

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - main
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -97,6 +98,28 @@ jobs:
           version_ldflags="-s -w -X github.com/DH-devmax/xyu/internal/version.Version=$BUILD_VERSION -X github.com/DH-devmax/xyu/internal/version.Commit=$GITHUB_SHA -X github.com/DH-devmax/xyu/internal/version.BuildTime=$BUILD_TIME"
           go build -trimpath -ldflags="$version_ldflags" -o "$package_dir/xianyu-server" ./cmd/server
           go build -trimpath -ldflags='-s -w' -o "$package_dir/browser-install" ./cmd/browser-install
+
+      - name: 构建 Linux Harness runtime
+        working-directory: brain/vendor/deepseek-harness
+        env:
+          HARNESS_TARGET: node24-linux-${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }}
+        run: |
+          set -Eeuo pipefail
+          corepack pnpm install --frozen-lockfile
+          CI=true corepack pnpm run build
+          CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
+
+      - name: 组装并检查 Linux Brain runtime
+        env:
+          PRODUCT_ARCH: ${{ matrix.arch }}
+        run: |
+          set -Eeuo pipefail
+          package_dir="dist/dh-xianyu-agentpanel-linux-${PRODUCT_ARCH}"
+          node_binary="$(node -p 'process.execPath')"
+          node scripts/build-brain-runtime.mjs \
+            --output "$package_dir/brain" --platform linux --arch "$PRODUCT_ARCH" --mode native \
+            --node-binary "$node_binary"
+          node scripts/check-brain-runtime-package.mjs --root "$package_dir/brain" --probe
 
       - name: 恢复 Linux Chromium runtime 缓存
         id: cache-linux-playwright
@@ -209,6 +232,22 @@ jobs:
         shell: pwsh
         run: npm ci --prefix frontend; npm run build --prefix frontend
 
+      - name: 构建 Windows Harness runtime
+        shell: pwsh
+        working-directory: brain/vendor/deepseek-harness
+        run: |
+          corepack pnpm install --frozen-lockfile
+          $env:CI = 'true'
+          corepack pnpm run build
+          corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets=node24-win-x64 --skip-build
+
+      - name: 组装并检查 Windows Brain runtime
+        shell: pwsh
+        run: |
+          $nodeBinary = (node -p "process.execPath")
+          node scripts/build-brain-runtime.mjs --output dist/windows/brain --platform windows --arch amd64 --mode native --node-binary $nodeBinary
+          node scripts/check-brain-runtime-package.mjs --root dist/windows/brain --probe
+
       - name: 验证 Windows 托盘逻辑与安装脚本
         shell: pwsh
         run: |
@@ -285,6 +324,8 @@ jobs:
           $serviceName = 'DhXianyuAgentPanel'
           $workDir = Join-Path $env:RUNNER_TEMP $serviceName
           $runtimeRoot = (Resolve-Path 'dist/windows/playwright-runtime/amd64').Path
+          $productRoot = (Resolve-Path 'dist/windows').Path
+          $brainRuntimeRoot = (Resolve-Path 'dist/windows/brain/runtime').Path
           $serviceScript = (Resolve-Path 'packaging/windows/service-control.ps1').Path
           $serverPath = (Resolve-Path 'dist/windows/xianyu-server.exe').Path
           try {
@@ -292,7 +333,7 @@ jobs:
               & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
                 -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
                 -File $serviceScript -Mode register -ServiceName $serviceName `
-                -ExePath $serverPath -WorkDir $workDir -RuntimeRoot $runtimeRoot
+                -ExePath $serverPath -WorkDir $workDir -RuntimeRoot $runtimeRoot -ProductRoot $productRoot -BrainRuntimeRoot $brainRuntimeRoot
               if ($LASTEXITCODE -ne 0) {
                 throw "Windows 服务第 $registerAttempt 次注册失败，错误码: $LASTEXITCODE"
               }
@@ -317,6 +358,9 @@ jobs:
               $serverPath,
               '-service',
               "-workdir $workDir",
+              "-product-root $productRoot",
+              "-brain-runtime-root $brainRuntimeRoot",
+              "-brain-data-root $workDir\data\brain",
               "-playwright-runtime-root $runtimeRoot"
             )
             $invalidServiceArgument = $requiredServiceArguments |
@@ -389,9 +433,13 @@ jobs:
           WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
           WINDOWS_SIGNING_IDENTITY: ${{ secrets.WINDOWS_SIGNING_IDENTITY }}
         run: |
+          $signingFiles = @('dist/windows/xianyu-server.exe','dist/windows/xianyu-tray.exe')
+          $signingFiles += @(Get-ChildItem -LiteralPath 'dist/windows/brain/runtime' -Recurse -File |
+            Where-Object { $_.Extension -in '.exe', '.dll', '.node' } |
+            Select-Object -ExpandProperty FullName)
           & packaging/windows/sign.ps1 `
             -PfxPath $env:WINDOWS_SIGNING_PFX_PATH `
-            -Files 'dist/windows/xianyu-server.exe','dist/windows/xianyu-tray.exe'
+            -Files $signingFiles
 
       - name: 安装 Inno Setup
         shell: pwsh
@@ -418,6 +466,7 @@ jobs:
               'dist/windows/xianyu-server.exe',
               'dist/windows/xianyu-tray.exe',
               'dist/windows/playwright-runtime/amd64',
+              'dist/windows/brain',
               'icon/windows/icon.ico',
               'packaging/windows/languages/ChineseSimplified.isl',
               'packaging/windows/languages/ChineseTraditional.isl',
@@ -433,6 +482,8 @@ jobs:
             if ($null -eq ($runtimeFiles | Select-Object -First 1)) {
               throw 'Windows 安装器 Playwright runtime 为空'
             }
+            $brainManifest = 'dist/windows/brain/runtime/runtime.json'
+            if (-not (Test-Path -LiteralPath $brainManifest -PathType Leaf)) { throw 'Windows 安装器缺少 Brain runtime manifest' }
             $longestRuntimeFile = $runtimeFiles |
               Sort-Object { $_.FullName.Length } -Descending |
               Select-Object -First 1
@@ -496,11 +547,16 @@ jobs:
 
             $expectedServer = Join-Path $installDir 'xianyu-server.exe'
             $expectedRuntime = Join-Path $installDir 'playwright-runtime'
+            $expectedProductRoot = $installDir
+            $expectedBrainRuntime = Join-Path $installDir 'brain\runtime'
             $serviceConfig = Get-CimInstance -ClassName Win32_Service -Filter "Name='$serviceName'" -ErrorAction Stop
             $actualServiceCommand = if ($null -eq $serviceConfig) { '' } else { $serviceConfig.PathName.Replace('"', '') }
             $requiredServiceArguments = @(
               $expectedServer,
               '-service',
+              "-product-root $expectedProductRoot",
+              "-brain-runtime-root $expectedBrainRuntime",
+              "-brain-data-root $(Join-Path $env:ProgramData 'DhXianyuAgentPanel\data\brain')",
               "-playwright-runtime-root $expectedRuntime"
             )
             $invalidServiceArgument = $requiredServiceArguments |
@@ -620,6 +676,29 @@ jobs:
 
       - name: 构建嵌入式前端
         run: npm ci --prefix frontend && npm run build --prefix frontend
+
+      - name: 构建 macOS Harness runtime
+        working-directory: brain/vendor/deepseek-harness
+        run: |
+          set -Eeuo pipefail
+          corepack pnpm install --frozen-lockfile
+          CI=true corepack pnpm run build
+          CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets=node24-macos-arm64 --skip-build
+
+      - name: 组装并检查 macOS Brain runtime
+        run: |
+          set -Eeuo pipefail
+          node_binary_arm64="$(node -p 'process.execPath')"
+          node_version="$(node -p 'process.versions.node')"
+          node_archive="$RUNNER_TEMP/node-v${node_version}-darwin-x64.tar.gz"
+          curl --fail --silent --show-error --location "https://nodejs.org/dist/v${node_version}/node-v${node_version}-darwin-x64.tar.gz" --output "$node_archive"
+          tar -xzf "$node_archive" -C "$RUNNER_TEMP"
+          node_binary_amd64="$RUNNER_TEMP/node-v${node_version}-darwin-x64/bin/node"
+          test -x "$node_binary_amd64"
+          node scripts/build-brain-runtime.mjs --output dist/macos/brain/arm64 --platform darwin --arch arm64 --mode native --node-binary "$node_binary_arm64"
+          node scripts/build-brain-runtime.mjs --output dist/macos/brain/amd64 --platform darwin --arch amd64 --mode node --node-binary "$node_binary_amd64"
+          node scripts/check-brain-runtime-package.mjs --root dist/macos/brain/arm64 --probe
+          node scripts/check-brain-runtime-package.mjs --root dist/macos/brain/amd64
 
       - name: 验证 macOS 托盘逻辑
         run: go test ./cmd/tray

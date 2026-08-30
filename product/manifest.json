@@ -45,6 +45,21 @@
     ],
     "node_carrier_platforms": [
       "darwin-amd64"
-    ]
+    ],
+    "brain_runtime_modes": {
+      "linux-amd64": "native",
+      "linux-arm64": "native",
+      "darwin-arm64": "native",
+      "darwin-amd64": "node",
+      "windows-amd64": "native"
+    },
+    "brain_layout": {
+      "root": "brain/runtime",
+      "node_carrier": "node-carrier",
+      "native_dsh": "dsh-runtime",
+      "node_dsh_entry": "node/node_modules/@deepseek-ai/dsh/lib/bin.js",
+      "sdk_client_entry": "node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js",
+      "manifest": "runtime.json"
+    }
   }
 }

@@ -38,6 +38,13 @@ type serverOptions struct {
 	addr                  string
 	webDir                string
 	workDir               string
+	productRoot           string
+	brainRuntimeRoot      string
+	brainNodeBinary       string
+	brainDSHRuntime       string
+	brainDSHEntry         string
+	brainSDKClientEntry   string
+	brainDataRoot         string
 	playwrightRuntimeRoot string
 	playwrightDriverDir   string
 	playwrightBrowserDir  string
@@ -199,6 +206,13 @@ func parseOptions() serverOptions {
 	flag.StringVar(&opts.addr, "addr", ":59188", "HTTP 监听地址")
 	flag.StringVar(&opts.webDir, "web", "", "前端静态资源目录（含 index.html）")
 	flag.StringVar(&opts.workDir, "workdir", "", "服务工作目录；用于桌面服务固定数据和浏览器目录")
+	flag.StringVar(&opts.productRoot, "product-root", "", "产品资源根目录；用于定位 Brain gateway 和安装包资源")
+	flag.StringVar(&opts.brainRuntimeRoot, "brain-runtime-root", "", "Brain runtime 载荷根目录；默认位于产品根 brain/runtime")
+	flag.StringVar(&opts.brainNodeBinary, "brain-node-binary", "", "Brain 使用的 Node 24 carrier 路径")
+	flag.StringVar(&opts.brainDSHRuntime, "brain-dsh-runtime", "", "原生平台 Harness runtime 路径")
+	flag.StringVar(&opts.brainDSHEntry, "brain-dsh-entry", "", "Node carrier 模式下的 dsh 入口路径")
+	flag.StringVar(&opts.brainSDKClientEntry, "brain-sdk-client-entry", "", "构建版 Harness SDK 客户端入口路径")
+	flag.StringVar(&opts.brainDataRoot, "brain-data-root", "", "Brain 派生会话数据目录")
 	flag.StringVar(&opts.playwrightRuntimeRoot, "playwright-runtime-root", "", "随安装包分发的 Playwright runtime 根目录")
 	flag.StringVar(&opts.playwrightDriverDir, "playwright-driver-dir", "", "Playwright driver 目录")
 	flag.StringVar(&opts.playwrightBrowserDir, "playwright-browser-dir", "", "Playwright 浏览器缓存目录")
@@ -428,6 +442,9 @@ func buildServerRuntime(opts serverOptions, infrastructure serverInfrastructure)
 	// runtime、buildErr 分别是组合层返回的完整运行时快照及其装配失败原因。
 	runtime, buildErr := compositionruntime.BuildRuntime(compositionruntime.RuntimeOptions{
 		NoBrowser: opts.noBrowser, SecureCookie: opts.secure, WebDir: opts.webDir, Addr: opts.addr,
+		ProductRoot: opts.productRoot, BrainRuntimeRoot: opts.brainRuntimeRoot, BrainNodeBinary: opts.brainNodeBinary,
+		BrainDSHRuntime: opts.brainDSHRuntime, BrainDSHEntry: opts.brainDSHEntry, BrainSDKClientEntry: opts.brainSDKClientEntry,
+		BrainDataRoot: opts.brainDataRoot,
 	}, compositionruntime.RuntimeInfrastructure{Store: infrastructure.store, Logger: infrastructure.logger})
 	if buildErr != nil {
 		return serverRuntime{}, buildErr

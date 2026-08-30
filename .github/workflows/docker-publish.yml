@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - main
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -120,6 +121,26 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24
+
+      - name: 构建 Docker Harness runtime
+        shell: bash
+        env:
+          HARNESS_TARGET: node24-linux-${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }}
+        working-directory: brain/vendor/deepseek-harness
+        run: |
+          set -Eeuo pipefail
+          corepack pnpm install --frozen-lockfile
+          CI=true corepack pnpm run build
+          CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
+
+      - name: 组装并检查 Docker Brain runtime
+        env:
+          PRODUCT_ARCH: ${{ matrix.arch }}
+        run: |
+          set -Eeuo pipefail
+          node_binary="$(node -p 'process.execPath')"
+          node scripts/build-brain-runtime.mjs --output .docker/brain-runtime --platform linux --arch "$PRODUCT_ARCH" --mode native --node-binary "$node_binary"
+          node scripts/check-brain-runtime-package.mjs --root .docker/brain-runtime --probe
 
       - name: 恢复 Docker Chromium runtime 缓存
         id: cache-docker-playwright

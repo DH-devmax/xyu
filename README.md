@@ -90,6 +90,9 @@ flowchart LR
     Engine --> Automation["自动化中心"]
     Automation --> Notify["通知渠道"]
     Engine -. "浏览器能力" .-> Chromium["Playwright / Chromium"]
+    Engine -. "结构化草案" .-> Brain["Brain gateway"]
+    Brain --> Harness["DeepSeek Harness runtime"]
+    Brain --> API
 ```
 
 核心职责划分：
@@ -100,6 +103,7 @@ flowchart LR
 - `internal/engine`：单账号生命周期、消息处理、回复与交付行为
 - `internal/automation`：发货、评价赠品、求评价和任务调度
 - `internal/browser`：Chromium 指纹读取
+- `brain/gateway`、`brain/profile`：Harness 进程边界、客服工具白名单和结果草案校验
 - `internal/db`：多数据库访问、敏感字段加密和嵌入式迁移
 - `internal/server`：HTTP/SPA transport、管理端鉴权和前端静态资源
 
@@ -260,6 +264,25 @@ packaging/macos/build-pkg.sh 0.0.0-local "$PWD/dist/macos" arm64
 不会生成安装后无法启动服务的残缺安装包。Intel macOS 使用 `amd64` 参数，并需要本机已有对应 x64 runtime。
 本机没有签名身份时生成的是未签名 pkg，不可作为已签名分发包使用。
 
+Brain runtime 也必须先组装并检查；构建器只接受官方 Node 24 或 SEA carrier，不接受依赖 Homebrew
+动态库的 `node`：
+
+```bash
+cd brain/vendor/deepseek-harness
+corepack pnpm install --frozen-lockfile
+CI=true corepack pnpm run build
+CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets=node24-macos-arm64 --skip-build
+cd ../../..
+export BRAIN_NODE_BINARY=/path/to/official-node-24/bin/node
+node scripts/build-brain-runtime.mjs --output "$PWD/dist/macos/brain/arm64" \
+  --platform darwin --arch arm64 --mode native --node-binary "$BRAIN_NODE_BINARY"
+node scripts/check-brain-runtime-package.mjs --root "$PWD/dist/macos/brain/arm64" --probe
+```
+
+Intel 包使用官方 Node 24 x64 carrier 和 `--mode node`；Linux、Windows 与 Apple Silicon 包在各自原生
+runner 上生成 native DSH。完整布局和 Go 启动参数见
+[`docs/architecture/brain-runtime-packaging.md`](docs/architecture/brain-runtime-packaging.md)。
+
 桌面端首次启动：
 
 1. 安装对应平台的安装包。macOS 请选择 arm64（Apple Silicon）或 amd64（Intel）版本。
@@ -391,6 +414,13 @@ Docker Compose 还支持：
 | `-addr` | `:59188` | HTTP 监听地址 |
 | `-web` | 内嵌前端 | 外部前端静态资源目录，目录内需包含 `index.html` |
 | `-workdir` | 空 | 服务工作目录；桌面服务用它固定数据和浏览器目录 |
+| `-product-root` | 当前目录 | 安装包资源根目录；用于定位 Brain gateway、profile 和前端资源 |
+| `-brain-runtime-root` | `<product-root>/brain/runtime` | Node 24 carrier、SDK 和 DSH 载荷目录 |
+| `-brain-node-binary` | 自动发现 | 覆盖 Brain 使用的 Node 24 carrier 路径 |
+| `-brain-dsh-runtime` | 自动发现 | 原生平台 Harness runtime 路径 |
+| `-brain-dsh-entry` | 自动发现 | Intel macOS 等 node 模式的 dsh 入口 |
+| `-brain-sdk-client-entry` | 自动发现 | 构建版 Harness SDK 客户端入口 |
+| `-brain-data-root` | `<product-root>/data/brain` | Brain session、摘要和索引等可重建派生数据目录 |
 | `-playwright-runtime-root` | 空 | 安装包随附的 Playwright runtime 根目录 |
 | `-playwright-driver-dir` | 空 | Playwright driver 目录，会设置为当前进程的 driver 路径 |
 | `-playwright-browser-dir` | 空 | Playwright 浏览器缓存目录，会设置为当前进程的 browser 路径 |
@@ -492,7 +522,24 @@ docker compose up -d
 修改其密码。
 
 `docker-compose.debian13-postgres17.yml` 保留为**源码构建版**，用于本地修改 Dockerfile
-或需要构建本地镜像的场景；生产服务器无需使用该文件。
+或需要构建本地镜像的场景；它要求先在目标架构生成并检查 `.docker/brain-runtime`，再执行
+`docker compose -f docker-compose.debian13-postgres17.yml build`。生产服务器无需使用该文件。
+
+源码 Docker 构建的 Brain 载荷步骤：
+
+```bash
+corepack pnpm --dir brain/vendor/deepseek-harness install --frozen-lockfile
+CI=true corepack pnpm --dir brain/vendor/deepseek-harness run build
+CI=true corepack pnpm --dir brain/vendor/deepseek-harness exec tsx \
+  scripts/build-exe-for-python-sdk.ts --targets=node24-linux-x64 --skip-build
+node scripts/build-brain-runtime.mjs --output .docker/brain-runtime \
+  --platform linux --arch amd64 --mode native --node-binary "$(node -p 'process.execPath')"
+node scripts/check-brain-runtime-package.mjs --root .docker/brain-runtime --probe
+docker compose -f docker-compose.debian13-postgres17.yml up -d
+```
+
+ARM64 主机将目标替换为 `node24-linux-arm64` 和 `--arch arm64`；载荷必须由匹配架构的
+runner 生成。
 
 持久化卷：
 

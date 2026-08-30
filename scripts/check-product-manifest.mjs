@@ -17,6 +17,14 @@ const requiredValues = new Map([
   ['branding_crop', manifest.branding?.crop === '520x520+250+245'],
   ['harness_tag', manifest.components?.deepseek_harness?.tag === 'dsh-v0.1.2-alpha.1'],
   ['harness_commit', manifest.components?.deepseek_harness?.commit === 'cd5ef8148158c3a752a658978873241fdf8e2bbc'],
+  ['brain_runtime_root', manifest.runtime?.brain_layout?.root === 'brain/runtime'],
+  ['brain_runtime_manifest', manifest.runtime?.brain_layout?.manifest === 'runtime.json'],
+  ['brain_sdk_entry', manifest.runtime?.brain_layout?.sdk_client_entry === 'node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js'],
+  ['brain_linux_amd64_mode', manifest.runtime?.brain_runtime_modes?.['linux-amd64'] === 'native'],
+  ['brain_linux_arm64_mode', manifest.runtime?.brain_runtime_modes?.['linux-arm64'] === 'native'],
+  ['brain_darwin_arm64_mode', manifest.runtime?.brain_runtime_modes?.['darwin-arm64'] === 'native'],
+  ['brain_darwin_amd64_mode', manifest.runtime?.brain_runtime_modes?.['darwin-amd64'] === 'node'],
+  ['brain_windows_amd64_mode', manifest.runtime?.brain_runtime_modes?.['windows-amd64'] === 'native'],
 ]);
 
 // invalidKeys 收集所有未满足的必要字段，一次输出可避免修复后反复运行。

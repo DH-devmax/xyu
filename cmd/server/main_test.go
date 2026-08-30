@@ -62,12 +62,12 @@ func TestParseOptionsReadsAllOperationalFlags(t *testing.T) {
 		os.Args = oldArgs
 		flag.CommandLine = oldCommandLine
 	})
-	os.Args = []string{"server", "-db", "custom.db", "-db-url", "sqlite://override.db", "-addr", "127.0.0.1:1", "-web", "web", "-workdir", "data", "-playwright-runtime-root", "runtime", "-playwright-driver-dir", "driver", "-playwright-browser-dir", "browsers", "-data-key-file", "key", "-secure", "-no-browser", "-v", "-log-level", "debug", "-log-format", "json", "-init-admin", "-ensure-admin", "-admin-email", "a@example.com", "-admin-password", "secret", "-service", "-version"}
+	os.Args = []string{"server", "-db", "custom.db", "-db-url", "sqlite://override.db", "-addr", "127.0.0.1:1", "-web", "web", "-workdir", "data", "-product-root", "product", "-brain-runtime-root", "brain-runtime", "-brain-node-binary", "node24", "-brain-dsh-runtime", "dsh", "-brain-dsh-entry", "dsh-entry", "-brain-sdk-client-entry", "sdk", "-brain-data-root", "brain-data", "-playwright-runtime-root", "runtime", "-playwright-driver-dir", "driver", "-playwright-browser-dir", "browsers", "-data-key-file", "key", "-secure", "-no-browser", "-v", "-log-level", "debug", "-log-format", "json", "-init-admin", "-ensure-admin", "-admin-email", "a@example.com", "-admin-password", "secret", "-service", "-version"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 	flag.CommandLine.SetOutput(io.Discard)
 	// opts 保存解析后的服务启动选项。
 	opts := parseOptions()
-	if opts.dbPath != "custom.db" || opts.dbURL != "sqlite://override.db" || opts.addr != "127.0.0.1:1" || opts.webDir != "web" || opts.workDir != "data" || opts.playwrightRuntimeRoot != "runtime" || opts.playwrightDriverDir != "driver" || opts.playwrightBrowserDir != "browsers" || opts.dataKeyFile != "key" {
+	if opts.dbPath != "custom.db" || opts.dbURL != "sqlite://override.db" || opts.addr != "127.0.0.1:1" || opts.webDir != "web" || opts.workDir != "data" || opts.productRoot != "product" || opts.brainRuntimeRoot != "brain-runtime" || opts.brainNodeBinary != "node24" || opts.brainDSHRuntime != "dsh" || opts.brainDSHEntry != "dsh-entry" || opts.brainSDKClientEntry != "sdk" || opts.brainDataRoot != "brain-data" || opts.playwrightRuntimeRoot != "runtime" || opts.playwrightDriverDir != "driver" || opts.playwrightBrowserDir != "browsers" || opts.dataKeyFile != "key" {
 		t.Fatalf("路径参数解析错误：%+v", opts)
 	}
 	if !opts.secure || !opts.noBrowser || !opts.verbose || !opts.initAdmin || !opts.ensureAdmin || !opts.service || !opts.showVersion || opts.logLevel != "debug" || opts.logFormat != "json" || opts.adminEmail != "a@example.com" || opts.adminPassword != "secret" {

@@ -48,8 +48,16 @@ type Options struct {
 	GatewayPath string
 	// HarnessRoot 是 vendored Harness workspace 根目录。
 	HarnessRoot string
+	// RuntimeRoot 是安装包内 Brain runtime 载荷根目录。
+	RuntimeRoot string
 	// NodeBinary 是包内 Node carrier；空值时使用 PATH 中的 node。
 	NodeBinary string
+	// DSHRuntime 是原生平台的单文件 Harness runtime；空值时尝试闭包入口。
+	DSHRuntime string
+	// DSHEntry 是 Node carrier 模式下的构建 dsh 入口。
+	DSHEntry string
+	// SDKClientEntry 是构建后的 SDK 客户端入口；空值时使用 vendor 源码。
+	SDKClientEntry string
 	// DataRoot 是 Harness 会话派生数据目录。
 	DataRoot string
 	// MCPBackendURL 是 Go 业务 MCP 端点地址。
@@ -180,11 +188,51 @@ func NewSupervisor(options Options) (*Supervisor, error) {
 	if options.Logger == nil {
 		options.Logger = slog.Default()
 	}
+	// rootErr 保存产品根目录绝对化失败原因，安装服务不能依赖启动时的当前目录。
+	if productRoot, rootErr := filepath.Abs(options.ProductRoot); rootErr == nil {
+		options.ProductRoot = productRoot
+	} else {
+		return nil, fmt.Errorf("解析 Brain 产品根目录失败: %w", rootErr)
+	}
+	// resolveProductPath 把相对资源路径解释为产品根目录下的路径，避免服务工作目录改变后失效。
+	resolveProductPath := func(value string) string {
+		if value == "" || filepath.IsAbs(value) {
+			return value
+		}
+		return filepath.Join(options.ProductRoot, value)
+	}
+	options.GatewayPath = resolveProductPath(options.GatewayPath)
+	options.HarnessRoot = resolveProductPath(options.HarnessRoot)
+	options.RuntimeRoot = resolveProductPath(options.RuntimeRoot)
+	options.DataRoot = resolveProductPath(options.DataRoot)
+	// nodeBinaryPath 允许传入 PATH 中的 node；含路径的值则相对产品根解析。
+	if options.NodeBinary != "" && (filepath.IsAbs(options.NodeBinary) || strings.ContainsAny(options.NodeBinary, `/\\`)) {
+		options.NodeBinary = resolveProductPath(options.NodeBinary)
+	}
+	options.DSHRuntime = resolveProductPath(options.DSHRuntime)
+	options.DSHEntry = resolveProductPath(options.DSHEntry)
+	options.SDKClientEntry = resolveProductPath(options.SDKClientEntry)
 	if options.GatewayPath == "" {
 		options.GatewayPath = filepath.Join(options.ProductRoot, "brain/gateway/index.mjs")
 	}
 	if options.HarnessRoot == "" {
 		options.HarnessRoot = filepath.Join(options.ProductRoot, "brain/vendor/deepseek-harness")
+	}
+	if options.RuntimeRoot == "" {
+		options.RuntimeRoot = filepath.Join(options.ProductRoot, "brain/runtime")
+	}
+	// 安装包使用固定文件名，开发树没有这些文件时继续走 PATH 和源码模式。
+	if options.NodeBinary == "" {
+		options.NodeBinary = firstExistingFile(filepath.Join(options.RuntimeRoot, "node-carrier"), filepath.Join(options.RuntimeRoot, "node-carrier.exe"))
+	}
+	if options.DSHRuntime == "" {
+		options.DSHRuntime = firstExistingFile(filepath.Join(options.RuntimeRoot, "dsh-runtime"), filepath.Join(options.RuntimeRoot, "dsh-runtime.exe"))
+	}
+	if options.DSHEntry == "" {
+		options.DSHEntry = firstExistingFile(filepath.Join(options.RuntimeRoot, "node/node_modules/@deepseek-ai/dsh/lib/bin.js"))
+	}
+	if options.SDKClientEntry == "" {
+		options.SDKClientEntry = firstExistingFile(filepath.Join(options.RuntimeRoot, "node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js"))
 	}
 	if options.DataRoot == "" {
 		options.DataRoot = filepath.Join(options.ProductRoot, "data/brain")
@@ -196,6 +244,19 @@ func NewSupervisor(options Options) (*Supervisor, error) {
 		options.StartTimeout = defaultGatewayStartTimeout
 	}
 	return &Supervisor{options: options, status: brainapp.RuntimeStatus{State: "stopped", UpdatedAt: time.Now().UnixMilli()}}, nil
+}
+
+// firstExistingFile 返回候选中的第一个普通文件，避免把目录误当作可执行入口。
+func firstExistingFile(candidates ...string) string {
+	// candidate 是当前尝试的候选路径。
+	for _, candidate := range candidates {
+		// info、err 保存当前候选路径的文件状态和检查结果。
+		info, err := os.Stat(candidate)
+		if err == nil && info.Mode().IsRegular() {
+			return candidate
+		}
+	}
+	return ""
 }
 
 // Start 启动 gateway、读取随机端口回执并完成健康检查；重复启动保持幂等。
@@ -274,12 +335,26 @@ func (supervisor *Supervisor) startLocked(ctx context.Context) error {
 			return fmt.Errorf("查找 Node carrier 失败: %w", lookErr)
 		}
 	}
-	// command 是 gateway 子进程命令；tsx loader 由 Harness workspace 解析同版本源代码。
-	command := exec.Command(nodeBinary, "--import", "tsx/esm", supervisor.options.GatewayPath)
-	command.Dir = supervisor.options.HarnessRoot
+	// gatewayArgs 根据是否存在构建 SDK 选择无 loader 的安装模式或源码 tsx 模式。
+	gatewayArgs := []string{supervisor.options.GatewayPath}
+	// commandDir 是 gateway 子进程的工作目录。
+	commandDir := supervisor.options.ProductRoot
+	if supervisor.options.SDKClientEntry == "" {
+		gatewayArgs = []string{"--import", "tsx/esm", supervisor.options.GatewayPath}
+		commandDir = supervisor.options.HarnessRoot
+	}
+	// command 是 gateway 子进程命令；安装包由 Node 24 carrier 直接执行 mjs。
+	command := exec.Command(nodeBinary, gatewayArgs...)
+	command.Dir = commandDir
 	command.Env = append(os.Environ(),
 		"DH_BRAIN_TOKEN="+token,
 		"DH_BRAIN_CONTRACT_VERSION="+defaultGatewayContract,
+		"DH_BRAIN_RUNTIME_ROOT="+supervisor.options.RuntimeRoot,
+		"DH_BRAIN_HARNESS_ROOT="+supervisor.options.HarnessRoot,
+		"DH_BRAIN_NODE_BINARY="+nodeBinary,
+		"DH_BRAIN_DSH_RUNTIME="+supervisor.options.DSHRuntime,
+		"DH_BRAIN_DSH_ENTRY="+supervisor.options.DSHEntry,
+		"DH_BRAIN_SDK_CLIENT_ENTRY="+supervisor.options.SDKClientEntry,
 		"DH_BRAIN_DATA_ROOT="+supervisor.options.DataRoot,
 		"DH_BRAIN_PROFILE_PATH="+filepath.Join(supervisor.options.ProductRoot, "brain/profile/customer-service.patch.yml"),
 		"DH_BRAIN_PROVIDER="+settings.Provider,

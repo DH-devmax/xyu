@@ -7,26 +7,91 @@
  * - Harness 只能提交草案，消息发送、改价和持久化仍由 Go 完成。
  */
 
+import { existsSync, readFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { createRequire } from 'node:module'
 import { once } from 'node:events'
-import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { delimiter, dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const gatewayDirectory = dirname(fileURLToPath(import.meta.url))
 const productRoot = resolve(gatewayDirectory, '../..')
-const harnessRoot = join(productRoot, 'brain/vendor/deepseek-harness')
-const requireFromHarness = createRequire(join(harnessRoot, 'packages/mcp/mcp-client/package.json'))
-const { McpServer } = requireFromHarness('@modelcontextprotocol/sdk/server/mcp.js')
-const { StreamableHTTPServerTransport } = requireFromHarness('@modelcontextprotocol/sdk/server/streamableHttp.js')
-const { z } = requireFromHarness('zod')
-const { DeepSeekHarness } = await import('../vendor/deepseek-harness/packages/sdk/client/src/index.ts')
-const { validateDraft } = await import('../runtime/result-tool.mjs')
+const configuredHarnessRoot = String(process.env.DH_BRAIN_HARNESS_ROOT ?? '').trim()
+const harnessRoot = configuredHarnessRoot === ''
+  ? join(productRoot, 'brain/vendor/deepseek-harness')
+  : resolve(configuredHarnessRoot)
+const configuredRuntimeRoot = String(process.env.DH_BRAIN_RUNTIME_ROOT ?? '').trim()
+const runtimeRoot = configuredRuntimeRoot === ''
+  ? join(productRoot, 'brain/runtime')
+  : resolve(configuredRuntimeRoot)
+const brainRoot = dirname(runtimeRoot)
+
+// readRuntimeManifest 读取安装包载荷锁定信息；开发树没有 manifest 时保留源码回落。
+function readRuntimeManifest() {
+  const manifestPath = join(runtimeRoot, 'runtime.json')
+  if (!existsSync(manifestPath)) return {}
+  let manifest
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  } catch (error) {
+    throw new Error(`Brain runtime manifest 解析失败: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  if (manifest?.schema_version !== 1 || manifest.contract_version !== 'brain.internal.v1') {
+    throw new Error('Brain runtime manifest 契约版本错误')
+  }
+  if (manifest.harness?.tag !== 'dsh-v0.1.2-alpha.1'
+    || manifest.harness?.commit !== 'cd5ef8148158c3a752a658978873241fdf8e2bbc'
+    || manifest.harness?.version !== '0.1.2-alpha.1') {
+    throw new Error('Brain runtime manifest Harness 锁定信息错误')
+  }
+  return manifest
+}
+
+const runtimeManifest = readRuntimeManifest()
+
+// runtimeManifestPath 将 manifest 中的相对路径限制在 brain 载荷根，防止路径越界。
+function runtimeManifestPath(name, fallback) {
+  const candidate = runtimeManifest.paths?.[name] ?? fallback
+  if (typeof candidate !== 'string' || candidate === '' || candidate.startsWith('/') || candidate.includes('\\')) {
+    throw new Error(`Brain runtime manifest 路径无效: ${name}`)
+  }
+  const resolvedPath = resolve(brainRoot, candidate)
+  const relativePath = relative(brainRoot, resolvedPath)
+  if (relativePath === '' || relativePath.startsWith('..') || isAbsolute(relativePath)) {
+    throw new Error(`Brain runtime manifest 路径越界: ${name}`)
+  }
+  return resolvedPath
+}
+
+const runtimeNodeRoot = join(runtimeRoot, 'node')
+const runtimeModuleAnchor = existsSync(join(runtimeNodeRoot, 'package.json'))
+  ? join(runtimeNodeRoot, 'package.json')
+  : join(harnessRoot, 'packages/mcp/mcp-client/package.json')
+const requireFromRuntime = createRequire(runtimeModuleAnchor)
+const { McpServer } = requireFromRuntime('@modelcontextprotocol/sdk/server/mcp.js')
+const { StreamableHTTPServerTransport } = requireFromRuntime('@modelcontextprotocol/sdk/server/streamableHttp.js')
+const { z } = requireFromRuntime('zod')
+const configuredSDKClientEntry = String(process.env.DH_BRAIN_SDK_CLIENT_ENTRY ?? '').trim()
+const sdkClientEntry = configuredSDKClientEntry === ''
+  ? runtimeManifestPath('sdk_client', 'runtime/node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js')
+  : resolve(configuredSDKClientEntry)
+const sdkModule = existsSync(sdkClientEntry)
+  ? await import(pathToFileURL(sdkClientEntry).href)
+  : await import(pathToFileURL(join(harnessRoot, 'packages/sdk/client/src/index.ts')).href)
+const { DeepSeekHarness, createProcessDeepSeekHarness } = sdkModule
+const resultToolEntry = runtimeManifestPath('result_tool', 'runtime/result-tool.mjs')
+const { validateDraft } = await import(pathToFileURL(resultToolEntry).href)
 
 const contractVersion = process.env.DH_BRAIN_CONTRACT_VERSION ?? 'brain.internal.v1'
 const bearerToken = String(process.env.DH_BRAIN_TOKEN ?? '').trim()
 const profilePath = process.env.DH_BRAIN_PROFILE_PATH ?? join(productRoot, 'brain/profile/customer-service.patch.yml')
 const dataRoot = process.env.DH_BRAIN_DATA_ROOT ?? join(productRoot, 'data/brain')
+const dshRuntimePath = String(process.env.DH_BRAIN_DSH_RUNTIME ?? '').trim()
+  || (runtimeManifest.paths?.dsh_runtime === undefined ? '' : runtimeManifestPath('dsh_runtime', ''))
+const dshEntryPath = String(process.env.DH_BRAIN_DSH_ENTRY ?? '').trim()
+  || (runtimeManifest.paths?.dsh_entry === undefined ? '' : runtimeManifestPath('dsh_entry', ''))
+const nodeBinaryPath = String(process.env.DH_BRAIN_NODE_BINARY ?? '').trim()
+  || (runtimeManifest.paths?.node_carrier === undefined ? '' : runtimeManifestPath('node_carrier', ''))
 const mcpBackendURL = String(process.env.DH_BRAIN_MCP_BACKEND_URL ?? '').trim()
 const mcpBackendToken = String(process.env.DH_BRAIN_MCP_BACKEND_TOKEN ?? '').trim()
 // mcpClientURL/mcpClientToken 是 gateway 暴露给 Harness profile 的一次性地址和凭证。
@@ -166,6 +231,36 @@ function createHarness() {
   const model = process.env.DH_BRAIN_MODEL ?? 'deepseek-v4-flash'
   const reasoningEffort = process.env.DH_BRAIN_REASONING_EFFORT ?? 'high'
   const childEnvironment = { ...process.env, DH_BRAIN_MCP_URL: mcpClientURL, DH_BRAIN_MCP_TOKEN: mcpClientToken }
+  const runtimeEnvironment = () => {
+    const runtimePath = dshRuntimePath === '' ? '' : dirname(dshRuntimePath)
+    const pathPrefix = runtimePath === '' ? [] : [runtimePath]
+    const currentPath = childEnvironment.PATH ?? ''
+    return {
+      ...childEnvironment,
+      DSH_HOME: dataRoot,
+      PATH: [...pathPrefix, currentPath].filter(Boolean).join(delimiter),
+    }
+  }
+  if (dshRuntimePath !== '' || dshEntryPath !== '') {
+    const command = dshRuntimePath !== '' ? dshRuntimePath : (nodeBinaryPath === '' ? process.execPath : nodeBinaryPath)
+    const args = dshRuntimePath !== ''
+      ? ['--profile', 'sdk', '--patch', profilePath]
+      : [dshEntryPath, '--profile', 'sdk', '--patch', profilePath]
+    return createProcessDeepSeekHarness({
+      command,
+      args,
+      cwd: productRoot,
+      environment: runtimeEnvironment,
+      description: 'DH 闲不下来客服 Harness runtime',
+      initializeTimeoutMs: 10_000,
+      requestTimeoutMs,
+      shutdownTimeoutMs: 90_000,
+    }, {
+      provider,
+      model,
+      reasoningEffort,
+    })
+  }
   return new DeepSeekHarness({
     profile: 'sdk',
     patches: [profilePath],

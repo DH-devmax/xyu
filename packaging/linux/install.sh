@@ -24,6 +24,7 @@ fi
 SERVER_SOURCE="${DH_XIANYU_AGENTPANEL_SERVER_SOURCE:-${XIANYU_SERVER_SOURCE:-$SCRIPT_DIR/xianyu-server}}"
 BROWSER_SOURCE="${DH_XIANYU_AGENTPANEL_BROWSER_INSTALL_SOURCE:-${XIANYU_BROWSER_INSTALL_SOURCE:-$SCRIPT_DIR/browser-install}}"
 RUNTIME_SOURCE="${DH_XIANYU_AGENTPANEL_PLAYWRIGHT_RUNTIME_SOURCE:-${XIANYU_PLAYWRIGHT_RUNTIME_SOURCE:-$SCRIPT_DIR/playwright-runtime}}"
+BRAIN_SOURCE="${DH_XIANYU_AGENTPANEL_BRAIN_SOURCE:-$SCRIPT_DIR/brain}"
 ICON_SOURCE="${DH_XIANYU_AGENTPANEL_ICON_SOURCE:-${XIANYU_ICON_SOURCE:-$SCRIPT_DIR/icon.png}}"
 MIGRATION_SOURCE="${DH_XIANYU_AGENTPANEL_MIGRATION_SOURCE:-$SCRIPT_DIR/migrate-product-data.sh}"
 if [[ ! -x "$SERVER_SOURCE" ]]; then
@@ -42,6 +43,17 @@ esac
 if [[ ! -d "$RUNTIME_SOURCE/$RUNTIME_ARCH/playwright-driver" ]] || \
    [[ ! -d "$RUNTIME_SOURCE/$RUNTIME_ARCH/playwright-browsers" ]]; then
   echo "找不到 $RUNTIME_ARCH 架构的 Playwright runtime：$RUNTIME_SOURCE/$RUNTIME_ARCH" >&2
+  exit 1
+fi
+if [[ ! -f "$BRAIN_SOURCE/runtime/runtime.json" ]] || \
+   [[ ! -f "$BRAIN_SOURCE/runtime/node-carrier" ]] || \
+   [[ ! -f "$BRAIN_SOURCE/runtime/node/package.json" ]] || \
+   [[ ! -f "$BRAIN_SOURCE/runtime/node/node_modules/@deepseek-ai/dsh/lib/bin.js" ]] || \
+   [[ ! -f "$BRAIN_SOURCE/runtime/node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js" ]] || \
+   [[ ! -f "$BRAIN_SOURCE/gateway/index.mjs" ]] || \
+   [[ ! -f "$BRAIN_SOURCE/profile/customer-service.patch.yml" ]] || \
+   [[ ! -f "$BRAIN_SOURCE/runtime/result-tool.mjs" ]]; then
+  echo "找不到完整的 Brain runtime 载荷：$BRAIN_SOURCE" >&2
   exit 1
 fi
 if [[ ! -f "$ICON_SOURCE" ]]; then
@@ -82,6 +94,10 @@ rm -rf "$INSTALL_DIR/playwright-runtime"
 install -d -m 0755 "$INSTALL_DIR/playwright-runtime"
 cp -R "$RUNTIME_SOURCE/." "$INSTALL_DIR/playwright-runtime/"
 chmod -R a+rX "$INSTALL_DIR/playwright-runtime"
+rm -rf "$INSTALL_DIR/brain"
+install -d -m 0755 "$INSTALL_DIR/brain"
+cp -R "$BRAIN_SOURCE/." "$INSTALL_DIR/brain/"
+chmod -R a+rX "$INSTALL_DIR/brain"
 install -d -m 0750 "$CONFIG_DIR"
 install -m 0755 "$SERVER_SOURCE" "$INSTALL_DIR/xianyu-server"
 install -m 0755 "$BROWSER_SOURCE" "$INSTALL_DIR/browser-install"
