@@ -21,7 +21,7 @@ The active application contains:
 ## Common commands
 
 ```bash
-cd /Users/christ/Workspace/git/xianyu/Ydisks-Xianyu-Helper
+cd /path/to/xyu
 
 make build      # go build ./cmd/server
 make test       # go test ./...
@@ -83,7 +83,7 @@ go test ./internal/db -run TestMultiDB -v
 Build the frontend:
 
 ```bash
-cd /Users/christ/Workspace/git/xianyu/Ydisks-Xianyu-Helper/frontend
+cd frontend
 npm install
 npm run build
 ```

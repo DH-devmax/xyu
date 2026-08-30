@@ -41,3 +41,9 @@ brain 状态由 `/api/v1/brain/status` 单独表达。
 Harness 源码以 squash subtree 固定到 `product/manifest.json` 记录的 tag 和 commit。客服
 profile 不加载 shell、PowerShell、editor、filesystem、subprocess、PTY、sandbox 和 coding 工具。
 发布闭包由专用 deploy root 生成，CI 对最终工具目录执行 fail-closed 白名单断言。
+
+`product/sbom.cdx.json` 是 Go module、前端 npm 和 vendored Harness pnpm workspace 的
+CycloneDX 1.6 机器可读清单，`product/dependency-licenses.json` 按许可声明聚合全部组件。
+两份产物记录 `product/manifest.json`、`go.mod`、`go.sum`、npm/pnpm 锁文件和上游
+notices 的 SHA-256。`make supply-chain-check` 在本地 preflight 和 main CI 中阻断任何未重新
+生成的依赖变更；更新依赖后需在已安装的 workspace 执行 `make supply-chain-generate`。

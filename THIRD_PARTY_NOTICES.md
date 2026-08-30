@@ -1,5 +1,12 @@
 # Third-Party Notices
 
+## Machine-readable inventory
+
+The deterministic CycloneDX 1.6 inventory is stored in `product/sbom.cdx.json`.
+`product/dependency-licenses.json` groups every inventoried component by its
+declared license. Both artifacts are bound to the Go, npm and pnpm lock inputs
+with SHA-256 hashes and are checked by `make supply-chain-check`.
+
 ## DH闲不下来 baseline
 
 The product retains the v1.0.5 Ydisks-Xianyu-Helper baseline and its

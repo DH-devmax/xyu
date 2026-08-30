@@ -17,6 +17,9 @@ const requiredValues = new Map([
   ['branding_crop', manifest.branding?.crop === '520x520+250+245'],
   ['harness_tag', manifest.components?.deepseek_harness?.tag === 'dsh-v0.1.2-alpha.1'],
   ['harness_commit', manifest.components?.deepseek_harness?.commit === 'cd5ef8148158c3a752a658978873241fdf8e2bbc'],
+  ['supply_chain_format', manifest.supply_chain?.format === 'CycloneDX 1.6'],
+  ['supply_chain_sbom', manifest.supply_chain?.sbom === 'product/sbom.cdx.json'],
+  ['supply_chain_licenses', manifest.supply_chain?.licenses === 'product/dependency-licenses.json'],
   ['brain_runtime_root', manifest.runtime?.brain_layout?.root === 'brain/runtime'],
   ['brain_runtime_manifest', manifest.runtime?.brain_layout?.manifest === 'runtime.json'],
   ['brain_sdk_entry', manifest.runtime?.brain_layout?.sdk_client_entry === 'node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js'],
@@ -38,6 +41,7 @@ const vendorPackagePath = new URL('../brain/vendor/deepseek-harness/package.json
 // vendorPackage 用于证明工作树中的 Harness 版本与产品锁定相符。
 const vendorPackage = JSON.parse(await readFile(vendorPackagePath, 'utf8'));
 if (vendorPackage.version !== '0.1.2-alpha.1') throw new Error('Harness subtree 版本与锁定不符');
+if (vendorPackage.packageManager !== 'pnpm@11.7.0') throw new Error('Harness pnpm 版本与发布门禁不符');
 
 // subtreeCommit 是从完整 Git 历史中检索的上游 split 证据，CI 必须使用 fetch-depth 0。
 const subtreeCommit = execFileSync('git', [

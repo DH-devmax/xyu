@@ -24,4 +24,4 @@ if ! grep -q 'createProcessDeepSeekHarness, DeepSeekHarness' \
   git apply --directory=brain/vendor/deepseek-harness brain/vendor-patches/sdk-native-launch.patch
 fi
 
-printf '请更新 product/manifest.json 的 Harness tag/commit，然后运行 make brain-check。\n'
+printf '请更新 product/manifest.json 的 Harness tag/commit，然后运行 make brain-check 和 make supply-chain-generate。\n'

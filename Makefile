@@ -3,7 +3,7 @@
 GO ?= go
 GOLANGCI_LINT ?= golangci-lint
 
-.PHONY: build build-int build-browser-install build-tray brain-check brain-profile-integration brain-runtime-build brain-runtime-check test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check brand-assets-check packaging-check product-data-migration-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
+.PHONY: build build-int build-browser-install build-tray brain-check brain-profile-integration brain-runtime-build brain-runtime-check test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check supply-chain-generate supply-chain-check brand-assets-check packaging-check product-data-migration-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
 
 ## build: 编译 server（默认，跳过 integration build tag）
 build:
@@ -98,9 +98,19 @@ brand-assets-check:
 product-data-migration-check:
 	bash scripts/migrate-product-data.test.sh
 
-## product-check: 校验品牌、契约版本、上游组件和打包输入
+## supply-chain-generate: 从 Go/npm/pnpm 锁定信息生成 CycloneDX SBOM 与许可证清单
+supply-chain-generate:
+	node scripts/generate-supply-chain.mjs
+
+## supply-chain-check: 校验 SBOM、许可证清单与所有依赖锁文件一致
+supply-chain-check:
+	node --test scripts/supply-chain.test.mjs
+	node scripts/check-supply-chain.mjs
+
+## product-check: 校验品牌、供应链、契约版本、上游组件和打包输入
 product-check:
 	node scripts/check-product-manifest.mjs
+	$(MAKE) supply-chain-check
 	$(MAKE) brand-assets-check
 	$(MAKE) packaging-check
 	$(MAKE) product-data-migration-check

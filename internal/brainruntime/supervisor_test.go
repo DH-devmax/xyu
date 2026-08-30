@@ -11,6 +11,53 @@ import (
 	brainapp "github.com/DH-devmax/xyu/internal/application/brain"
 )
 
+// brainGatewayFixture 是 Supervisor 进程生命周期测试的最小 Node 子进程，不引入 Harness workspace 依赖。
+const brainGatewayFixture = `
+import { createServer } from 'node:http'
+
+const token = String(process.env.DH_BRAIN_TOKEN ?? '')
+const contractVersion = String(process.env.DH_BRAIN_CONTRACT_VERSION ?? '')
+const server = createServer((request, response) => {
+  response.setHeader('content-type', 'application/json')
+  if (request.headers.authorization !== 'Bearer ' + token) {
+    response.writeHead(401)
+    response.end(JSON.stringify({ error: 'unauthorized' }))
+    return
+  }
+  if (request.method === 'GET' && request.url === '/internal/v1/health') {
+    response.end(JSON.stringify({
+      contract_version: contractVersion,
+      state: 'running',
+      healthy: true,
+      runtime_version: 'dsh-v0.1.2-alpha.1',
+      active_sessions: 0,
+      queue_depth: 0,
+      restart_count: 0,
+      last_error: '',
+      updated_at: Date.now(),
+    }))
+    return
+  }
+  if (request.method === 'POST' && request.url === '/internal/v1/drain') {
+    response.end(JSON.stringify({ contract_version: contractVersion, drained: true }))
+    server.close(() => process.exit(0))
+    return
+  }
+  response.writeHead(404)
+  response.end(JSON.stringify({ error: 'not_found' }))
+})
+
+server.listen(0, '127.0.0.1', () => {
+  const address = server.address()
+  process.stdout.write(JSON.stringify({
+    ready: true,
+    host: '127.0.0.1',
+    port: address.port,
+    contract_version: contractVersion,
+  }) + '\n')
+})
+`
+
 // productRootForTest 从测试运行目录向上寻找已 vendor 的 Brain 产品根目录。
 func productRootForTest(t *testing.T) string {
 	t.Helper()
@@ -35,21 +82,33 @@ func productRootForTest(t *testing.T) string {
 	return ""
 }
 
-// TestSupervisorStartsHealthAndDrains 验证 Go supervisor 能启动真实 gateway、读取状态并优雅排空。
+// TestSupervisorStartsHealthAndDrains 验证 Go supervisor 能启动独立 gateway fixture、读取状态并优雅排空。
 func TestSupervisorStartsHealthAndDrains(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("fixture uses the POSIX Node carrier command line")
 	}
-	// root 保存当前步骤的中间结果。
-	root := productRootForTest(t)
+	// root 是不依赖 vendored node_modules 的最小产品目录。
+	root := t.TempDir()
+	// gatewayPath 是测试进程的 ESM 入口。
+	gatewayPath := filepath.Join(root, "brain", "gateway", "index.mjs")
+	// err 保存 fixture 目录的创建结果。
+	if err := os.MkdirAll(filepath.Dir(gatewayPath), 0o755); err != nil {
+		t.Fatalf("mkdir gateway fixture: %v", err)
+	}
+	// err 保存 Node fixture 入口文件的写入结果。
+	if err := os.WriteFile(gatewayPath, []byte(brainGatewayFixture), 0o600); err != nil {
+		t.Fatalf("write gateway fixture: %v", err)
+	}
 	// dataRoot 保存当前步骤的中间结果。
 	dataRoot := filepath.Join(t.TempDir(), "brain")
 	// err、supervisor 保存当前步骤的中间结果。
 	supervisor, err := NewSupervisor(Options{
 		ProductRoot: root,
-		GatewayPath: filepath.Join(root, "brain/gateway/index.mjs"),
-		HarnessRoot: filepath.Join(root, "brain/vendor/deepseek-harness"),
-		DataRoot:    dataRoot,
+		GatewayPath: gatewayPath,
+		HarnessRoot: root,
+		// SDKClientEntry 仅用于选择无 tsx loader 的已构建启动路径，fixture 不会读取其内容。
+		SDKClientEntry: gatewayPath,
+		DataRoot:       dataRoot,
 		Settings: func(context.Context) (brainapp.Settings, error) {
 			return brainapp.Settings{Enabled: true, Provider: brainapp.DefaultProvider, Model: brainapp.DefaultModel,
 				BaseURL: brainapp.DefaultBaseURL, ReasoningEffort: "high", TimeoutMS: 30_000, QueueTimeoutMS: 5_000, MaxConcurrency: 4}, nil

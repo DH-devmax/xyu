@@ -35,6 +35,11 @@
     "openapi": "3.1.0",
     "brain": "1.0.0"
   },
+  "supply_chain": {
+    "format": "CycloneDX 1.6",
+    "sbom": "product/sbom.cdx.json",
+    "licenses": "product/dependency-licenses.json"
+  },
   "runtime": {
     "node": "24",
     "native_platforms": [

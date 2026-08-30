@@ -44,8 +44,8 @@ jobs:
       - name: 检查中文注释
         run: go run ./tools/commentlint -mode check -root .
 
-      - name: 检查产品与上游锁定清单
-        run: node scripts/check-product-manifest.mjs
+      - name: 检查产品、供应链与上游锁定清单
+        run: make product-check
 
       - name: 检查架构依赖
         run: go run ./tools/architecturecheck
@@ -127,11 +127,11 @@ jobs:
         working-directory: brain/vendor/deepseek-harness
         env:
           CI: "1"
-        run: corepack pnpm install --frozen-lockfile
+        run: corepack pnpm@11.7.0 install --frozen-lockfile
 
       - name: 验证 SDK 补丁与客服 profile 真实启动
         run: |
-          corepack pnpm --dir brain/vendor/deepseek-harness exec vitest run packages/sdk/client
+          corepack pnpm@11.7.0 --dir brain/vendor/deepseek-harness exec vitest run packages/sdk/client
           make brain-profile-integration
 
   multidb:
