@@ -1,0 +1,2022 @@
+diff --git a/.dockerignore b/.dockerignore
+index f3dd611776..270336e024 100644
+--- a/.dockerignore
++++ b/.dockerignore
+@@ -14,6 +14,11 @@ init-admin
+ *.sqlite
+ *.sqlite3
+ cover.out
++# Harness 源码只在 CI 载荷构建阶段使用；最终镜像从 .docker/brain-runtime
++# 复制已检查的 gateway、SDK 和 carrier，避免把本地依赖和构建缓存送入 Docker 上下文。
++brain/vendor/deepseek-harness/
+ !/.docker/
++!/.docker/brain-runtime/
++!/.docker/brain-runtime/**
+ !/.docker/playwright-runtime/
+ !/.docker/playwright-runtime/**
+diff --git a/.github/workflows/desktop-cd.yml b/.github/workflows/desktop-cd.yml
+index d66eb69090..9431191f5a 100644
+--- a/.github/workflows/desktop-cd.yml
++++ b/.github/workflows/desktop-cd.yml
+@@ -4,6 +4,7 @@ on:
+   push:
+     branches:
+       - dev
++      - main
+   workflow_dispatch:
+   workflow_call:
+     inputs:
+@@ -98,6 +99,28 @@ jobs:
+           go build -trimpath -ldflags="$version_ldflags" -o "$package_dir/xianyu-server" ./cmd/server
+           go build -trimpath -ldflags='-s -w' -o "$package_dir/browser-install" ./cmd/browser-install
+ 
++      - name: 构建 Linux Harness runtime
++        working-directory: brain/vendor/deepseek-harness
++        env:
++          HARNESS_TARGET: node24-linux-${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }}
++        run: |
++          set -Eeuo pipefail
++          corepack pnpm install --frozen-lockfile
++          CI=true corepack pnpm run build
++          CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
++
++      - name: 组装并检查 Linux Brain runtime
++        env:
++          PRODUCT_ARCH: ${{ matrix.arch }}
++        run: |
++          set -Eeuo pipefail
++          package_dir="dist/dh-xianyu-agentpanel-linux-${PRODUCT_ARCH}"
++          node_binary="$(node -p 'process.execPath')"
++          node scripts/build-brain-runtime.mjs \
++            --output "$package_dir/brain" --platform linux --arch "$PRODUCT_ARCH" --mode native \
++            --node-binary "$node_binary"
++          node scripts/check-brain-runtime-package.mjs --root "$package_dir/brain" --probe
++
+       - name: 恢复 Linux Chromium runtime 缓存
+         id: cache-linux-playwright
+         uses: actions/cache/restore@v5
+@@ -209,6 +232,22 @@ jobs:
+         shell: pwsh
+         run: npm ci --prefix frontend; npm run build --prefix frontend
+ 
++      - name: 构建 Windows Harness runtime
++        shell: pwsh
++        working-directory: brain/vendor/deepseek-harness
++        run: |
++          corepack pnpm install --frozen-lockfile
++          $env:CI = 'true'
++          corepack pnpm run build
++          corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets=node24-win-x64 --skip-build
++
++      - name: 组装并检查 Windows Brain runtime
++        shell: pwsh
++        run: |
++          $nodeBinary = (node -p "process.execPath")
++          node scripts/build-brain-runtime.mjs --output dist/windows/brain --platform windows --arch amd64 --mode native --node-binary $nodeBinary
++          node scripts/check-brain-runtime-package.mjs --root dist/windows/brain --probe
++
+       - name: 验证 Windows 托盘逻辑与安装脚本
+         shell: pwsh
+         run: |
+@@ -285,6 +324,8 @@ jobs:
+           $serviceName = 'DhXianyuAgentPanel'
+           $workDir = Join-Path $env:RUNNER_TEMP $serviceName
+           $runtimeRoot = (Resolve-Path 'dist/windows/playwright-runtime/amd64').Path
++          $productRoot = (Resolve-Path 'dist/windows').Path
++          $brainRuntimeRoot = (Resolve-Path 'dist/windows/brain/runtime').Path
+           $serviceScript = (Resolve-Path 'packaging/windows/service-control.ps1').Path
+           $serverPath = (Resolve-Path 'dist/windows/xianyu-server.exe').Path
+           try {
+@@ -292,7 +333,7 @@ jobs:
+               & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
+                 -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+                 -File $serviceScript -Mode register -ServiceName $serviceName `
+-                -ExePath $serverPath -WorkDir $workDir -RuntimeRoot $runtimeRoot
++                -ExePath $serverPath -WorkDir $workDir -RuntimeRoot $runtimeRoot -ProductRoot $productRoot -BrainRuntimeRoot $brainRuntimeRoot
+               if ($LASTEXITCODE -ne 0) {
+                 throw "Windows 服务第 $registerAttempt 次注册失败，错误码: $LASTEXITCODE"
+               }
+@@ -317,6 +358,9 @@ jobs:
+               $serverPath,
+               '-service',
+               "-workdir $workDir",
++              "-product-root $productRoot",
++              "-brain-runtime-root $brainRuntimeRoot",
++              "-brain-data-root $workDir\data\brain",
+               "-playwright-runtime-root $runtimeRoot"
+             )
+             $invalidServiceArgument = $requiredServiceArguments |
+@@ -389,9 +433,13 @@ jobs:
+           WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+           WINDOWS_SIGNING_IDENTITY: ${{ secrets.WINDOWS_SIGNING_IDENTITY }}
+         run: |
++          $signingFiles = @('dist/windows/xianyu-server.exe','dist/windows/xianyu-tray.exe')
++          $signingFiles += @(Get-ChildItem -LiteralPath 'dist/windows/brain/runtime' -Recurse -File |
++            Where-Object { $_.Extension -in '.exe', '.dll', '.node' } |
++            Select-Object -ExpandProperty FullName)
+           & packaging/windows/sign.ps1 `
+             -PfxPath $env:WINDOWS_SIGNING_PFX_PATH `
+-            -Files 'dist/windows/xianyu-server.exe','dist/windows/xianyu-tray.exe'
++            -Files $signingFiles
+ 
+       - name: 安装 Inno Setup
+         shell: pwsh
+@@ -418,6 +466,7 @@ jobs:
+               'dist/windows/xianyu-server.exe',
+               'dist/windows/xianyu-tray.exe',
+               'dist/windows/playwright-runtime/amd64',
++              'dist/windows/brain',
+               'icon/windows/icon.ico',
+               'packaging/windows/languages/ChineseSimplified.isl',
+               'packaging/windows/languages/ChineseTraditional.isl',
+@@ -433,6 +482,8 @@ jobs:
+             if ($null -eq ($runtimeFiles | Select-Object -First 1)) {
+               throw 'Windows 安装器 Playwright runtime 为空'
+             }
++            $brainManifest = 'dist/windows/brain/runtime/runtime.json'
++            if (-not (Test-Path -LiteralPath $brainManifest -PathType Leaf)) { throw 'Windows 安装器缺少 Brain runtime manifest' }
+             $longestRuntimeFile = $runtimeFiles |
+               Sort-Object { $_.FullName.Length } -Descending |
+               Select-Object -First 1
+@@ -496,11 +547,16 @@ jobs:
+ 
+             $expectedServer = Join-Path $installDir 'xianyu-server.exe'
+             $expectedRuntime = Join-Path $installDir 'playwright-runtime'
++            $expectedProductRoot = $installDir
++            $expectedBrainRuntime = Join-Path $installDir 'brain\runtime'
+             $serviceConfig = Get-CimInstance -ClassName Win32_Service -Filter "Name='$serviceName'" -ErrorAction Stop
+             $actualServiceCommand = if ($null -eq $serviceConfig) { '' } else { $serviceConfig.PathName.Replace('"', '') }
+             $requiredServiceArguments = @(
+               $expectedServer,
+               '-service',
++              "-product-root $expectedProductRoot",
++              "-brain-runtime-root $expectedBrainRuntime",
++              "-brain-data-root $(Join-Path $env:ProgramData 'DhXianyuAgentPanel\data\brain')",
+               "-playwright-runtime-root $expectedRuntime"
+             )
+             $invalidServiceArgument = $requiredServiceArguments |
+@@ -621,6 +677,29 @@ jobs:
+       - name: 构建嵌入式前端
+         run: npm ci --prefix frontend && npm run build --prefix frontend
+ 
++      - name: 构建 macOS Harness runtime
++        working-directory: brain/vendor/deepseek-harness
++        run: |
++          set -Eeuo pipefail
++          corepack pnpm install --frozen-lockfile
++          CI=true corepack pnpm run build
++          CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets=node24-macos-arm64 --skip-build
++
++      - name: 组装并检查 macOS Brain runtime
++        run: |
++          set -Eeuo pipefail
++          node_binary_arm64="$(node -p 'process.execPath')"
++          node_version="$(node -p 'process.versions.node')"
++          node_archive="$RUNNER_TEMP/node-v${node_version}-darwin-x64.tar.gz"
++          curl --fail --silent --show-error --location "https://nodejs.org/dist/v${node_version}/node-v${node_version}-darwin-x64.tar.gz" --output "$node_archive"
++          tar -xzf "$node_archive" -C "$RUNNER_TEMP"
++          node_binary_amd64="$RUNNER_TEMP/node-v${node_version}-darwin-x64/bin/node"
++          test -x "$node_binary_amd64"
++          node scripts/build-brain-runtime.mjs --output dist/macos/brain/arm64 --platform darwin --arch arm64 --mode native --node-binary "$node_binary_arm64"
++          node scripts/build-brain-runtime.mjs --output dist/macos/brain/amd64 --platform darwin --arch amd64 --mode node --node-binary "$node_binary_amd64"
++          node scripts/check-brain-runtime-package.mjs --root dist/macos/brain/arm64 --probe
++          node scripts/check-brain-runtime-package.mjs --root dist/macos/brain/amd64
++
+       - name: 验证 macOS 托盘逻辑
+         run: go test ./cmd/tray
+ 
+diff --git a/.github/workflows/docker-publish.yml b/.github/workflows/docker-publish.yml
+index d3b741086d..9943c1fc48 100644
+--- a/.github/workflows/docker-publish.yml
++++ b/.github/workflows/docker-publish.yml
+@@ -4,6 +4,7 @@ on:
+   push:
+     branches:
+       - dev
++      - main
+   workflow_dispatch:
+   workflow_call:
+     inputs:
+@@ -121,6 +122,26 @@ jobs:
+         with:
+           node-version: 24
+ 
++      - name: 构建 Docker Harness runtime
++        shell: bash
++        env:
++          HARNESS_TARGET: node24-linux-${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }}
++        working-directory: brain/vendor/deepseek-harness
++        run: |
++          set -Eeuo pipefail
++          corepack pnpm install --frozen-lockfile
++          CI=true corepack pnpm run build
++          CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
++
++      - name: 组装并检查 Docker Brain runtime
++        env:
++          PRODUCT_ARCH: ${{ matrix.arch }}
++        run: |
++          set -Eeuo pipefail
++          node_binary="$(node -p 'process.execPath')"
++          node scripts/build-brain-runtime.mjs --output .docker/brain-runtime --platform linux --arch "$PRODUCT_ARCH" --mode native --node-binary "$node_binary"
++          node scripts/check-brain-runtime-package.mjs --root .docker/brain-runtime --probe
++
+       - name: 恢复 Docker Chromium runtime 缓存
+         id: cache-docker-playwright
+         uses: actions/cache/restore@v5
+diff --git a/.gitignore b/.gitignore
+index f92f3ea800..1c04f41605 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -37,6 +37,8 @@
+ /brain/vendor/deepseek-harness/node_modules/
+ /brain/dist/
+ /brain/.build/
++/dist/
++/.docker/brain-runtime/
+ /internal/server/data/
+ 
+ # Embedded frontend build assets (index.html references hashed files, so JS/CSS must be tracked)
+diff --git a/Dockerfile.debian13 b/Dockerfile.debian13
+index 3aee9af9f2..0e4987834e 100644
+--- a/Dockerfile.debian13
++++ b/Dockerfile.debian13
+@@ -80,6 +80,7 @@ WORKDIR /app
+ COPY --from=backend /out/xianyu-server /app/xianyu-server
+ COPY --from=backend /out/xianyu-dbseed /app/xianyu-dbseed
+ COPY --from=backend /out/xianyu-dbverify /app/xianyu-dbverify
++COPY .docker/brain-runtime /app/brain
+ COPY --from=playwright-runtime /ms-playwright-go /ms-playwright-go
+ COPY --from=playwright-runtime /ms-playwright /ms-playwright
+ # 浏览器文件本身不包含 Linux 动态链接库。使用与 runtime 同捆的 Playwright
+@@ -96,6 +97,16 @@ RUN set -eux; \
+     find "$PLAYWRIGHT_BROWSERS_PATH" -type f -perm -111 \( -name chrome -o -name chrome-headless-shell -o -name headless_shell \) -print -quit | grep -q .; \
+     apt-get clean; \
+     rm -rf /var/lib/apt/lists/* /var/cache/apt/* /root/.cache /tmp/* /var/tmp/*; \
+-    mkdir -p /app/data /app/browser_data
++    test -f /app/brain/runtime/runtime.json; \
++    test -x /app/brain/runtime/node-carrier; \
++    test -f /app/brain/runtime/node/package.json; \
++    test -f /app/brain/runtime/node/node_modules/@deepseek-ai/dsh/lib/bin.js; \
++    test -f /app/brain/runtime/node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js; \
++    test -f /app/brain/gateway/index.mjs; \
++    test -f /app/brain/profile/customer-service.patch.yml; \
++    test -f /app/brain/runtime/result-tool.mjs; \
++    test -x /app/brain/runtime/dsh-runtime; \
++    test -x /app/brain/runtime/dsh-runtime-rg; \
++    mkdir -p /app/data /app/data/brain /app/browser_data
+ EXPOSE 59188
+-CMD ["/app/xianyu-server", "-addr", ":59188"]
++CMD ["/app/xianyu-server", "-addr", ":59188", "-product-root", "/app", "-brain-runtime-root", "/app/brain/runtime", "-brain-data-root", "/app/data/brain"]
+diff --git a/Makefile b/Makefile
+index d76492e0c0..82408b4afe 100644
+--- a/Makefile
++++ b/Makefile
+@@ -3,7 +3,7 @@
+ GO ?= go
+ GOLANGCI_LINT ?= golangci-lint
+ 
+-.PHONY: build build-int build-browser-install build-tray brain-check brain-profile-integration test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check brand-assets-check packaging-check product-data-migration-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
++.PHONY: build build-int build-browser-install build-tray brain-check brain-profile-integration brain-runtime-build brain-runtime-check test test-server test-server-race test-multidb test-int vet lint architecture api-generate api-check product-check brand-assets-check packaging-check product-data-migration-check preflight cover cover-browser cover-frontend tidy frontend fmt comments check
+ 
+ ## build: 编译 server（默认，跳过 integration build tag）
+ build:
+@@ -20,12 +20,21 @@ build-tray:
+ ## brain-check: 验证 Harness 客服 profile 、结果插件和发布工具白名单
+ brain-check:
+ 	node --test brain/runtime/result-tool.test.mjs
++	node --test scripts/brain-runtime-package.test.mjs
+ 	node brain/profile/verify-tool-allowlist.mjs
+ 
+ ## brain-profile-integration: 使用本地 MCP/模型 fixture 启动真实 DSH profile 并断言最终工具目录
+ brain-profile-integration:
+ 	node brain/profile/verify-runtime-profile.mjs
+ 
++## brain-runtime-build: 组装指定平台的 Brain 安装载荷；必须显式提供 BRAIN_RUNTIME_OUTPUT、BRAIN_PLATFORM 和 BRAIN_ARCH
++brain-runtime-build:
++	node scripts/build-brain-runtime.mjs --output "$${BRAIN_RUNTIME_OUTPUT:?缺少 BRAIN_RUNTIME_OUTPUT}" --platform "$${BRAIN_PLATFORM:?缺少 BRAIN_PLATFORM}" --arch "$${BRAIN_ARCH:?缺少 BRAIN_ARCH}" $${BRAIN_RUNTIME_MODE:+--mode "$$BRAIN_RUNTIME_MODE"} $${BRAIN_NODE_BINARY:+--node-binary "$$BRAIN_NODE_BINARY"} $${BRAIN_DSH_RUNTIME:+--dsh-runtime "$$BRAIN_DSH_RUNTIME"}
++
++## brain-runtime-check: 检查已组装载荷；BRAIN_RUNTIME_ROOT 指向包含 gateway/profile/runtime 的 brain 目录
++brain-runtime-check:
++	node scripts/check-brain-runtime-package.mjs --root "$${BRAIN_RUNTIME_ROOT:?缺少 BRAIN_RUNTIME_ROOT}" --probe
++
+ ## build-int: 带 integration tag 编译（含 browser 包，需要 Chromium 环境）
+ build-int:
+ 	$(GO) build -tags integration ./...
+diff --git a/README.md b/README.md
+index bacdb31d1c..8683adeb08 100644
+--- a/README.md
++++ b/README.md
+@@ -90,6 +90,9 @@ flowchart LR
+     Engine --> Automation["自动化中心"]
+     Automation --> Notify["通知渠道"]
+     Engine -. "浏览器能力" .-> Chromium["Playwright / Chromium"]
++    Engine -. "结构化草案" .-> Brain["Brain gateway"]
++    Brain --> Harness["DeepSeek Harness runtime"]
++    Brain --> API
+ ```
+ 
+ 核心职责划分：
+@@ -100,6 +103,7 @@ flowchart LR
+ - `internal/engine`：单账号生命周期、消息处理、回复与交付行为
+ - `internal/automation`：发货、评价赠品、求评价和任务调度
+ - `internal/browser`：Chromium 指纹读取
++- `brain/gateway`、`brain/profile`：Harness 进程边界、客服工具白名单和结果草案校验
+ - `internal/db`：多数据库访问、敏感字段加密和嵌入式迁移
+ - `internal/server`：HTTP/SPA transport、管理端鉴权和前端静态资源
+ 
+@@ -260,6 +264,25 @@ packaging/macos/build-pkg.sh 0.0.0-local "$PWD/dist/macos" arm64
+ 不会生成安装后无法启动服务的残缺安装包。Intel macOS 使用 `amd64` 参数，并需要本机已有对应 x64 runtime。
+ 本机没有签名身份时生成的是未签名 pkg，不可作为已签名分发包使用。
+ 
++Brain runtime 也必须先组装并检查；构建器只接受官方 Node 24 或 SEA carrier，不接受依赖 Homebrew
++动态库的 `node`：
++
++```bash
++cd brain/vendor/deepseek-harness
++corepack pnpm install --frozen-lockfile
++CI=true corepack pnpm run build
++CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets=node24-macos-arm64 --skip-build
++cd ../../..
++export BRAIN_NODE_BINARY=/path/to/official-node-24/bin/node
++node scripts/build-brain-runtime.mjs --output "$PWD/dist/macos/brain/arm64" \
++  --platform darwin --arch arm64 --mode native --node-binary "$BRAIN_NODE_BINARY"
++node scripts/check-brain-runtime-package.mjs --root "$PWD/dist/macos/brain/arm64" --probe
++```
++
++Intel 包使用官方 Node 24 x64 carrier 和 `--mode node`；Linux、Windows 与 Apple Silicon 包在各自原生
++runner 上生成 native DSH。完整布局和 Go 启动参数见
++[`docs/architecture/brain-runtime-packaging.md`](docs/architecture/brain-runtime-packaging.md)。
++
+ 桌面端首次启动：
+ 
+ 1. 安装对应平台的安装包。macOS 请选择 arm64（Apple Silicon）或 amd64（Intel）版本。
+@@ -391,6 +414,13 @@ Docker Compose 还支持：
+ | `-addr` | `:59188` | HTTP 监听地址 |
+ | `-web` | 内嵌前端 | 外部前端静态资源目录，目录内需包含 `index.html` |
+ | `-workdir` | 空 | 服务工作目录；桌面服务用它固定数据和浏览器目录 |
++| `-product-root` | 当前目录 | 安装包资源根目录；用于定位 Brain gateway、profile 和前端资源 |
++| `-brain-runtime-root` | `<product-root>/brain/runtime` | Node 24 carrier、SDK 和 DSH 载荷目录 |
++| `-brain-node-binary` | 自动发现 | 覆盖 Brain 使用的 Node 24 carrier 路径 |
++| `-brain-dsh-runtime` | 自动发现 | 原生平台 Harness runtime 路径 |
++| `-brain-dsh-entry` | 自动发现 | Intel macOS 等 node 模式的 dsh 入口 |
++| `-brain-sdk-client-entry` | 自动发现 | 构建版 Harness SDK 客户端入口 |
++| `-brain-data-root` | `<product-root>/data/brain` | Brain session、摘要和索引等可重建派生数据目录 |
+ | `-playwright-runtime-root` | 空 | 安装包随附的 Playwright runtime 根目录 |
+ | `-playwright-driver-dir` | 空 | Playwright driver 目录，会设置为当前进程的 driver 路径 |
+ | `-playwright-browser-dir` | 空 | Playwright 浏览器缓存目录，会设置为当前进程的 browser 路径 |
+@@ -492,7 +522,24 @@ docker compose up -d
+ 修改其密码。
+ 
+ `docker-compose.debian13-postgres17.yml` 保留为**源码构建版**，用于本地修改 Dockerfile
+-或需要构建本地镜像的场景；生产服务器无需使用该文件。
++或需要构建本地镜像的场景；它要求先在目标架构生成并检查 `.docker/brain-runtime`，再执行
++`docker compose -f docker-compose.debian13-postgres17.yml build`。生产服务器无需使用该文件。
++
++源码 Docker 构建的 Brain 载荷步骤：
++
++```bash
++corepack pnpm --dir brain/vendor/deepseek-harness install --frozen-lockfile
++CI=true corepack pnpm --dir brain/vendor/deepseek-harness run build
++CI=true corepack pnpm --dir brain/vendor/deepseek-harness exec tsx \
++  scripts/build-exe-for-python-sdk.ts --targets=node24-linux-x64 --skip-build
++node scripts/build-brain-runtime.mjs --output .docker/brain-runtime \
++  --platform linux --arch amd64 --mode native --node-binary "$(node -p 'process.execPath')"
++node scripts/check-brain-runtime-package.mjs --root .docker/brain-runtime --probe
++docker compose -f docker-compose.debian13-postgres17.yml up -d
++```
++
++ARM64 主机将目标替换为 `node24-linux-arm64` 和 `--arch arm64`；载荷必须由匹配架构的
++runner 生成。
+ 
+ 持久化卷：
+ 
+diff --git a/brain/gateway/index.mjs b/brain/gateway/index.mjs
+index ddc9d8e1ee..2db275a41d 100644
+--- a/brain/gateway/index.mjs
++++ b/brain/gateway/index.mjs
+@@ -7,26 +7,91 @@
+  * - Harness 只能提交草案，消息发送、改价和持久化仍由 Go 完成。
+  */
+ 
++import { existsSync, readFileSync } from 'node:fs'
+ import { createServer } from 'node:http'
+ import { createRequire } from 'node:module'
+ import { once } from 'node:events'
+-import { dirname, join, resolve } from 'node:path'
+-import { fileURLToPath } from 'node:url'
++import { delimiter, dirname, isAbsolute, join, relative, resolve } from 'node:path'
++import { fileURLToPath, pathToFileURL } from 'node:url'
+ 
+ const gatewayDirectory = dirname(fileURLToPath(import.meta.url))
+ const productRoot = resolve(gatewayDirectory, '../..')
+-const harnessRoot = join(productRoot, 'brain/vendor/deepseek-harness')
+-const requireFromHarness = createRequire(join(harnessRoot, 'packages/mcp/mcp-client/package.json'))
+-const { McpServer } = requireFromHarness('@modelcontextprotocol/sdk/server/mcp.js')
+-const { StreamableHTTPServerTransport } = requireFromHarness('@modelcontextprotocol/sdk/server/streamableHttp.js')
+-const { z } = requireFromHarness('zod')
+-const { DeepSeekHarness } = await import('../vendor/deepseek-harness/packages/sdk/client/src/index.ts')
+-const { validateDraft } = await import('../runtime/result-tool.mjs')
++const configuredHarnessRoot = String(process.env.DH_BRAIN_HARNESS_ROOT ?? '').trim()
++const harnessRoot = configuredHarnessRoot === ''
++  ? join(productRoot, 'brain/vendor/deepseek-harness')
++  : resolve(configuredHarnessRoot)
++const configuredRuntimeRoot = String(process.env.DH_BRAIN_RUNTIME_ROOT ?? '').trim()
++const runtimeRoot = configuredRuntimeRoot === ''
++  ? join(productRoot, 'brain/runtime')
++  : resolve(configuredRuntimeRoot)
++const brainRoot = dirname(runtimeRoot)
++
++// readRuntimeManifest 读取安装包载荷锁定信息；开发树没有 manifest 时保留源码回落。
++function readRuntimeManifest() {
++  const manifestPath = join(runtimeRoot, 'runtime.json')
++  if (!existsSync(manifestPath)) return {}
++  let manifest
++  try {
++    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
++  } catch (error) {
++    throw new Error(`Brain runtime manifest 解析失败: ${error instanceof Error ? error.message : String(error)}`)
++  }
++  if (manifest?.schema_version !== 1 || manifest.contract_version !== 'brain.internal.v1') {
++    throw new Error('Brain runtime manifest 契约版本错误')
++  }
++  if (manifest.harness?.tag !== 'dsh-v0.1.2-alpha.1'
++    || manifest.harness?.commit !== 'cd5ef8148158c3a752a658978873241fdf8e2bbc'
++    || manifest.harness?.version !== '0.1.2-alpha.1') {
++    throw new Error('Brain runtime manifest Harness 锁定信息错误')
++  }
++  return manifest
++}
++
++const runtimeManifest = readRuntimeManifest()
++
++// runtimeManifestPath 将 manifest 中的相对路径限制在 brain 载荷根，防止路径越界。
++function runtimeManifestPath(name, fallback) {
++  const candidate = runtimeManifest.paths?.[name] ?? fallback
++  if (typeof candidate !== 'string' || candidate === '' || candidate.startsWith('/') || candidate.includes('\\')) {
++    throw new Error(`Brain runtime manifest 路径无效: ${name}`)
++  }
++  const resolvedPath = resolve(brainRoot, candidate)
++  const relativePath = relative(brainRoot, resolvedPath)
++  if (relativePath === '' || relativePath.startsWith('..') || isAbsolute(relativePath)) {
++    throw new Error(`Brain runtime manifest 路径越界: ${name}`)
++  }
++  return resolvedPath
++}
++
++const runtimeNodeRoot = join(runtimeRoot, 'node')
++const runtimeModuleAnchor = existsSync(join(runtimeNodeRoot, 'package.json'))
++  ? join(runtimeNodeRoot, 'package.json')
++  : join(harnessRoot, 'packages/mcp/mcp-client/package.json')
++const requireFromRuntime = createRequire(runtimeModuleAnchor)
++const { McpServer } = requireFromRuntime('@modelcontextprotocol/sdk/server/mcp.js')
++const { StreamableHTTPServerTransport } = requireFromRuntime('@modelcontextprotocol/sdk/server/streamableHttp.js')
++const { z } = requireFromRuntime('zod')
++const configuredSDKClientEntry = String(process.env.DH_BRAIN_SDK_CLIENT_ENTRY ?? '').trim()
++const sdkClientEntry = configuredSDKClientEntry === ''
++  ? runtimeManifestPath('sdk_client', 'runtime/node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js')
++  : resolve(configuredSDKClientEntry)
++const sdkModule = existsSync(sdkClientEntry)
++  ? await import(pathToFileURL(sdkClientEntry).href)
++  : await import(pathToFileURL(join(harnessRoot, 'packages/sdk/client/src/index.ts')).href)
++const { DeepSeekHarness, createProcessDeepSeekHarness } = sdkModule
++const resultToolEntry = runtimeManifestPath('result_tool', 'runtime/result-tool.mjs')
++const { validateDraft } = await import(pathToFileURL(resultToolEntry).href)
+ 
+ const contractVersion = process.env.DH_BRAIN_CONTRACT_VERSION ?? 'brain.internal.v1'
+ const bearerToken = String(process.env.DH_BRAIN_TOKEN ?? '').trim()
+ const profilePath = process.env.DH_BRAIN_PROFILE_PATH ?? join(productRoot, 'brain/profile/customer-service.patch.yml')
+ const dataRoot = process.env.DH_BRAIN_DATA_ROOT ?? join(productRoot, 'data/brain')
++const dshRuntimePath = String(process.env.DH_BRAIN_DSH_RUNTIME ?? '').trim()
++  || (runtimeManifest.paths?.dsh_runtime === undefined ? '' : runtimeManifestPath('dsh_runtime', ''))
++const dshEntryPath = String(process.env.DH_BRAIN_DSH_ENTRY ?? '').trim()
++  || (runtimeManifest.paths?.dsh_entry === undefined ? '' : runtimeManifestPath('dsh_entry', ''))
++const nodeBinaryPath = String(process.env.DH_BRAIN_NODE_BINARY ?? '').trim()
++  || (runtimeManifest.paths?.node_carrier === undefined ? '' : runtimeManifestPath('node_carrier', ''))
+ const mcpBackendURL = String(process.env.DH_BRAIN_MCP_BACKEND_URL ?? '').trim()
+ const mcpBackendToken = String(process.env.DH_BRAIN_MCP_BACKEND_TOKEN ?? '').trim()
+ // mcpClientURL/mcpClientToken 是 gateway 暴露给 Harness profile 的一次性地址和凭证。
+@@ -166,6 +231,36 @@ function createHarness() {
+   const model = process.env.DH_BRAIN_MODEL ?? 'deepseek-v4-flash'
+   const reasoningEffort = process.env.DH_BRAIN_REASONING_EFFORT ?? 'high'
+   const childEnvironment = { ...process.env, DH_BRAIN_MCP_URL: mcpClientURL, DH_BRAIN_MCP_TOKEN: mcpClientToken }
++  const runtimeEnvironment = () => {
++    const runtimePath = dshRuntimePath === '' ? '' : dirname(dshRuntimePath)
++    const pathPrefix = runtimePath === '' ? [] : [runtimePath]
++    const currentPath = childEnvironment.PATH ?? ''
++    return {
++      ...childEnvironment,
++      DSH_HOME: dataRoot,
++      PATH: [...pathPrefix, currentPath].filter(Boolean).join(delimiter),
++    }
++  }
++  if (dshRuntimePath !== '' || dshEntryPath !== '') {
++    const command = dshRuntimePath !== '' ? dshRuntimePath : (nodeBinaryPath === '' ? process.execPath : nodeBinaryPath)
++    const args = dshRuntimePath !== ''
++      ? ['--profile', 'sdk', '--patch', profilePath]
++      : [dshEntryPath, '--profile', 'sdk', '--patch', profilePath]
++    return createProcessDeepSeekHarness({
++      command,
++      args,
++      cwd: productRoot,
++      environment: runtimeEnvironment,
++      description: 'DH 闲不下来客服 Harness runtime',
++      initializeTimeoutMs: 10_000,
++      requestTimeoutMs,
++      shutdownTimeoutMs: 90_000,
++    }, {
++      provider,
++      model,
++      reasoningEffort,
++    })
++  }
+   return new DeepSeekHarness({
+     profile: 'sdk',
+     patches: [profilePath],
+diff --git a/cmd/server/main.go b/cmd/server/main.go
+index 356fa21633..cb5f864deb 100644
+--- a/cmd/server/main.go
++++ b/cmd/server/main.go
+@@ -38,6 +38,13 @@ type serverOptions struct {
+ 	addr                  string
+ 	webDir                string
+ 	workDir               string
++	productRoot           string
++	brainRuntimeRoot      string
++	brainNodeBinary       string
++	brainDSHRuntime       string
++	brainDSHEntry         string
++	brainSDKClientEntry   string
++	brainDataRoot         string
+ 	playwrightRuntimeRoot string
+ 	playwrightDriverDir   string
+ 	playwrightBrowserDir  string
+@@ -199,6 +206,13 @@ func parseOptions() serverOptions {
+ 	flag.StringVar(&opts.addr, "addr", ":59188", "HTTP 监听地址")
+ 	flag.StringVar(&opts.webDir, "web", "", "前端静态资源目录（含 index.html）")
+ 	flag.StringVar(&opts.workDir, "workdir", "", "服务工作目录；用于桌面服务固定数据和浏览器目录")
++	flag.StringVar(&opts.productRoot, "product-root", "", "产品资源根目录；用于定位 Brain gateway 和安装包资源")
++	flag.StringVar(&opts.brainRuntimeRoot, "brain-runtime-root", "", "Brain runtime 载荷根目录；默认位于产品根 brain/runtime")
++	flag.StringVar(&opts.brainNodeBinary, "brain-node-binary", "", "Brain 使用的 Node 24 carrier 路径")
++	flag.StringVar(&opts.brainDSHRuntime, "brain-dsh-runtime", "", "原生平台 Harness runtime 路径")
++	flag.StringVar(&opts.brainDSHEntry, "brain-dsh-entry", "", "Node carrier 模式下的 dsh 入口路径")
++	flag.StringVar(&opts.brainSDKClientEntry, "brain-sdk-client-entry", "", "构建版 Harness SDK 客户端入口路径")
++	flag.StringVar(&opts.brainDataRoot, "brain-data-root", "", "Brain 派生会话数据目录")
+ 	flag.StringVar(&opts.playwrightRuntimeRoot, "playwright-runtime-root", "", "随安装包分发的 Playwright runtime 根目录")
+ 	flag.StringVar(&opts.playwrightDriverDir, "playwright-driver-dir", "", "Playwright driver 目录")
+ 	flag.StringVar(&opts.playwrightBrowserDir, "playwright-browser-dir", "", "Playwright 浏览器缓存目录")
+@@ -428,6 +442,9 @@ func buildServerRuntime(opts serverOptions, infrastructure serverInfrastructure)
+ 	// runtime、buildErr 分别是组合层返回的完整运行时快照及其装配失败原因。
+ 	runtime, buildErr := compositionruntime.BuildRuntime(compositionruntime.RuntimeOptions{
+ 		NoBrowser: opts.noBrowser, SecureCookie: opts.secure, WebDir: opts.webDir, Addr: opts.addr,
++		ProductRoot: opts.productRoot, BrainRuntimeRoot: opts.brainRuntimeRoot, BrainNodeBinary: opts.brainNodeBinary,
++		BrainDSHRuntime: opts.brainDSHRuntime, BrainDSHEntry: opts.brainDSHEntry, BrainSDKClientEntry: opts.brainSDKClientEntry,
++		BrainDataRoot: opts.brainDataRoot,
+ 	}, compositionruntime.RuntimeInfrastructure{Store: infrastructure.store, Logger: infrastructure.logger})
+ 	if buildErr != nil {
+ 		return serverRuntime{}, buildErr
+diff --git a/cmd/server/main_test.go b/cmd/server/main_test.go
+index 88c7911ab0..b3264a3831 100644
+--- a/cmd/server/main_test.go
++++ b/cmd/server/main_test.go
+@@ -62,12 +62,12 @@ func TestParseOptionsReadsAllOperationalFlags(t *testing.T) {
+ 		os.Args = oldArgs
+ 		flag.CommandLine = oldCommandLine
+ 	})
+-	os.Args = []string{"server", "-db", "custom.db", "-db-url", "sqlite://override.db", "-addr", "127.0.0.1:1", "-web", "web", "-workdir", "data", "-playwright-runtime-root", "runtime", "-playwright-driver-dir", "driver", "-playwright-browser-dir", "browsers", "-data-key-file", "key", "-secure", "-no-browser", "-v", "-log-level", "debug", "-log-format", "json", "-init-admin", "-ensure-admin", "-admin-email", "a@example.com", "-admin-password", "secret", "-service", "-version"}
++	os.Args = []string{"server", "-db", "custom.db", "-db-url", "sqlite://override.db", "-addr", "127.0.0.1:1", "-web", "web", "-workdir", "data", "-product-root", "product", "-brain-runtime-root", "brain-runtime", "-brain-node-binary", "node24", "-brain-dsh-runtime", "dsh", "-brain-dsh-entry", "dsh-entry", "-brain-sdk-client-entry", "sdk", "-brain-data-root", "brain-data", "-playwright-runtime-root", "runtime", "-playwright-driver-dir", "driver", "-playwright-browser-dir", "browsers", "-data-key-file", "key", "-secure", "-no-browser", "-v", "-log-level", "debug", "-log-format", "json", "-init-admin", "-ensure-admin", "-admin-email", "a@example.com", "-admin-password", "secret", "-service", "-version"}
+ 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+ 	flag.CommandLine.SetOutput(io.Discard)
+ 	// opts 保存解析后的服务启动选项。
+ 	opts := parseOptions()
+-	if opts.dbPath != "custom.db" || opts.dbURL != "sqlite://override.db" || opts.addr != "127.0.0.1:1" || opts.webDir != "web" || opts.workDir != "data" || opts.playwrightRuntimeRoot != "runtime" || opts.playwrightDriverDir != "driver" || opts.playwrightBrowserDir != "browsers" || opts.dataKeyFile != "key" {
++	if opts.dbPath != "custom.db" || opts.dbURL != "sqlite://override.db" || opts.addr != "127.0.0.1:1" || opts.webDir != "web" || opts.workDir != "data" || opts.productRoot != "product" || opts.brainRuntimeRoot != "brain-runtime" || opts.brainNodeBinary != "node24" || opts.brainDSHRuntime != "dsh" || opts.brainDSHEntry != "dsh-entry" || opts.brainSDKClientEntry != "sdk" || opts.brainDataRoot != "brain-data" || opts.playwrightRuntimeRoot != "runtime" || opts.playwrightDriverDir != "driver" || opts.playwrightBrowserDir != "browsers" || opts.dataKeyFile != "key" {
+ 		t.Fatalf("路径参数解析错误：%+v", opts)
+ 	}
+ 	if !opts.secure || !opts.noBrowser || !opts.verbose || !opts.initAdmin || !opts.ensureAdmin || !opts.service || !opts.showVersion || opts.logLevel != "debug" || opts.logFormat != "json" || opts.adminEmail != "a@example.com" || opts.adminPassword != "secret" {
+diff --git a/docs/architecture/brain-runtime-packaging.md b/docs/architecture/brain-runtime-packaging.md
+new file mode 100644
+index 0000000000..b31ed17a55
+--- /dev/null
++++ b/docs/architecture/brain-runtime-packaging.md
+@@ -0,0 +1,71 @@
++# Brain Runtime 打包边界
++
++DH 闲不下来把 Go 服务、TypeScript gateway 和 DeepSeek Harness runtime 分成三个进程。安装包只需要把 `brain/` 目录放在产品资源根，Go 通过 `-product-root` 和 `-brain-runtime-root` 传入固定路径；gateway 再从 `runtime.json` 对应的布局读取 carrier 和 SDK。
++
++## 载荷布局
++
++```text
++brain/
++  gateway/index.mjs
++  profile/customer-service.patch.yml
++  runtime/
++    runtime.json
++    node-carrier(.exe)
++    dsh-runtime(.exe)                 # native 平台
++    dsh-runtime-rg(.exe)              # native 平台 sidecar
++    dsh-runtime-spawn-helper          # macOS native
++    result-tool.mjs
++    node/
++      package.json
++      node_modules/                    # 官方无符号链接闭包
++        @deepseek-ai/dsh/
++        @deepseek-ai/dsh-sdk-client/
++        @deepseek-ai/dsh-sdk-protocol/
++```
++
++`scripts/build-brain-runtime.mjs` 负责组装载荷并写入关键文件 SHA-256；`scripts/check-brain-runtime-package.mjs` 会重新打开 manifest、遍历符号链接、执行 Node `--version`、执行 DSH `--version`，并导入构建版 SDK。macOS 构建还会用 `otool -L` 拒绝指向 Homebrew 或其他安装包外路径的动态库；同目标 runner 会再执行复制后的 carrier，避免源目录依赖掩盖残缺包。
++
++## 平台策略
++
++| 目标 | 模式 | 入口 |
++| --- | --- | --- |
++| Linux amd64/arm64 | `native` | 单文件 `dsh-runtime` |
++| Windows amd64 | `native` | 单文件 `dsh-runtime.exe` |
++| macOS arm64 | `native` | 单文件 `dsh-runtime` |
++| macOS amd64 | `node` | Node 24 carrier + `@deepseek-ai/dsh/lib/bin.js` |
++
++Intel Mac 使用 Node 模式，是因为 Harness 当前没有 macOS x64 原生目标。Node carrier 必须是官方 Node 24 分发版本；Homebrew 的动态 `node` 可能依赖机器上的 `libnode` 和 Homebrew 动态库，构建器会先执行 `--version`，检查器会在打包前实际启动它。
++
++## 插件裁剪
++
++客服 profile 的工具边界由 `brain/profile/customer-service.patch.yml` 和 allowlist 检查确定，只暴露五个只读 MCP 工具及 `submit_reply_draft`。Harness 的官方闭包仍保留运行时所需的传递依赖；coding、shell、文件系统、浏览器和编辑器工具不会注册到客服 profile。物理删除传递包会破坏 Cordis 依赖图，因此作为后续体积优化，不作为当前安全边界。
++
++## 构建示例
++
++```bash
++cd brain/vendor/deepseek-harness
++corepack pnpm install --frozen-lockfile
++CI=true corepack pnpm run build
++CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts \
++  --targets=node24-macos-arm64 --skip-build
++cd ../../..
++node scripts/build-brain-runtime.mjs \
++  --output /tmp/dh-brain-arm64 \
++  --platform darwin --arch arm64 --mode native \
++  --node-binary /path/to/node-24/bin/node
++node scripts/check-brain-runtime-package.mjs \
++  --root /tmp/dh-brain-arm64 --probe
++```
++
++开发树没有 `brain/runtime/node` 时，Go supervisor 会回落到 Harness workspace 的 `tsx` 源码入口；发布包始终要求构建版 SDK 和 Node carrier，缺少任一项会在构建或安装检查阶段报告。
++
++## 本地门禁
++
++不下载上游依赖的载荷回归会用最小 fixture 覆盖 native/node 两种模式、manifest 摘要、路径边界、篡改文件和符号链接：
++
++```bash
++node --test scripts/brain-runtime-package.test.mjs
++make brain-check
++```
++
++Docker 构建只把已经检查的 `.docker/brain-runtime` 和 Playwright runtime 放入上下文；Harness workspace、`node_modules`、`dist-exe` 和 `.dsh-build` 均由 `.dockerignore` 排除。
+diff --git a/docs/release/v2.0.0-alpha.0-verification.md b/docs/release/v2.0.0-alpha.0-verification.md
+index a3a57b50bf..0b6d771844 100644
+--- a/docs/release/v2.0.0-alpha.0-verification.md
++++ b/docs/release/v2.0.0-alpha.0-verification.md
+@@ -65,6 +65,25 @@
+ 
+ Playwright 已在 `http://127.0.0.1:3017/static/` 对桌面和移动登录页完成截图检查；`/static/favicon.png` 返回 `200 image/png`，前端控制台仅有后端未启动时的预期 `/api/v1/session` `502`。
+ 
++## Brain runtime 载荷验证（2026-08-30）
++
++本轮新增的构建器和检查器把 gateway、客服 profile、结果插件、SDK 闭包、Node 24 carrier 及原生 DSH
++固定到同一 `brain/` 目录，并为关键文件写入 SHA-256。无网络 fixture 回归覆盖 node/native 两种模式、
++篡改文件、manifest 路径穿越和符号链接：
++
++| 命令 | 结果 |
++| --- | --- |
++| `node --test scripts/brain-runtime-package.test.mjs` | `2` 个测试通过 |
++| `make brain-check` | 结果插件 `3` 项、载荷 `2` 项和客服 allowlist 全部通过 |
++| `node scripts/check-brain-runtime-package.mjs --root /tmp/dh-brain-package-arm64 --probe` | macOS arm64 native；Node `v24.20.0`、DSH `0.1.2-alpha.1`、`9` 个摘要、`0` 个符号链接 |
++| `node scripts/check-brain-runtime-package.mjs --root /tmp/dh-brain-package-node --probe` | macOS arm64 node；Node `v24.20.0`、DSH `0.1.2-alpha.1`、`6` 个摘要、`0` 个符号链接 |
++| `node scripts/check-brain-runtime-package.mjs --root /tmp/dh-brain-package-x64 --probe` | macOS amd64 node；Node `v24.20.0`、x64、DSH `0.1.2-alpha.1`、`6` 个摘要、`0` 个符号链接 |
++| `node scripts/build-brain-runtime.mjs ... --node-binary /opt/homebrew/.../node` | 退出码 `1`；`otool` 检出外部动态库并拒绝生成残缺载荷 |
++
++Docker 构建上下文现在排除 Harness workspace、`node_modules`、`dist-exe` 和 `.dsh-build`，只保留已检查的
++`.docker/brain-runtime` 与 Playwright runtime。Go Supervisor 对相对 `-product-root` 和 Brain 入口做统一
++绝对化，并在包内优先使用 Node carrier/构建 SDK。
++
+ ## 发布状态
+ 
+ 本地阶段提交、补丁、验证记录和回滚脚本已形成。完整多平台安装包、CI 绿灯和远端读取能力仍属于后续发布门禁。
+diff --git "a/docs/wiki/\351\203\250\347\275\262\344\270\216\346\225\260\346\215\256\345\272\223.md" "b/docs/wiki/\351\203\250\347\275\262\344\270\216\346\225\260\346\215\256\345\272\223.md"
+index ebb1ba9c2f..d56da14df4 100644
+--- "a/docs/wiki/\351\203\250\347\275\262\344\270\216\346\225\260\346\215\256\345\272\223.md"
++++ "b/docs/wiki/\351\203\250\347\275\262\344\270\216\346\225\260\346\215\256\345\272\223.md"
+@@ -35,6 +35,22 @@ v2 桌面端和直接运行的服务优先读取 `DH_XIANYU_AGENTPANEL_*` 前缀
+ 
+ Docker 中的自动续期会使用容器内 Chromium 检测到的 Linux 原生浏览器指纹请求闲鱼官网；不会因为宿主系统是 Linux 而跳过静默续期。续期结果仍以闲鱼响应和账号登录态为准。
+ 
++如需从源码构建 `docker-compose.debian13-postgres17.yml`，先在匹配架构的 runner 生成并检查
++`.docker/brain-runtime`，再启动服务：
++
++```bash
++corepack pnpm --dir brain/vendor/deepseek-harness install --frozen-lockfile
++CI=true corepack pnpm --dir brain/vendor/deepseek-harness run build
++CI=true corepack pnpm --dir brain/vendor/deepseek-harness exec tsx \
++  scripts/build-exe-for-python-sdk.ts --targets=node24-linux-x64 --skip-build
++node scripts/build-brain-runtime.mjs --output .docker/brain-runtime \
++  --platform linux --arch amd64 --mode native --node-binary "$(node -p 'process.execPath')"
++node scripts/check-brain-runtime-package.mjs --root .docker/brain-runtime --probe
++docker compose -f docker-compose.debian13-postgres17.yml up -d
++```
++
++ARM64 主机将目标替换为 `node24-linux-arm64` 和 `--arch arm64`。
++
+ 源码服务默认使用 `-addr :59188`，会监听全部网络接口；Docker Compose 端口映射默认也使用
+ `XIANYU_BIND_ADDRESS=0.0.0.0`。桌面安装包则显式绑定 `127.0.0.1:59188`。远程部署必须在防火墙、
+ 安全组或反向代理层限制管理端口，不能把源码示例中的 `:59188` 误认为仅本机监听。
+@@ -107,6 +123,18 @@ packaging/macos/build-pkg.sh 0.0.0-local "$PWD/dist/macos" arm64
+ Intel macOS 将上述 `arm64` 替换为 `amd64`，且需要本机已准备对应 x64 runtime。没有签名身份时生成的是
+ 未签名 pkg，不可作为已签名分发包使用。
+ 
++每个桌面包还包含 Brain runtime：Node 24 carrier、构建版 Harness SDK、客服 profile 和 DSH。先在
++目标架构 runner 生成并检查 `brain` 目录，再调用 `build-pkg.sh`；macOS 使用官方 Node 24 或 SEA
++carrier，依赖 Homebrew 动态库的 `node` 会被构建器拦截。载荷门禁命令为：
++
++```bash
++node --test scripts/brain-runtime-package.test.mjs
++node scripts/check-brain-runtime-package.mjs --root dist/macos/brain/arm64 --probe
++```
++
++完整布局、Intel 的 node 模式和服务参数见
++[`docs/architecture/brain-runtime-packaging.md`](../architecture/brain-runtime-packaging.md)。
++
+ ## 桌面端日志与操作
+ 
+ 日志目录如下。Windows 和 macOS 托盘菜单还可以启动、停止或重启后台服务，打开管理页面和日志目录。
+diff --git a/internal/brainruntime/supervisor.go b/internal/brainruntime/supervisor.go
+index dd29616eb9..b7aa5064f7 100644
+--- a/internal/brainruntime/supervisor.go
++++ b/internal/brainruntime/supervisor.go
+@@ -48,8 +48,16 @@ type Options struct {
+ 	GatewayPath string
+ 	// HarnessRoot 是 vendored Harness workspace 根目录。
+ 	HarnessRoot string
++	// RuntimeRoot 是安装包内 Brain runtime 载荷根目录。
++	RuntimeRoot string
+ 	// NodeBinary 是包内 Node carrier；空值时使用 PATH 中的 node。
+ 	NodeBinary string
++	// DSHRuntime 是原生平台的单文件 Harness runtime；空值时尝试闭包入口。
++	DSHRuntime string
++	// DSHEntry 是 Node carrier 模式下的构建 dsh 入口。
++	DSHEntry string
++	// SDKClientEntry 是构建后的 SDK 客户端入口；空值时使用 vendor 源码。
++	SDKClientEntry string
+ 	// DataRoot 是 Harness 会话派生数据目录。
+ 	DataRoot string
+ 	// MCPBackendURL 是 Go 业务 MCP 端点地址。
+@@ -180,12 +188,52 @@ func NewSupervisor(options Options) (*Supervisor, error) {
+ 	if options.Logger == nil {
+ 		options.Logger = slog.Default()
+ 	}
++	// rootErr 保存产品根目录绝对化失败原因，安装服务不能依赖启动时的当前目录。
++	if productRoot, rootErr := filepath.Abs(options.ProductRoot); rootErr == nil {
++		options.ProductRoot = productRoot
++	} else {
++		return nil, fmt.Errorf("解析 Brain 产品根目录失败: %w", rootErr)
++	}
++	// resolveProductPath 把相对资源路径解释为产品根目录下的路径，避免服务工作目录改变后失效。
++	resolveProductPath := func(value string) string {
++		if value == "" || filepath.IsAbs(value) {
++			return value
++		}
++		return filepath.Join(options.ProductRoot, value)
++	}
++	options.GatewayPath = resolveProductPath(options.GatewayPath)
++	options.HarnessRoot = resolveProductPath(options.HarnessRoot)
++	options.RuntimeRoot = resolveProductPath(options.RuntimeRoot)
++	options.DataRoot = resolveProductPath(options.DataRoot)
++	// nodeBinaryPath 允许传入 PATH 中的 node；含路径的值则相对产品根解析。
++	if options.NodeBinary != "" && (filepath.IsAbs(options.NodeBinary) || strings.ContainsAny(options.NodeBinary, `/\\`)) {
++		options.NodeBinary = resolveProductPath(options.NodeBinary)
++	}
++	options.DSHRuntime = resolveProductPath(options.DSHRuntime)
++	options.DSHEntry = resolveProductPath(options.DSHEntry)
++	options.SDKClientEntry = resolveProductPath(options.SDKClientEntry)
+ 	if options.GatewayPath == "" {
+ 		options.GatewayPath = filepath.Join(options.ProductRoot, "brain/gateway/index.mjs")
+ 	}
+ 	if options.HarnessRoot == "" {
+ 		options.HarnessRoot = filepath.Join(options.ProductRoot, "brain/vendor/deepseek-harness")
+ 	}
++	if options.RuntimeRoot == "" {
++		options.RuntimeRoot = filepath.Join(options.ProductRoot, "brain/runtime")
++	}
++	// 安装包使用固定文件名，开发树没有这些文件时继续走 PATH 和源码模式。
++	if options.NodeBinary == "" {
++		options.NodeBinary = firstExistingFile(filepath.Join(options.RuntimeRoot, "node-carrier"), filepath.Join(options.RuntimeRoot, "node-carrier.exe"))
++	}
++	if options.DSHRuntime == "" {
++		options.DSHRuntime = firstExistingFile(filepath.Join(options.RuntimeRoot, "dsh-runtime"), filepath.Join(options.RuntimeRoot, "dsh-runtime.exe"))
++	}
++	if options.DSHEntry == "" {
++		options.DSHEntry = firstExistingFile(filepath.Join(options.RuntimeRoot, "node/node_modules/@deepseek-ai/dsh/lib/bin.js"))
++	}
++	if options.SDKClientEntry == "" {
++		options.SDKClientEntry = firstExistingFile(filepath.Join(options.RuntimeRoot, "node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js"))
++	}
+ 	if options.DataRoot == "" {
+ 		options.DataRoot = filepath.Join(options.ProductRoot, "data/brain")
+ 	}
+@@ -198,6 +246,19 @@ func NewSupervisor(options Options) (*Supervisor, error) {
+ 	return &Supervisor{options: options, status: brainapp.RuntimeStatus{State: "stopped", UpdatedAt: time.Now().UnixMilli()}}, nil
+ }
+ 
++// firstExistingFile 返回候选中的第一个普通文件，避免把目录误当作可执行入口。
++func firstExistingFile(candidates ...string) string {
++	// candidate 是当前尝试的候选路径。
++	for _, candidate := range candidates {
++		// info、err 保存当前候选路径的文件状态和检查结果。
++		info, err := os.Stat(candidate)
++		if err == nil && info.Mode().IsRegular() {
++			return candidate
++		}
++	}
++	return ""
++}
++
+ // Start 启动 gateway、读取随机端口回执并完成健康检查；重复启动保持幂等。
+ func (supervisor *Supervisor) Start(ctx context.Context) error {
+ 	if supervisor == nil {
+@@ -274,12 +335,26 @@ func (supervisor *Supervisor) startLocked(ctx context.Context) error {
+ 			return fmt.Errorf("查找 Node carrier 失败: %w", lookErr)
+ 		}
+ 	}
+-	// command 是 gateway 子进程命令；tsx loader 由 Harness workspace 解析同版本源代码。
+-	command := exec.Command(nodeBinary, "--import", "tsx/esm", supervisor.options.GatewayPath)
+-	command.Dir = supervisor.options.HarnessRoot
++	// gatewayArgs 根据是否存在构建 SDK 选择无 loader 的安装模式或源码 tsx 模式。
++	gatewayArgs := []string{supervisor.options.GatewayPath}
++	// commandDir 是 gateway 子进程的工作目录。
++	commandDir := supervisor.options.ProductRoot
++	if supervisor.options.SDKClientEntry == "" {
++		gatewayArgs = []string{"--import", "tsx/esm", supervisor.options.GatewayPath}
++		commandDir = supervisor.options.HarnessRoot
++	}
++	// command 是 gateway 子进程命令；安装包由 Node 24 carrier 直接执行 mjs。
++	command := exec.Command(nodeBinary, gatewayArgs...)
++	command.Dir = commandDir
+ 	command.Env = append(os.Environ(),
+ 		"DH_BRAIN_TOKEN="+token,
+ 		"DH_BRAIN_CONTRACT_VERSION="+defaultGatewayContract,
++		"DH_BRAIN_RUNTIME_ROOT="+supervisor.options.RuntimeRoot,
++		"DH_BRAIN_HARNESS_ROOT="+supervisor.options.HarnessRoot,
++		"DH_BRAIN_NODE_BINARY="+nodeBinary,
++		"DH_BRAIN_DSH_RUNTIME="+supervisor.options.DSHRuntime,
++		"DH_BRAIN_DSH_ENTRY="+supervisor.options.DSHEntry,
++		"DH_BRAIN_SDK_CLIENT_ENTRY="+supervisor.options.SDKClientEntry,
+ 		"DH_BRAIN_DATA_ROOT="+supervisor.options.DataRoot,
+ 		"DH_BRAIN_PROFILE_PATH="+filepath.Join(supervisor.options.ProductRoot, "brain/profile/customer-service.patch.yml"),
+ 		"DH_BRAIN_PROVIDER="+settings.Provider,
+diff --git a/internal/brainruntime/supervisor_test.go b/internal/brainruntime/supervisor_test.go
+index 5fc14d640b..1715311462 100644
+--- a/internal/brainruntime/supervisor_test.go
++++ b/internal/brainruntime/supervisor_test.go
+@@ -117,3 +117,72 @@ func TestSupervisorDisabledDoesNotSpawn(t *testing.T) {
+ 		t.Fatalf("disabled start should not create data root, stat err=%v", err)
+ 	}
+ }
++
++// TestNewSupervisorDerivesPackagedRuntimePaths 验证安装布局可在只提供产品根目录时自动解析全部 carrier 入口。
++func TestNewSupervisorDerivesPackagedRuntimePaths(t *testing.T) {
++	// root 是一个最小安装包目录，文件内容只用于路径探测，不启动真实进程。
++	root := t.TempDir()
++	// runtimeRoot 是安装包内 Brain runtime 的目录。
++	runtimeRoot := filepath.Join(root, "brain", "runtime")
++	// paths 保存用于验证自动推导逻辑的最小文件集合。
++	paths := []string{
++		filepath.Join(root, "brain", "gateway", "index.mjs"),
++		filepath.Join(runtimeRoot, "node-carrier"),
++		filepath.Join(runtimeRoot, "dsh-runtime"),
++		filepath.Join(runtimeRoot, "node", "node_modules", "@deepseek-ai", "dsh", "lib", "bin.js"),
++		filepath.Join(runtimeRoot, "node", "node_modules", "@deepseek-ai", "dsh-sdk-client", "lib", "index.js"),
++	}
++	// path 是当前待创建的 fixture 文件路径。
++	for _, path := range paths {
++		// err 保存创建 fixture 父目录的结果。
++		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
++			t.Fatalf("mkdir %s: %v", path, err)
++		}
++		// err 保存写入 fixture 文件的结果。
++		if err := os.WriteFile(path, []byte("fixture"), 0o755); err != nil {
++			t.Fatalf("write %s: %v", path, err)
++		}
++	}
++	// supervisor 保存自动推导后的安装入口，设置 disabled 避免测试拉起 carrier。
++	supervisor, err := NewSupervisor(Options{ProductRoot: root, Settings: func(context.Context) (brainapp.Settings, error) {
++		return brainapp.Settings{Enabled: false}, nil
++	}})
++	if err != nil {
++		t.Fatalf("new supervisor: %v", err)
++	}
++	if supervisor.options.RuntimeRoot != runtimeRoot || supervisor.options.NodeBinary != filepath.Join(runtimeRoot, "node-carrier") || supervisor.options.DSHRuntime != filepath.Join(runtimeRoot, "dsh-runtime") || supervisor.options.DSHEntry != filepath.Join(runtimeRoot, "node", "node_modules", "@deepseek-ai", "dsh", "lib", "bin.js") || supervisor.options.SDKClientEntry != filepath.Join(runtimeRoot, "node", "node_modules", "@deepseek-ai", "dsh-sdk-client", "lib", "index.js") {
++		t.Fatalf("packaged paths not derived: %+v", supervisor.options)
++	}
++}
++
++// TestNewSupervisorResolvesRelativeResourcePaths 验证相对产品资源路径以 ProductRoot 为基准解析。
++func TestNewSupervisorResolvesRelativeResourcePaths(t *testing.T) {
++	// root 是当前工作目录下的相对产品根；使用目录名避免依赖固定绝对路径。
++	root := filepath.Join("relative-brain-root", "product")
++	// supervisor 保存路径解析结果，disabled 设置避免创建 runtime 数据目录。
++	supervisor, err := NewSupervisor(Options{
++		ProductRoot:    root,
++		GatewayPath:    "brain/gateway/index.mjs",
++		HarnessRoot:    "brain/vendor/deepseek-harness",
++		RuntimeRoot:    "brain/runtime",
++		DataRoot:       "data/brain",
++		NodeBinary:     "node",
++		DSHRuntime:     "brain/runtime/dsh-runtime",
++		DSHEntry:       "brain/runtime/node/bin.js",
++		SDKClientEntry: "brain/runtime/node/sdk.js",
++		Settings: func(context.Context) (brainapp.Settings, error) {
++			return brainapp.Settings{Enabled: false}, nil
++		},
++	})
++	if err != nil {
++		t.Fatalf("new supervisor: %v", err)
++	}
++	// absoluteRoot 是与 NewSupervisor 相同规则计算出的预期绝对产品根。
++	absoluteRoot, err := filepath.Abs(root)
++	if err != nil {
++		t.Fatalf("abs root: %v", err)
++	}
++	if supervisor.options.ProductRoot != absoluteRoot || supervisor.options.GatewayPath != filepath.Join(absoluteRoot, "brain/gateway/index.mjs") || supervisor.options.HarnessRoot != filepath.Join(absoluteRoot, "brain/vendor/deepseek-harness") || supervisor.options.RuntimeRoot != filepath.Join(absoluteRoot, "brain/runtime") || supervisor.options.DataRoot != filepath.Join(absoluteRoot, "data/brain") || supervisor.options.NodeBinary != "node" || supervisor.options.DSHRuntime != filepath.Join(absoluteRoot, "brain/runtime/dsh-runtime") || supervisor.options.DSHEntry != filepath.Join(absoluteRoot, "brain/runtime/node/bin.js") || supervisor.options.SDKClientEntry != filepath.Join(absoluteRoot, "brain/runtime/node/sdk.js") {
++		t.Fatalf("relative paths not resolved: %+v", supervisor.options)
++	}
++}
+diff --git a/internal/composition/runtime/runtime.go b/internal/composition/runtime/runtime.go
+index 2ca97791d2..4a35c15d3f 100644
+--- a/internal/composition/runtime/runtime.go
++++ b/internal/composition/runtime/runtime.go
+@@ -35,8 +35,16 @@ type RuntimeOptions struct {
+ 	Addr string
+ 	// ProductRoot 是包含 Brain gateway 与 vendored Harness 的产品根目录；空值使用当前工作目录。
+ 	ProductRoot string
++	// BrainRuntimeRoot 是安装包内 Brain runtime 载荷根目录；空值使用产品根 brain/runtime。
++	BrainRuntimeRoot string
+ 	// BrainNodeBinary 是安装包提供的 Node carrier；空值由 supervisor 查找 PATH。
+ 	BrainNodeBinary string
++	// BrainDSHRuntime 是原生平台的单文件 Harness runtime；空值由 supervisor 自动推导。
++	BrainDSHRuntime string
++	// BrainDSHEntry 是 Node carrier 模式下的构建 dsh 入口；空值由 supervisor 自动推导。
++	BrainDSHEntry string
++	// BrainSDKClientEntry 是构建 SDK 客户端入口；空值由 supervisor 自动推导。
++	BrainSDKClientEntry string
+ 	// BrainDataRoot 是 Harness 派生会话数据目录；空值位于产品根 data/brain。
+ 	BrainDataRoot string
+ }
+@@ -235,13 +243,20 @@ func buildBrainSupervisor(options RuntimeOptions, infrastructure RuntimeInfrastr
+ 			return nil, nil, fmt.Errorf("读取 Brain 产品根目录失败: %w", rootErr)
+ 		}
+ 	}
++	// rootErr 保存产品根目录绝对化失败原因，保证显式拼接的 gateway 路径不会重复相对前缀。
++	if absoluteRoot, rootErr := filepath.Abs(productRoot); rootErr == nil {
++		productRoot = absoluteRoot
++	} else {
++		return nil, nil, fmt.Errorf("解析 Brain 产品根目录失败: %w", rootErr)
++	}
+ 	// brainRepository 保存当前步骤的中间结果。
+ 	brainRepository := adapter.NewBrainRepository(infrastructure.Store)
+ 	// brainSupervisor、supervisorErr 保存当前步骤的中间结果。
+ 	brainSupervisor, supervisorErr := brainruntime.NewSupervisor(brainruntime.Options{
+ 		ProductRoot: productRoot, GatewayPath: filepath.Join(productRoot, "brain/gateway/index.mjs"),
+-		HarnessRoot: filepath.Join(productRoot, "brain/vendor/deepseek-harness"), NodeBinary: options.BrainNodeBinary,
+-		DataRoot: options.BrainDataRoot, Logger: infrastructure.Logger,
++		HarnessRoot: filepath.Join(productRoot, "brain/vendor/deepseek-harness"), RuntimeRoot: options.BrainRuntimeRoot,
++		NodeBinary: options.BrainNodeBinary, DSHRuntime: options.BrainDSHRuntime, DSHEntry: options.BrainDSHEntry,
++		SDKClientEntry: options.BrainSDKClientEntry, DataRoot: options.BrainDataRoot, Logger: infrastructure.Logger,
+ 		Settings:   func(ctx context.Context) (brainapp.Settings, error) { return brainRepository.GetSettings(ctx) },
+ 		APIKey:     func(ctx context.Context) (string, error) { return brainRepository.ReadAPIKey(ctx) },
+ 		MCPBackend: adapter.NewBrainMCPBackend(infrastructure.Store),
+diff --git a/packaging/linux/dh-xianyu-agentpanel.service b/packaging/linux/dh-xianyu-agentpanel.service
+index bfbe486cd1..b22aca4261 100644
+--- a/packaging/linux/dh-xianyu-agentpanel.service
++++ b/packaging/linux/dh-xianyu-agentpanel.service
+@@ -10,7 +10,7 @@ Group=dh-xianyu-agentpanel
+ WorkingDirectory=/var/lib/dh-xianyu-agentpanel
+ EnvironmentFile=-/etc/dh-xianyu-agentpanel/config.env
+ Environment=DH_XIANYU_AGENTPANEL_LOG_DIR=/var/log/dh-xianyu-agentpanel
+-ExecStart=/opt/dh-xianyu-agentpanel/xianyu-server -addr 127.0.0.1:59188 -workdir /var/lib/dh-xianyu-agentpanel -data-key-file /var/lib/dh-xianyu-agentpanel/data-key -playwright-runtime-root /opt/dh-xianyu-agentpanel/playwright-runtime
++ExecStart=/opt/dh-xianyu-agentpanel/xianyu-server -addr 127.0.0.1:59188 -workdir /var/lib/dh-xianyu-agentpanel -data-key-file /var/lib/dh-xianyu-agentpanel/data-key -product-root /opt/dh-xianyu-agentpanel -brain-runtime-root /opt/dh-xianyu-agentpanel/brain/runtime -brain-data-root /var/lib/dh-xianyu-agentpanel/data/brain -playwright-runtime-root /opt/dh-xianyu-agentpanel/playwright-runtime
+ Restart=on-failure
+ RestartSec=5s
+ KillSignal=SIGTERM
+diff --git a/packaging/linux/install.sh b/packaging/linux/install.sh
+index e4d953783c..07fc841762 100755
+--- a/packaging/linux/install.sh
++++ b/packaging/linux/install.sh
+@@ -24,6 +24,7 @@ fi
+ SERVER_SOURCE="${DH_XIANYU_AGENTPANEL_SERVER_SOURCE:-${XIANYU_SERVER_SOURCE:-$SCRIPT_DIR/xianyu-server}}"
+ BROWSER_SOURCE="${DH_XIANYU_AGENTPANEL_BROWSER_INSTALL_SOURCE:-${XIANYU_BROWSER_INSTALL_SOURCE:-$SCRIPT_DIR/browser-install}}"
+ RUNTIME_SOURCE="${DH_XIANYU_AGENTPANEL_PLAYWRIGHT_RUNTIME_SOURCE:-${XIANYU_PLAYWRIGHT_RUNTIME_SOURCE:-$SCRIPT_DIR/playwright-runtime}}"
++BRAIN_SOURCE="${DH_XIANYU_AGENTPANEL_BRAIN_SOURCE:-$SCRIPT_DIR/brain}"
+ ICON_SOURCE="${DH_XIANYU_AGENTPANEL_ICON_SOURCE:-${XIANYU_ICON_SOURCE:-$SCRIPT_DIR/icon.png}}"
+ MIGRATION_SOURCE="${DH_XIANYU_AGENTPANEL_MIGRATION_SOURCE:-$SCRIPT_DIR/migrate-product-data.sh}"
+ if [[ ! -x "$SERVER_SOURCE" ]]; then
+@@ -44,6 +45,17 @@ if [[ ! -d "$RUNTIME_SOURCE/$RUNTIME_ARCH/playwright-driver" ]] || \
+   echo "找不到 $RUNTIME_ARCH 架构的 Playwright runtime：$RUNTIME_SOURCE/$RUNTIME_ARCH" >&2
+   exit 1
+ fi
++if [[ ! -f "$BRAIN_SOURCE/runtime/runtime.json" ]] || \
++   [[ ! -f "$BRAIN_SOURCE/runtime/node-carrier" ]] || \
++   [[ ! -f "$BRAIN_SOURCE/runtime/node/package.json" ]] || \
++   [[ ! -f "$BRAIN_SOURCE/runtime/node/node_modules/@deepseek-ai/dsh/lib/bin.js" ]] || \
++   [[ ! -f "$BRAIN_SOURCE/runtime/node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js" ]] || \
++   [[ ! -f "$BRAIN_SOURCE/gateway/index.mjs" ]] || \
++   [[ ! -f "$BRAIN_SOURCE/profile/customer-service.patch.yml" ]] || \
++   [[ ! -f "$BRAIN_SOURCE/runtime/result-tool.mjs" ]]; then
++  echo "找不到完整的 Brain runtime 载荷：$BRAIN_SOURCE" >&2
++  exit 1
++fi
+ if [[ ! -f "$ICON_SOURCE" ]]; then
+   echo "找不到应用图标：$ICON_SOURCE" >&2
+   exit 1
+@@ -82,6 +94,10 @@ rm -rf "$INSTALL_DIR/playwright-runtime"
+ install -d -m 0755 "$INSTALL_DIR/playwright-runtime"
+ cp -R "$RUNTIME_SOURCE/." "$INSTALL_DIR/playwright-runtime/"
+ chmod -R a+rX "$INSTALL_DIR/playwright-runtime"
++rm -rf "$INSTALL_DIR/brain"
++install -d -m 0755 "$INSTALL_DIR/brain"
++cp -R "$BRAIN_SOURCE/." "$INSTALL_DIR/brain/"
++chmod -R a+rX "$INSTALL_DIR/brain"
+ install -d -m 0750 "$CONFIG_DIR"
+ install -m 0755 "$SERVER_SOURCE" "$INSTALL_DIR/xianyu-server"
+ install -m 0755 "$BROWSER_SOURCE" "$INSTALL_DIR/browser-install"
+diff --git a/packaging/macos/build-pkg.sh b/packaging/macos/build-pkg.sh
+index 77e7282829..758a08673d 100755
+--- a/packaging/macos/build-pkg.sh
++++ b/packaging/macos/build-pkg.sh
+@@ -27,6 +27,7 @@ case "$ARCH" in
+   amd64) PLATFORM_ARCH="x64" ;;
+ esac
+ runtime_dir="$DIST_DIR/playwright-runtime/$ARCH"
++brain_source="$DIST_DIR/brain/$ARCH"
+ runtime_has_chromium() {
+   find "$runtime_dir/playwright-browsers" -type f \
+     -path "*/chrome-mac-$PLATFORM_ARCH/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing" \
+@@ -48,6 +49,17 @@ if ! runtime_has_chromium || ! runtime_has_headless_shell; then
+   echo "Playwright runtime 缺少 $ARCH 架构的 Chromium 或 headless shell。" >&2
+   exit 1
+ fi
++if [ ! -f "$brain_source/runtime/runtime.json" ] || \
++   [ ! -f "$brain_source/runtime/node-carrier" ] || \
++   [ ! -f "$brain_source/runtime/node/package.json" ] || \
++   [ ! -f "$brain_source/runtime/node/node_modules/@deepseek-ai/dsh/lib/bin.js" ] || \
++   [ ! -f "$brain_source/runtime/node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js" ] || \
++   [ ! -f "$brain_source/gateway/index.mjs" ] || \
++   [ ! -f "$brain_source/profile/customer-service.patch.yml" ] || \
++   [ ! -f "$brain_source/runtime/result-tool.mjs" ]; then
++  echo "未找到完整的 $ARCH Brain runtime 载荷：$brain_source" >&2
++  exit 1
++fi
+ 
+ rm -rf "$ROOT_DIR"
+ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Helpers" "$APP/Contents/Resources"
+@@ -59,6 +71,8 @@ cp "$SCRIPT_DIR/com.dhdevmax.xianyu-agentpanel.tray.plist.template" "$APP/Conten
+ cp "$PROJECT_ROOT/scripts/migrate-product-data.sh" "$APP/Contents/Resources/migrate-product-data.sh"
+ mkdir -p "$APP/Contents/Resources/playwright-runtime/$ARCH"
+ cp -R "$DIST_DIR/playwright-runtime/$ARCH/." "$APP/Contents/Resources/playwright-runtime/$ARCH/"
++mkdir -p "$APP/Contents/Resources/brain"
++cp -R "$brain_source/." "$APP/Contents/Resources/brain/"
+ cp "$PROJECT_ROOT/icon/macos/icon.icns" "$APP/Contents/Resources/icon.icns"
+ mkdir -p "$APP/Contents/Resources/en.lproj" \
+   "$APP/Contents/Resources/zh-Hans.lproj" \
+@@ -113,7 +127,7 @@ if [ -n "${MACOS_SIGNING_IDENTITY:-}" ]; then
+   # 因此这里只签 bundle 外的独立 Mach-O，再按目录深度递归签名所有 bundle。
+   signing_list="$runtime_files"
+ 
+-  find "$APP/Contents/Resources/playwright-runtime" -type f -print > "$signing_list"
++  find "$APP/Contents/Resources/playwright-runtime" "$APP/Contents/Resources/brain/runtime" -type f -print > "$signing_list"
+   while IFS= read -r executable; do
+     case "$executable" in
+       *.app/*|*.framework/*|*.xpc/*) continue ;;
+@@ -123,7 +137,7 @@ if [ -n "${MACOS_SIGNING_IDENTITY:-}" ]; then
+     fi
+   done < "$signing_list"
+ 
+-  find "$APP/Contents/Resources/playwright-runtime" -depth -type d \
++  find "$APP/Contents/Resources/playwright-runtime" "$APP/Contents/Resources/brain/runtime" -depth -type d \
+     \( -name '*.framework' -o -name '*.xpc' -o -name '*.app' \) -print > "$signing_list"
+   while IFS= read -r nested_bundle; do
+     sign_nested_bundle "$nested_bundle"
+diff --git a/packaging/macos/com.dhdevmax.xianyu-agentpanel.server.plist.template b/packaging/macos/com.dhdevmax.xianyu-agentpanel.server.plist.template
+index 3aff12bbc0..1818bb6dae 100644
+--- a/packaging/macos/com.dhdevmax.xianyu-agentpanel.server.plist.template
++++ b/packaging/macos/com.dhdevmax.xianyu-agentpanel.server.plist.template
+@@ -7,6 +7,9 @@
+ 	<array>
+ 		<string>__SERVER__</string>
+ 		<string>-addr</string><string>127.0.0.1:59188</string>
++		<string>-product-root</string><string>__PRODUCT_ROOT__</string>
++		<string>-brain-runtime-root</string><string>__BRAIN_RUNTIME_ROOT__</string>
++		<string>-brain-data-root</string><string>__DATA_DIR__/data/brain</string>
+ 		<string>-playwright-runtime-root</string><string>__RUNTIME_ROOT__</string>
+ 	</array>
+ 	<key>WorkingDirectory</key><string>__DATA_DIR__</string>
+diff --git a/packaging/macos/scripts/postinstall b/packaging/macos/scripts/postinstall
+index ea6b72d13d..f5b63ff1ee 100755
+--- a/packaging/macos/scripts/postinstall
++++ b/packaging/macos/scripts/postinstall
+@@ -29,6 +29,19 @@ fi
+ SERVER="$APP/Contents/Helpers/xianyu-server"
+ TRAY="$APP/Contents/MacOS/DH闲不下来"
+ RUNTIME_ROOT="$APP/Contents/Resources/playwright-runtime"
++PRODUCT_ROOT="$APP/Contents/Resources"
++BRAIN_RUNTIME_ROOT="$APP/Contents/Resources/brain/runtime"
++if [ ! -f "$BRAIN_RUNTIME_ROOT/runtime.json" ] || \
++   [ ! -f "$BRAIN_RUNTIME_ROOT/node-carrier" ] || \
++   [ ! -f "$BRAIN_RUNTIME_ROOT/node/package.json" ] || \
++   [ ! -f "$BRAIN_RUNTIME_ROOT/node/node_modules/@deepseek-ai/dsh/lib/bin.js" ] || \
++   [ ! -f "$BRAIN_RUNTIME_ROOT/node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js" ] || \
++   [ ! -f "$APP/Contents/Resources/brain/gateway/index.mjs" ] || \
++   [ ! -f "$APP/Contents/Resources/brain/profile/customer-service.patch.yml" ] || \
++   [ ! -f "$BRAIN_RUNTIME_ROOT/result-tool.mjs" ]; then
++  echo "安装包缺少 Brain runtime 载荷：$BRAIN_RUNTIME_ROOT"
++  exit 1
++fi
+ CONSOLE_USER="$(stat -f '%Su' /dev/console)"
+ 
+ if [ "$CONSOLE_USER" = "root" ] || [ -z "$CONSOLE_USER" ]; then
+@@ -79,6 +92,8 @@ TRAY_ESCAPED="$(escape_sed "$TRAY")"
+ DATA_ESCAPED="$(escape_sed "$DATA_DIR")"
+ LOG_ESCAPED="$(escape_sed "$LOG_DIR")"
+ RUNTIME_ROOT_ESCAPED="$(escape_sed "$RUNTIME_ROOT")"
++PRODUCT_ROOT_ESCAPED="$(escape_sed "$PRODUCT_ROOT")"
++BRAIN_RUNTIME_ROOT_ESCAPED="$(escape_sed "$BRAIN_RUNTIME_ROOT")"
+ 
+ SERVER_LABEL="com.dhdevmax.xianyu-agentpanel.server"
+ TRAY_LABEL="com.dhdevmax.xianyu-agentpanel.tray"
+@@ -88,6 +103,8 @@ sed -e "s|__SERVER__|$SERVER_ESCAPED|g" \
+     -e "s|__DATA_DIR__|$DATA_ESCAPED|g" \
+     -e "s|__LOG_DIR__|$LOG_ESCAPED|g" \
+     -e "s|__RUNTIME_ROOT__|$RUNTIME_ROOT_ESCAPED|g" \
++    -e "s|__PRODUCT_ROOT__|$PRODUCT_ROOT_ESCAPED|g" \
++    -e "s|__BRAIN_RUNTIME_ROOT__|$BRAIN_RUNTIME_ROOT_ESCAPED|g" \
+     "$APP/Contents/Resources/com.dhdevmax.xianyu-agentpanel.server.plist.template" > "$server_plist"
+ sed -e "s|__TRAY__|$TRAY_ESCAPED|g" \
+     -e "s|__LOG_DIR__|$LOG_ESCAPED|g" \
+diff --git a/packaging/windows/installer.iss b/packaging/windows/installer.iss
+index 2a54ae4a8d..4a35a8f116 100644
+--- a/packaging/windows/installer.iss
++++ b/packaging/windows/installer.iss
+@@ -6,6 +6,7 @@
+ #define RepoRoot AddBackslash(SourcePath) + "..\.."
+ #define WindowsDistDir AddBackslash(RepoRoot) + "dist\windows"
+ #define WindowsRuntimeDir AddBackslash(WindowsDistDir) + "playwright-runtime\amd64"
++#define WindowsBrainDir AddBackslash(WindowsDistDir) + "brain"
+ #define WindowsIconDir AddBackslash(RepoRoot) + "icon\windows"
+ #define WindowsLanguageDir AddBackslash(SourcePath) + "languages"
+ 
+@@ -52,6 +53,7 @@ Source: "{#WindowsDistDir}\xianyu-server.exe"; DestDir: "{app}"; Flags: ignoreve
+ Source: "{#WindowsDistDir}\xianyu-tray.exe"; DestDir: "{app}"; Flags: ignoreversion
+ Source: "{#WindowsIconDir}\icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+ Source: "{#WindowsRuntimeDir}\*"; DestDir: "{app}\playwright-runtime"; Flags: recursesubdirs createallsubdirs ignoreversion
++Source: "{#WindowsBrainDir}\*"; DestDir: "{app}\brain"; Flags: recursesubdirs createallsubdirs ignoreversion
+ Source: "service-control.ps1"; Flags: dontcopy
+ Source: "service-control.ps1"; DestDir: "{app}"; Flags: ignoreversion
+ Source: "migrate-data.ps1"; Flags: dontcopy
+@@ -92,7 +94,9 @@ begin
+     ' -ExePath "' + ExpandConstant('{app}\xianyu-server.exe') +
+     '" -TrayPath "' + ExpandConstant('{app}\xianyu-tray.exe') +
+     '" -WorkDir "' + ExpandConstant('{commonappdata}\DhXianyuAgentPanel') +
+-    '" -RuntimeRoot "' + ExpandConstant('{app}\playwright-runtime') + '"';
++    '" -RuntimeRoot "' + ExpandConstant('{app}\playwright-runtime') +
++    '" -ProductRoot "' + ExpandConstant('{app}') +
++    '" -BrainRuntimeRoot "' + ExpandConstant('{app}\brain\runtime') + '"';
+ end;
+ 
+ function PrepareToInstall(var NeedsRestart: Boolean): String;
+diff --git a/packaging/windows/service-control.ps1 b/packaging/windows/service-control.ps1
+index 703c27ed78..83e6f10c6d 100644
+--- a/packaging/windows/service-control.ps1
++++ b/packaging/windows/service-control.ps1
+@@ -9,6 +9,8 @@
+     [string]$TrayPath = '',
+     [string]$WorkDir = '',
+     [string]$RuntimeRoot = '',
++    [string]$ProductRoot = '',
++    [string]$BrainRuntimeRoot = '',
+     [string]$CreatedMarkerPath = ''
+ )
+ 
+@@ -141,8 +143,10 @@ function Grant-InteractiveUserServiceControl {
+ function Assert-ServiceInstallParameters {
+     if ([string]::IsNullOrWhiteSpace($ExePath) -or
+         [string]::IsNullOrWhiteSpace($WorkDir) -or
+-        [string]::IsNullOrWhiteSpace($RuntimeRoot)) {
+-        throw '安装服务缺少 ExePath、WorkDir 或 RuntimeRoot'
++        [string]::IsNullOrWhiteSpace($RuntimeRoot) -or
++        [string]::IsNullOrWhiteSpace($ProductRoot) -or
++        [string]::IsNullOrWhiteSpace($BrainRuntimeRoot)) {
++        throw '安装服务缺少 ExePath、WorkDir、RuntimeRoot、ProductRoot 或 BrainRuntimeRoot'
+     }
+ }
+ 
+@@ -154,8 +158,8 @@ function Register-InstalledService {
+     New-Item -ItemType Directory -Force -Path (Join-Path $WorkDir 'data') | Out-Null
+     New-Item -ItemType Directory -Force -Path (Join-Path $WorkDir 'logs') | Out-Null
+ 
+-    $binaryPath = '"{0}" -service -workdir "{1}" -data-key-file "{1}\data-key" -addr 127.0.0.1:59188 -playwright-runtime-root "{2}"' -f `
+-        $ExePath, $WorkDir, $RuntimeRoot
++    $binaryPath = '"{0}" -service -workdir "{1}" -data-key-file "{1}\data-key" -addr 127.0.0.1:59188 -product-root "{2}" -brain-runtime-root "{3}" -brain-data-root "{1}\data\brain" -playwright-runtime-root "{4}"' -f `
++        $ExePath, $WorkDir, $ProductRoot, $BrainRuntimeRoot, $RuntimeRoot
+     if (-not (Test-ServiceInstalled)) {
+         if (-not [string]::IsNullOrWhiteSpace($CreatedMarkerPath)) {
+             Set-Content -LiteralPath $CreatedMarkerPath -Value $ServiceName -Encoding ASCII
+diff --git a/product/manifest.json b/product/manifest.json
+index fddd13ed54..856b68ceb9 100644
+--- a/product/manifest.json
++++ b/product/manifest.json
+@@ -45,6 +45,21 @@
+     ],
+     "node_carrier_platforms": [
+       "darwin-amd64"
+-    ]
++    ],
++    "brain_runtime_modes": {
++      "linux-amd64": "native",
++      "linux-arm64": "native",
++      "darwin-arm64": "native",
++      "darwin-amd64": "node",
++      "windows-amd64": "native"
++    },
++    "brain_layout": {
++      "root": "brain/runtime",
++      "node_carrier": "node-carrier",
++      "native_dsh": "dsh-runtime",
++      "node_dsh_entry": "node/node_modules/@deepseek-ai/dsh/lib/bin.js",
++      "sdk_client_entry": "node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js",
++      "manifest": "runtime.json"
++    }
+   }
+ }
+diff --git a/scripts/brain-runtime-package.test.mjs b/scripts/brain-runtime-package.test.mjs
+new file mode 100644
+index 0000000000..644960f68b
+--- /dev/null
++++ b/scripts/brain-runtime-package.test.mjs
+@@ -0,0 +1,136 @@
++import assert from 'node:assert/strict'
++import { spawn } from 'node:child_process'
++import { chmod, mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
++import test from 'node:test'
++import { tmpdir } from 'node:os'
++import { dirname, join, resolve } from 'node:path'
++import { fileURLToPath } from 'node:url'
++
++const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
++const buildScript = join(projectRoot, 'scripts/build-brain-runtime.mjs')
++const checkScript = join(projectRoot, 'scripts/check-brain-runtime-package.mjs')
++const node24Available = process.versions.node.startsWith('24.')
++
++// runNode 执行一个产品脚本并返回 stdout/stderr，失败时保留完整诊断。
++function runNode(script, args, cwd = projectRoot) {
++  return new Promise((resolvePromise, reject) => {
++    const child = spawn(process.execPath, [script, ...args], { cwd, env: process.env })
++    let stdout = ''
++    let stderr = ''
++    child.stdout.setEncoding('utf8')
++    child.stderr.setEncoding('utf8')
++    child.stdout.on('data', chunk => { stdout += chunk })
++    child.stderr.on('data', chunk => { stderr += chunk })
++    child.once('error', reject)
++    child.once('close', code => resolvePromise({ code, stdout, stderr }))
++  })
++}
++
++// writeFixture 写入最小闭包文件，模拟官方 deploy root 而不下载网络依赖。
++async function writeFixture(root) {
++  const closure = join(root, 'harness', 'runtime', 'node')
++  const dshPackage = join(closure, 'node_modules/@deepseek-ai/dsh')
++  const sdkPackage = join(root, 'harness', 'packages/sdk/client')
++  await mkdir(join(dshPackage, 'lib'), { recursive: true })
++  await mkdir(join(sdkPackage, 'lib'), { recursive: true })
++  await writeFile(join(closure, 'package.json'), JSON.stringify({ type: 'module' }) + '\n')
++  await writeFile(join(dshPackage, 'package.json'), JSON.stringify({ name: '@deepseek-ai/dsh', version: '0.1.2-alpha.1', type: 'module' }) + '\n')
++  await writeFile(join(dshPackage, 'lib/bin.js'), [
++    "if (process.argv.includes('--version')) process.stdout.write('0.1.2-alpha.1\\n')",
++    "else process.stdout.write('fixture\\n')",
++  ].join('\n'))
++  await writeFile(join(sdkPackage, 'package.json'), JSON.stringify({ name: '@deepseek-ai/dsh-sdk-client', version: '0.1.2-alpha.1', type: 'module' }) + '\n')
++  await writeFile(join(sdkPackage, 'lib/index.js'), 'export const fixture = true\n')
++  // nodeCarrier 是测试用转发器，保持 Node 24 参数和架构输出但不依赖机器 PATH。
++  const nodeCarrier = join(root, 'harness', process.platform === 'win32' ? 'node-carrier.cmd' : 'node-carrier')
++  if (process.platform === 'win32') {
++    await writeFile(nodeCarrier, `@echo off\r\n"${process.execPath}" %*\r\n`)
++  } else {
++    await writeFile(nodeCarrier, `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} "$@"\n`)
++    await chmod(nodeCarrier, 0o755)
++  }
++  const nativeDsh = join(root, 'harness', 'fake-dsh')
++  const nativeDshSource = '#!/bin/sh\nprintf "0.1.2-alpha.1\\n"\n'
++  await writeFile(nativeDsh, nativeDshSource)
++  await writeFile(`${nativeDsh}-rg`, nativeDshSource)
++  await chmod(nativeDsh, 0o755)
++  await chmod(`${nativeDsh}-rg`, 0o755)
++  return { harnessRoot: join(root, 'harness'), closure, nativeDsh, nodeCarrier }
++}
++
++// buildAndCheck 构建一种模式并立即用 checker 重新打开 manifest 和载荷。
++async function buildAndCheck(fixture, output, mode) {
++  const build = await runNode(buildScript, [
++    '--output', output,
++    '--platform', 'linux',
++    '--arch', process.arch === 'x64' ? 'amd64' : 'arm64',
++    '--mode', mode,
++    '--harness-root', fixture.harnessRoot,
++    '--runtime-closure', fixture.closure,
++    '--node-binary', fixture.nodeCarrier,
++    ...(mode === 'native' ? ['--dsh-runtime', fixture.nativeDsh] : []),
++  ])
++  assert.equal(build.code, 0, `${mode} build failed:\n${build.stdout}\n${build.stderr}`)
++  const check = await runNode(checkScript, ['--root', output, '--probe'])
++  assert.equal(check.code, 0, `${mode} check failed:\n${check.stdout}\n${check.stderr}`)
++  const manifest = JSON.parse(await readFile(join(output, 'runtime/runtime.json'), 'utf8'))
++  assert.equal(manifest.mode, mode)
++  assert.equal(manifest.node.major, '24')
++  return manifest
++}
++
++test('brain runtime builder and checker cover node and native payloads', { skip: !node24Available || process.platform === 'win32' }, async () => {
++  // root 是本次测试的隔离目录，结束后删除所有构建载荷。
++  const root = await mkdtemp(join(tmpdir(), 'dh-brain-runtime-test-'))
++  try {
++    const fixture = await writeFixture(root)
++    const nodeManifest = await buildAndCheck(fixture, join(root, 'node-mode'), 'node')
++    const nativeManifest = process.platform === 'win32'
++      ? undefined
++      : await buildAndCheck(fixture, join(root, 'native-mode'), 'native')
++    assert.equal(Object.keys(nodeManifest.sha256).length, 6)
++    if (nativeManifest !== undefined) assert.equal(Object.keys(nativeManifest.sha256).length, 8)
++  } finally {
++    await rm(root, { recursive: true, force: true })
++  }
++})
++
++test('brain runtime checker rejects tampered files and symlinks', { skip: !node24Available || process.platform === 'win32' }, async () => {
++  // root 是本次负向检查的隔离目录。
++  const root = await mkdtemp(join(tmpdir(), 'dh-brain-runtime-tamper-'))
++  try {
++    const fixture = await writeFixture(root)
++    const output = join(root, 'payload')
++    await buildAndCheck(fixture, output, 'node')
++    const manifestPath = join(output, 'runtime/runtime.json')
++    const lockedManifest = JSON.parse(await readFile(manifestPath, 'utf8'))
++    lockedManifest.harness.commit = '0000000000000000000000000000000000000000'
++    await writeFile(manifestPath, `${JSON.stringify(lockedManifest, null, 2)}\n`)
++    const unlocked = await runNode(checkScript, ['--root', output])
++    assert.notEqual(unlocked.code, 0)
++    assert.match(`${unlocked.stdout}\n${unlocked.stderr}`, /Harness commit 错误/)
++
++    await buildAndCheck(fixture, output, 'node')
++    const resultTool = join(output, 'runtime/result-tool.mjs')
++    await writeFile(resultTool, `${await readFile(resultTool, 'utf8')}\n// tampered\n`)
++    const tampered = await runNode(checkScript, ['--root', output])
++    assert.notEqual(tampered.code, 0)
++    assert.match(`${tampered.stdout}\n${tampered.stderr}`, /摘要不匹配/)
++
++    await buildAndCheck(fixture, output, 'node')
++    const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
++    manifest.paths.sdk_client = '../outside-sdk.js'
++    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
++    const escaped = await runNode(checkScript, ['--root', output])
++    assert.notEqual(escaped.code, 0)
++    assert.match(`${escaped.stdout}\n${escaped.stderr}`, /路径越界/)
++
++    await buildAndCheck(fixture, output, 'node')
++    await symlink('runtime.json', join(output, 'runtime/manifest-link'))
++    const linked = await runNode(checkScript, ['--root', output])
++    assert.notEqual(linked.code, 0)
++    assert.match(`${linked.stdout}\n${linked.stderr}`, /符号链接/)
++  } finally {
++    await rm(root, { recursive: true, force: true })
++  }
++})
+diff --git a/scripts/build-brain-runtime.mjs b/scripts/build-brain-runtime.mjs
+new file mode 100644
+index 0000000000..981f9ac74e
+--- /dev/null
++++ b/scripts/build-brain-runtime.mjs
+@@ -0,0 +1,309 @@
++#!/usr/bin/env node
++
++import { createHash } from 'node:crypto'
++import { execFile } from 'node:child_process'
++import { access, chmod, cp, lstat, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
++import { constants } from 'node:fs'
++import { promisify } from 'node:util'
++import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
++import { fileURLToPath } from 'node:url'
++
++const execFileAsync = promisify(execFile)
++const rootDir = fileURLToPath(new URL('..', import.meta.url))
++const harnessRootDefault = join(rootDir, 'brain/vendor/deepseek-harness')
++const runtimeRelative = 'python/sdk-runtime/src/deepseek_harness_runtime/runtime'
++const harnessTag = 'dsh-v0.1.2-alpha.1'
++const harnessCommit = 'cd5ef8148158c3a752a658978873241fdf8e2bbc'
++const harnessVersion = '0.1.2-alpha.1'
++const contractVersion = 'brain.internal.v1'
++
++// usage 输出跨平台构建器的稳定参数，避免 CI 依赖隐含的当前目录。
++function usage() {
++  return [
++    '用法: node scripts/build-brain-runtime.mjs --output <brain-dir> --platform <linux|darwin|windows> --arch <amd64|arm64>',
++    '      [--mode <native|node>] [--harness-root <path>] [--node-binary <path>]',
++    '      [--dsh-runtime <path>] [--runtime-closure <path>] [--dsh-entry <path>]',
++    '',
++    'native 模式复制目标平台单文件 DSH；node 模式由 Node 24 carrier 启动闭包中的 dsh。',
++  ].join('\n')
++}
++
++// parseArgs 解析少量长参数并拒绝未知选项，保证安装载荷不会静默缺字段。
++function parseArgs(argv) {
++  const values = { mode: '' }
++  for (let index = 0; index < argv.length; index += 1) {
++    const argument = argv[index]
++    if (argument === '--help' || argument === '-h') {
++      console.log(usage())
++      process.exit(0)
++    }
++    if (!argument?.startsWith('--')) throw new Error(`未知参数: ${argument ?? ''}`)
++    const key = argument.slice(2)
++    const value = argv[index + 1]
++    if (value === undefined || value.startsWith('--')) throw new Error(`参数 ${argument} 缺少值`)
++    values[key.replaceAll('-', '_')] = value
++    index += 1
++  }
++  for (const required of ['output', 'platform', 'arch']) {
++    if (!values[required]) throw new Error(`缺少 --${required}`)
++  }
++  return values
++}
++
++// targetTags 把产品命名转换成 Harness 官方构建产物的 platform/arch 标签。
++function targetTags(platform, arch) {
++  const platformTag = platform === 'darwin' ? 'macos' : platform === 'windows' ? 'win' : platform
++  const archTag = arch === 'amd64' ? 'x64' : arch
++  return { platformTag, archTag }
++}
++
++// assertChoice 校验平台、架构和模式，防止生成无法启动的混合载荷。
++function assertChoice(platform, arch, mode) {
++  if (!['linux', 'darwin', 'windows'].includes(platform)) throw new Error(`不支持的平台: ${platform}`)
++  if (!['amd64', 'arm64'].includes(arch)) throw new Error(`不支持的架构: ${arch}`)
++  if (platform === 'windows' && arch !== 'amd64') throw new Error('Windows 仅支持 amd64')
++  if (!['native', 'node'].includes(mode)) throw new Error(`不支持的 Brain runtime 模式: ${mode}`)
++  if (platform === 'darwin' && arch === 'amd64' && mode === 'native') {
++    throw new Error('Intel macOS 使用 node 模式；官方无 macOS x64 原生 runtime')
++  }
++}
++
++// firstExisting 返回候选中的第一个普通文件，便于本地构建和 CI 缓存共用同一入口。
++async function firstExisting(...candidates) {
++  for (const candidate of candidates) {
++    try {
++      const metadata = await stat(candidate)
++      if (metadata.isFile()) return candidate
++    } catch {
++      // 继续尝试下一个候选。
++    }
++  }
++  return ''
++}
++
++// copyTree 复制并解除符号链接，安装包运行时必须自包含且可审计。
++async function copyTree(source, destination) {
++  await mkdir(dirname(destination), { recursive: true })
++  await cp(source, destination, { recursive: true, dereference: true, force: true })
++}
++
++// copyExecutable 复制一个可执行文件并统一设置跨平台运行权限。
++async function copyExecutable(source, destination) {
++  await mkdir(dirname(destination), { recursive: true })
++  await cp(source, destination, { force: true, dereference: true })
++  await chmod(destination, 0o755)
++}
++
++// sha256File 生成发布 manifest 使用的稳定文件摘要。
++async function sha256File(path) {
++  const digest = createHash('sha256')
++  digest.update(await readFile(path))
++  return digest.digest('hex')
++}
++
++// assertNoSymlinks 递归检查载荷，避免复制阶段漏掉上游 workspace 链接。
++async function assertNoSymlinks(directory) {
++  const entries = await readdir(directory, { withFileTypes: true })
++  for (const entry of entries) {
++    const path = join(directory, entry.name)
++    const metadata = await lstat(path)
++    if (metadata.isSymbolicLink()) throw new Error(`Brain runtime 仍包含符号链接: ${path}`)
++    if (metadata.isDirectory()) await assertNoSymlinks(path)
++  }
++}
++
++// nodeMajor 执行待复制的 Node carrier，确保发布包不会带入 Node 22 或系统 shim。
++async function nodeMajor(nodeBinary) {
++  const result = await execFileAsync(nodeBinary, ['--version'], { timeout: 10_000 })
++  const version = String(result.stdout).trim()
++  const match = /^v(\d+)/.exec(version)
++  if (match?.[1] !== '24') throw new Error(`Node carrier 必须为 24.x，实际为 ${version}`)
++  return version
++}
++
++// nodeArchitecture 通过 carrier 自身报告 CPU，避免把 arm64 Node 放进 Intel 包。
++async function nodeArchitecture(nodeBinary) {
++  const result = await execFileAsync(nodeBinary, ['-p', 'process.arch'], { timeout: 10_000 })
++  const value = String(result.stdout).trim()
++  const normalized = value === 'x64' ? 'amd64' : value
++  return normalized
++}
++
++// assertDarwinCarrierPortable 拒绝依赖 Homebrew 等外部动态库的 macOS Node carrier。
++async function assertDarwinCarrierPortable(nodeBinary) {
++  if (process.platform !== 'darwin') return
++  const fileType = await execFileAsync('file', ['-b', nodeBinary], { timeout: 10_000 })
++    .then(result => String(result.stdout))
++    .catch(() => '')
++  if (!fileType.includes('Mach-O')) return
++  const dependencies = await execFileAsync('otool', ['-L', nodeBinary], { timeout: 10_000 })
++    .then(result => String(result.stdout).split('\n').slice(1).map(line => line.trim().split(' ')[0]).filter(Boolean))
++  const external = dependencies.filter(path => path.startsWith('@')
++    || (path.startsWith('/') && !path.startsWith('/System/Library/') && !path.startsWith('/usr/lib/')))
++  if (external.length > 0) {
++    throw new Error(`macOS Node carrier 依赖安装包外部动态库: ${external.join(', ')}；请使用官方 Node 24 或 SEA carrier`)
++  }
++}
++
++// isCurrentTarget 判断构建机是否能够直接启动目标平台的 carrier。
++function isCurrentTarget(platform, arch) {
++  const currentPlatform = process.platform === 'darwin' ? 'darwin' : process.platform === 'win32' ? 'windows' : process.platform
++  const currentArch = process.arch === 'x64' ? 'amd64' : process.arch === 'arm64' ? 'arm64' : process.arch
++  return currentPlatform === platform && currentArch === arch
++}
++
++// readJSON 读取 JSON 文件并在错误中带上明确路径。
++async function readJSON(path) {
++  try {
++    return JSON.parse(await readFile(path, 'utf8'))
++  } catch (error) {
++    throw new Error(`读取 JSON 失败 ${path}: ${error instanceof Error ? error.message : String(error)}`)
++  }
++}
++
++const options = parseArgs(process.argv.slice(2))
++const platform = options.platform
++const arch = options.arch
++const harnessRoot = resolve(options.harness_root || harnessRootDefault)
++const { platformTag, archTag } = targetTags(platform, arch)
++const mode = options.mode || (platform === 'darwin' && arch === 'amd64' ? 'node' : 'native')
++assertChoice(platform, arch, mode)
++
++const outputBrain = resolve(options.output)
++const outputRelativeToRoot = relative(rootDir, outputBrain)
++const outputInsideProject = outputRelativeToRoot === '' || (!outputRelativeToRoot.startsWith('..') && !isAbsolute(outputRelativeToRoot))
++const outputIsBuildArea = outputRelativeToRoot === 'dist' || outputRelativeToRoot.startsWith(`dist${sep}`)
++  || outputRelativeToRoot === '.docker/brain-runtime' || outputRelativeToRoot.startsWith(`.docker${sep}brain-runtime${sep}`)
++if (outputBrain === '/' || outputBrain.length < 8 || (outputInsideProject && !outputIsBuildArea)) {
++  throw new Error(`拒绝清理危险 Brain 输出路径: ${outputBrain}`)
++}
++const outputRuntime = join(outputBrain, 'runtime')
++const closureSource = resolve(options.runtime_closure || join(harnessRoot, runtimeRelative, 'node'))
++const sdkSource = join(harnessRoot, 'packages/sdk/client')
++const sdkLibSource = join(sdkSource, 'lib')
++const sdkManifestSource = join(sdkSource, 'package.json')
++const gatewaySource = join(rootDir, 'brain/gateway/index.mjs')
++const profileSource = join(rootDir, 'brain/profile/customer-service.patch.yml')
++const resultToolSource = join(rootDir, 'brain/runtime/result-tool.mjs')
++
++for (const path of [closureSource, sdkLibSource, sdkManifestSource, gatewaySource, profileSource, resultToolSource]) {
++  await access(path, constants.R_OK).catch(() => { throw new Error(`Brain runtime 构建输入缺失: ${path}`) })
++}
++
++const nodeBinaryInput = options.node_binary || process.execPath
++const nodeBinary = isAbsolute(nodeBinaryInput) || nodeBinaryInput.includes('/') || nodeBinaryInput.includes('\\')
++  ? resolve(nodeBinaryInput)
++  : nodeBinaryInput
++const nodeVersion = await nodeMajor(nodeBinary)
++const nodeArch = await nodeArchitecture(nodeBinary)
++if (nodeArch !== arch) throw new Error(`Node carrier 架构与目标不匹配: ${nodeArch} != ${arch}`)
++await assertDarwinCarrierPortable(nodeBinary)
++const dshExtension = platform === 'windows' ? '.exe' : ''
++const generatedRuntimeRoot = join(harnessRoot, runtimeRelative)
++const generatedDshName = `deepseek-harness-sdk-runtime-${platformTag}-${archTag}${dshExtension}`
++const generatedDsh = await firstExisting(
++  options.dsh_runtime ? resolve(options.dsh_runtime) : '',
++  join(generatedRuntimeRoot, generatedDshName),
++)
++const generatedDshRG = generatedDsh === '' ? '' : platform === 'windows'
++  ? `${generatedDsh.slice(0, -dshExtension.length)}-rg.exe`
++  : `${generatedDsh}-rg`
++const generatedDshSpawnHelper = generatedDsh === '' || platform !== 'darwin'
++  ? ''
++  : `${generatedDsh}-spawn-helper`
++
++if (mode === 'native' && generatedDsh === '') {
++  throw new Error(`未找到 ${platformTag}-${archTag} 原生 DSH；请先运行 Harness build-exe-for-python-sdk 或传入 --dsh-runtime`)
++}
++if (mode === 'native') {
++  for (const path of [generatedDshRG, ...(platform === 'darwin' ? [generatedDshSpawnHelper] : [])]) {
++    await access(path, constants.R_OK).catch(() => { throw new Error(`原生 DSH sidecar 缺失: ${path}`) })
++  }
++}
++
++const sdkManifest = await readJSON(sdkManifestSource)
++const dshManifestPath = join(closureSource, 'node_modules/@deepseek-ai/dsh/package.json')
++const dshManifest = await readJSON(dshManifestPath)
++if (sdkManifest.version !== dshManifest.version) {
++  throw new Error(`SDK 与 DSH 版本不一致: ${sdkManifest.version} != ${dshManifest.version}`)
++}
++const productManifest = await readJSON(join(rootDir, 'product/manifest.json'))
++const lockedHarness = productManifest.components?.deepseek_harness
++if (lockedHarness?.tag !== harnessTag || lockedHarness?.commit !== harnessCommit) {
++  throw new Error(`产品 manifest 未锁定 Harness ${harnessTag} (${harnessCommit})`)
++}
++if (sdkManifest.version !== harnessVersion) {
++  throw new Error(`Harness SDK 版本未锁定: ${sdkManifest.version} != ${harnessVersion}`)
++}
++
++await rm(outputBrain, { recursive: true, force: true })
++await mkdir(outputRuntime, { recursive: true })
++await copyTree(closureSource, join(outputRuntime, 'node'))
++await copyTree(sdkLibSource, join(outputRuntime, 'node/node_modules/@deepseek-ai/dsh-sdk-client/lib'))
++await cp(sdkManifestSource, join(outputRuntime, 'node/node_modules/@deepseek-ai/dsh-sdk-client/package.json'), { force: true })
++await mkdir(join(outputBrain, 'gateway'), { recursive: true })
++await cp(gatewaySource, join(outputBrain, 'gateway/index.mjs'), { force: true })
++await mkdir(join(outputBrain, 'profile'), { recursive: true })
++await cp(profileSource, join(outputBrain, 'profile/customer-service.patch.yml'), { force: true })
++await cp(resultToolSource, join(outputRuntime, 'result-tool.mjs'), { force: true })
++
++const nodeCarrierName = platform === 'windows' ? 'node-carrier.exe' : 'node-carrier'
++await copyExecutable(nodeBinary, join(outputRuntime, nodeCarrierName))
++// 同目标构建机直接执行复制后的 carrier，避免源路径上的动态库恰好掩盖安装包缺依赖。
++if (isCurrentTarget(platform, arch)) {
++  await nodeMajor(join(outputRuntime, nodeCarrierName))
++  const copiedArch = await nodeArchitecture(join(outputRuntime, nodeCarrierName))
++  if (copiedArch !== arch) throw new Error(`复制后的 Node carrier 架构错误: ${copiedArch} != ${arch}`)
++}
++let dshRuntimeName = ''
++let dshRGName = ''
++let dshSpawnHelperName = ''
++if (mode === 'native') {
++  dshRuntimeName = platform === 'windows' ? 'dsh-runtime.exe' : 'dsh-runtime'
++  dshRGName = platform === 'windows' ? 'dsh-runtime-rg.exe' : 'dsh-runtime-rg'
++  await copyExecutable(generatedDsh, join(outputRuntime, dshRuntimeName))
++  await copyExecutable(generatedDshRG, join(outputRuntime, dshRGName))
++  if (platform === 'darwin') {
++    dshSpawnHelperName = 'dsh-runtime-spawn-helper'
++    await copyExecutable(generatedDshSpawnHelper, join(outputRuntime, dshSpawnHelperName))
++  }
++}
++
++const dshEntryName = 'node/node_modules/@deepseek-ai/dsh/lib/bin.js'
++const sdkEntryName = 'node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js'
++const relativeFiles = {
++  gateway: 'gateway/index.mjs',
++  profile: 'profile/customer-service.patch.yml',
++  result_tool: 'runtime/result-tool.mjs',
++  node_carrier: `runtime/${nodeCarrierName}`,
++  sdk_client: `runtime/${sdkEntryName}`,
++  dsh_entry: `runtime/${dshEntryName}`,
++}
++if (mode === 'native') {
++  relativeFiles.dsh_runtime = `runtime/${dshRuntimeName}`
++  relativeFiles.dsh_rg = `runtime/${dshRGName}`
++  if (dshSpawnHelperName !== '') relativeFiles.dsh_spawn_helper = `runtime/${dshSpawnHelperName}`
++}
++
++const hashFiles = {}
++for (const [name, relativePath] of Object.entries(relativeFiles)) {
++  hashFiles[name] = await sha256File(join(outputBrain, relativePath))
++}
++const runtimeManifest = {
++  schema_version: 1,
++  contract_version: contractVersion,
++  harness: {
++    tag: lockedHarness.tag,
++    commit: lockedHarness.commit,
++    version: sdkManifest.version,
++  },
++  platform,
++  arch,
++  mode,
++  node: { major: '24', version: nodeVersion, arch: nodeArch },
++  paths: relativeFiles,
++  sha256: hashFiles,
++}
++await writeFile(join(outputRuntime, 'runtime.json'), `${JSON.stringify(runtimeManifest, null, 2)}\n`)
++await assertNoSymlinks(outputBrain)
++console.log(JSON.stringify({ output: outputBrain, platform, arch, mode, node_version: nodeVersion, harness_version: sdkManifest.version, files: Object.keys(relativeFiles).length }, null, 2))
+diff --git a/scripts/check-brain-runtime-package.mjs b/scripts/check-brain-runtime-package.mjs
+new file mode 100644
+index 0000000000..b5bef4a0c8
+--- /dev/null
++++ b/scripts/check-brain-runtime-package.mjs
+@@ -0,0 +1,198 @@
++#!/usr/bin/env node
++
++import { createHash } from 'node:crypto'
++import { execFile } from 'node:child_process'
++import { access, lstat, readdir, readFile, stat } from 'node:fs/promises'
++import { constants } from 'node:fs'
++import { promisify } from 'node:util'
++import { isAbsolute, join, relative, resolve, sep } from 'node:path'
++import { fileURLToPath } from 'node:url'
++
++const execFileAsync = promisify(execFile)
++const rootDir = fileURLToPath(new URL('..', import.meta.url))
++const expectedHarnessTag = 'dsh-v0.1.2-alpha.1'
++const expectedHarnessCommit = 'cd5ef8148158c3a752a658978873241fdf8e2bbc'
++const expectedHarnessVersion = '0.1.2-alpha.1'
++
++// usage 输出运行时载荷检查器的参数说明。
++function usage() {
++  return '用法: node scripts/check-brain-runtime-package.mjs --root <brain-dir> [--probe]'
++}
++
++// parseArgs 解析检查器参数并保留默认的结构检查模式。
++function parseArgs(argv) {
++  const values = { probe: false }
++  for (let index = 0; index < argv.length; index += 1) {
++    const argument = argv[index]
++    if (argument === '--help' || argument === '-h') {
++      console.log(usage())
++      process.exit(0)
++    }
++    if (argument === '--probe') {
++      values.probe = true
++      continue
++    }
++    if (argument !== '--root') throw new Error(`未知参数: ${argument ?? ''}`)
++    const value = argv[index + 1]
++    if (value === undefined || value.startsWith('--')) throw new Error('--root 缺少值')
++    values.root = value
++    index += 1
++  }
++  if (!values.root) throw new Error('缺少 --root')
++  return values
++}
++
++// sha256File 计算 manifest 中关键载荷的摘要。
++async function sha256File(path) {
++  const digest = createHash('sha256')
++  digest.update(await readFile(path))
++  return digest.digest('hex')
++}
++
++// assertNoSymlinks 检查运行时闭包没有遗留 workspace 链接。
++async function assertNoSymlinks(directory) {
++  for (const entry of await readdir(directory, { withFileTypes: true })) {
++    const path = join(directory, entry.name)
++    const metadata = await lstat(path)
++    if (metadata.isSymbolicLink()) throw new Error(`载荷包含符号链接: ${path}`)
++    if (metadata.isDirectory()) await assertNoSymlinks(path)
++  }
++}
++
++// runVersion 执行一个 carrier 命令并返回标准输出，错误中不包含环境密钥。
++async function runVersion(command, args) {
++  const result = await execFileAsync(command, args, { timeout: 15_000, maxBuffer: 64 * 1024 })
++  return String(result.stdout).trim()
++}
++
++// assertDarwinCarrierPortable 检查 macOS carrier 不依赖安装包外的动态库。
++async function assertDarwinCarrierPortable(command) {
++  if (process.platform !== 'darwin') return
++  const fileType = await runVersion('file', ['-b', command]).catch(() => '')
++  if (!fileType.includes('Mach-O')) return
++  const dependencies = (await runVersion('otool', ['-L', command])).split('\n').slice(1)
++    .map(line => line.trim().split(' ')[0]).filter(Boolean)
++  const external = dependencies.filter(path => path.startsWith('@')
++    || (path.startsWith('/') && !path.startsWith('/System/Library/') && !path.startsWith('/usr/lib/')))
++  if (external.length > 0) throw new Error(`macOS Node carrier 依赖安装包外部动态库: ${external.join(', ')}`)
++}
++
++// isCurrentTarget 判断当前机器是否可以执行目标载荷的二进制探针。
++function isCurrentTarget(platform, arch) {
++  const currentPlatform = process.platform === 'darwin' ? 'darwin' : process.platform === 'win32' ? 'windows' : process.platform
++  const currentArch = process.arch === 'x64' ? 'amd64' : process.arch === 'arm64' ? 'arm64' : process.arch
++  return currentPlatform === platform && currentArch === arch
++}
++
++const options = parseArgs(process.argv.slice(2))
++const brainRoot = resolve(options.root)
++const runtimeRoot = join(brainRoot, 'runtime')
++
++// payloadPath 把 manifest 相对路径限制在 Brain 根目录内，阻断路径穿越和绝对路径引用。
++function payloadPath(relativePath, label) {
++  if (typeof relativePath !== 'string' || relativePath === '' || isAbsolute(relativePath)) {
++    throw new Error(`载荷路径无效 ${label}`)
++  }
++  const resolvedPath = resolve(brainRoot, relativePath)
++  const relativeToRoot = relative(brainRoot, resolvedPath)
++  if (relativeToRoot === '' || relativeToRoot.startsWith('..') || isAbsolute(relativeToRoot)) {
++    throw new Error(`载荷路径越界 ${label}`)
++  }
++  return resolvedPath
++}
++
++// manifestFilePath 从 runtime manifest 解析一个相对文件，并在后续检查中复用同一边界。
++function manifestFilePath(name, fallback) {
++  return payloadPath(manifest.paths?.[name] || fallback, name)
++}
++
++const runtimeManifestPath = join(runtimeRoot, 'runtime.json')
++await access(runtimeManifestPath, constants.R_OK).catch(() => { throw new Error(`缺少运行时 manifest: ${runtimeManifestPath}`) })
++const manifest = JSON.parse(await readFile(runtimeManifestPath, 'utf8'))
++if (manifest.schema_version !== 1) throw new Error(`未知运行时 manifest schema: ${manifest.schema_version}`)
++if (manifest.contract_version !== 'brain.internal.v1') throw new Error(`Brain 契约版本错误: ${manifest.contract_version}`)
++if (!['linux', 'darwin', 'windows'].includes(manifest.platform)) throw new Error(`运行时平台错误: ${manifest.platform}`)
++if (!['amd64', 'arm64'].includes(manifest.arch)) throw new Error(`运行时架构错误: ${manifest.arch}`)
++if (!['native', 'node'].includes(manifest.mode)) throw new Error(`运行时模式错误: ${manifest.mode}`)
++if (manifest.platform === 'windows' && manifest.arch !== 'amd64') throw new Error('Windows 运行时架构必须为 amd64')
++if (manifest.platform === 'darwin' && manifest.arch === 'amd64' && manifest.mode !== 'node') throw new Error('Intel macOS 必须使用 node 模式')
++if (manifest.node?.major !== '24') throw new Error(`Node carrier 主版本错误: ${manifest.node?.major}`)
++if (manifest.node?.arch !== manifest.arch) throw new Error(`Node carrier 架构记录错误: ${manifest.node?.arch}`)
++if (manifest.harness?.tag !== expectedHarnessTag) throw new Error(`Harness tag 错误: ${manifest.harness?.tag}`)
++if (manifest.harness?.commit !== expectedHarnessCommit) throw new Error(`Harness commit 错误: ${manifest.harness?.commit}`)
++if (manifest.harness?.version !== expectedHarnessVersion) throw new Error(`Harness 版本错误: ${manifest.harness?.version}`)
++
++const requiredRelative = ['gateway/index.mjs', 'profile/customer-service.patch.yml', 'runtime/result-tool.mjs', 'runtime/node/package.json', `runtime/${manifest.platform === 'windows' ? 'node-carrier.exe' : 'node-carrier'}`]
++for (const requiredPath of requiredRelative) {
++  await access(payloadPath(requiredPath, requiredPath), constants.R_OK).catch(() => { throw new Error(`载荷缺少文件: ${requiredPath}`) })
++}
++const sdkEntry = manifestFilePath('sdk_client', 'runtime/node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js')
++const dshEntry = manifestFilePath('dsh_entry', 'runtime/node/node_modules/@deepseek-ai/dsh/lib/bin.js')
++await access(sdkEntry, constants.R_OK).catch(() => { throw new Error(`缺少 SDK 客户端入口: ${sdkEntry}`) })
++await access(dshEntry, constants.R_OK).catch(() => { throw new Error(`缺少 dsh Node 入口: ${dshEntry}`) })
++if (manifest.mode === 'native') {
++  const nativeName = manifest.platform === 'windows' ? 'dsh-runtime.exe' : 'dsh-runtime'
++  const nativePath = manifestFilePath('dsh_runtime', `runtime/${nativeName}`)
++  await access(nativePath, constants.X_OK).catch(() => { throw new Error(`缺少原生 DSH: ${nativeName}`) })
++  const rgName = manifest.platform === 'windows' ? 'dsh-runtime-rg.exe' : 'dsh-runtime-rg'
++  const rgPath = manifestFilePath('dsh_rg', `runtime/${rgName}`)
++  await access(rgPath, constants.X_OK).catch(() => { throw new Error(`缺少 DSH sidecar: ${rgName}`) })
++  if (manifest.platform === 'darwin') {
++    const spawnHelperPath = manifestFilePath('dsh_spawn_helper', 'runtime/dsh-runtime-spawn-helper')
++    await access(spawnHelperPath, constants.X_OK).catch(() => { throw new Error('缺少 macOS spawn-helper') })
++  }
++}
++
++for (const [name, digest] of Object.entries(manifest.sha256 || {})) {
++  if (!/^[a-f0-9]{64}$/.test(String(digest))) throw new Error(`载荷摘要格式错误 ${name}`)
++  const path = manifestFilePath(name, String(digest))
++  const actual = await sha256File(path)
++  if (actual !== digest) throw new Error(`载荷摘要不匹配 ${name}: ${actual}`)
++}
++await assertNoSymlinks(brainRoot)
++
++const nodeCarrier = manifestFilePath('node_carrier', `runtime/${manifest.platform === 'windows' ? 'node-carrier.exe' : 'node-carrier'}`)
++await assertDarwinCarrierPortable(nodeCarrier)
++const nodeVersion = await runVersion(nodeCarrier, ['--version']).catch(error => {
++  if (options.probe || isCurrentTarget(manifest.platform, manifest.arch)) throw error
++  return 'skipped-cross-target'
++})
++if (nodeVersion !== 'skipped-cross-target' && !/^v24\./.test(nodeVersion)) throw new Error(`Node carrier 探针版本错误: ${nodeVersion}`)
++const nodeArch = nodeVersion === 'skipped-cross-target'
++  ? 'skipped-cross-target'
++  : await runVersion(nodeCarrier, ['-p', 'process.arch'])
++if (nodeArch !== 'skipped-cross-target' && (nodeArch === 'x64' ? 'amd64' : nodeArch) !== manifest.arch) {
++  throw new Error(`Node carrier 探针架构错误: ${nodeArch}`)
++}
++
++let dshVersion = 'skipped'
++if (manifest.mode === 'native') {
++  const nativeName = manifest.platform === 'windows' ? 'dsh-runtime.exe' : 'dsh-runtime'
++  const nativePath = manifestFilePath('dsh_runtime', `runtime/${nativeName}`)
++  dshVersion = await runVersion(nativePath, ['--version']).catch(error => {
++    if (options.probe || isCurrentTarget(manifest.platform, manifest.arch)) throw error
++    return 'skipped-cross-target'
++  })
++  if (dshVersion !== 'skipped-cross-target' && dshVersion !== '0.1.2-alpha.1') throw new Error(`原生 DSH 版本探针错误: ${dshVersion}`)
++} else if (nodeVersion !== 'skipped-cross-target') {
++  dshVersion = await runVersion(nodeCarrier, [dshEntry, '--version'])
++  if (dshVersion !== '0.1.2-alpha.1') throw new Error(`Node DSH 版本探针错误: ${dshVersion}`)
++}
++
++// SDK import probe 确认闭包内协议依赖和 ESM 入口均可由 carrier 解析。
++if (nodeVersion !== 'skipped-cross-target') {
++  await runVersion(nodeCarrier, ['--input-type=module', '-e', `await import(${JSON.stringify(sdkEntry)}); console.log('sdk-ok')`])
++}
++
++console.log(JSON.stringify({
++  check: 'brain-runtime-package',
++  root: brainRoot,
++  platform: manifest.platform,
++  arch: manifest.arch,
++  mode: manifest.mode,
++  node_version: nodeVersion,
++  node_arch: nodeArch,
++  dsh_version: dshVersion,
++  hashed_files: Object.keys(manifest.sha256 || {}).length,
++  symlinks: 0,
++}, null, 2))
+diff --git a/scripts/check-packaging-manifest.mjs b/scripts/check-packaging-manifest.mjs
+index 01e274fb37..3b498d693a 100644
+--- a/scripts/check-packaging-manifest.mjs
++++ b/scripts/check-packaging-manifest.mjs
+@@ -39,6 +39,11 @@ const requiredFiles = [
+   'packaging/linux/uninstall.sh',
+   'scripts/migrate-product-data.sh',
+   'scripts/migrate-product-data.test.sh',
++  'scripts/build-brain-runtime.mjs',
++  'scripts/check-brain-runtime-package.mjs',
++  'scripts/brain-runtime-package.test.mjs',
++  'brain/gateway/index.mjs',
++  'brain/profile/customer-service.patch.yml',
+   'packaging/windows/installer.iss',
+   'packaging/windows/service-control.ps1',
+   'packaging/windows/migrate-data.ps1',
+@@ -66,11 +71,18 @@ await assertText(`packaging/linux/${expected.linuxService}`, [
+   `User=${expected.slug}`,
+   `WorkingDirectory=/var/lib/${expected.slug}`,
+   `EnvironmentFile=-/etc/${expected.slug}/config.env`,
++  '-product-root /opt/dh-xianyu-agentpanel',
++  '-brain-runtime-root /opt/dh-xianyu-agentpanel/brain/runtime',
++  '-brain-data-root /var/lib/dh-xianyu-agentpanel/data/brain',
+ ]);
+ await assertText('packaging/linux/install.sh', [
+   `APP_NAME="${expected.slug}"`,
+   `SERVICE_NAME="$APP_NAME.service"`,
+   'migrate-product-data.sh',
++  'BRAIN_SOURCE=',
++  'BRAIN_SOURCE/runtime/runtime.json',
++  'BRAIN_SOURCE/runtime/node-carrier',
++  'BRAIN_SOURCE/runtime/result-tool.mjs',
+ ]);
+ await assertText('packaging/linux/uninstall.sh', [
+   `APP_NAME="${expected.slug}"`,
+@@ -81,11 +93,15 @@ await assertText('packaging/windows/installer.iss', [
+   'OutputBaseFilename=DH-Xianyu-AgentPanel-Setup',
+   `AppDataDir "{commonappdata}\\DhXianyuAgentPanel"`,
+   `Source: "migrate-data.ps1"`,
++  `Source: "{#WindowsBrainDir}\\*"`,
++  '-BrainRuntimeRoot',
+   expected.windowsService,
+ ]);
+ await assertText('packaging/windows/service-control.ps1', [
+   `[string]$ServiceName = '${expected.windowsService}'`,
+   "[string]$LegacyServiceName = 'YdisksXianyuHelper'",
++  '[string]$BrainRuntimeRoot =',
++  '-brain-runtime-root',
+   expected.displayName,
+ ]);
+ 
+@@ -99,6 +115,13 @@ await assertText('packaging/macos/component.plist', [
+ await assertText('packaging/macos/com.dhdevmax.xianyu-agentpanel.server.plist.template', [
+   expected.macBundleID,
+   '__SERVER__',
++  '__PRODUCT_ROOT__',
++  '__BRAIN_RUNTIME_ROOT__',
++]);
++await assertText('packaging/macos/build-pkg.sh', [
++  'brain_source=',
++  'runtime/node-carrier',
++  'runtime/result-tool.mjs',
+ ]);
+ await assertText('packaging/macos/com.dhdevmax.xianyu-agentpanel.tray.plist.template', [
+   expected.macBundleID,
+@@ -111,6 +134,20 @@ await assertText('.github/workflows/desktop-cd.yml', [
+   'DH-Xianyu-AgentPanel-Setup.exe',
+   'DH-Xianyu-AgentPanel-',
+   `packaging/linux/${expected.linuxService}`,
++  'build-brain-runtime.mjs',
++  'check-brain-runtime-package.mjs',
++  'brain/vendor/deepseek-harness',
++  "Extension -in '.exe', '.dll', '.node'",
++]);
++await assertText('Dockerfile.debian13', [
++  'COPY .docker/brain-runtime /app/brain',
++  '-brain-runtime-root',
++  '/app/brain/runtime',
++  'dsh-runtime-rg',
++]);
++await assertText('.github/workflows/docker-publish.yml', [
++  'build-brain-runtime.mjs',
++  '.docker/brain-runtime',
+ ]);
+ await assertText('.github/workflows/release.yml', [
+   `${expected.slug}-linux-amd64-`,
+diff --git a/scripts/check-product-manifest.mjs b/scripts/check-product-manifest.mjs
+index 4aed1e64f1..b3bd57d18c 100644
+--- a/scripts/check-product-manifest.mjs
++++ b/scripts/check-product-manifest.mjs
+@@ -17,6 +17,14 @@ const requiredValues = new Map([
+   ['branding_crop', manifest.branding?.crop === '520x520+250+245'],
+   ['harness_tag', manifest.components?.deepseek_harness?.tag === 'dsh-v0.1.2-alpha.1'],
+   ['harness_commit', manifest.components?.deepseek_harness?.commit === 'cd5ef8148158c3a752a658978873241fdf8e2bbc'],
++  ['brain_runtime_root', manifest.runtime?.brain_layout?.root === 'brain/runtime'],
++  ['brain_runtime_manifest', manifest.runtime?.brain_layout?.manifest === 'runtime.json'],
++  ['brain_sdk_entry', manifest.runtime?.brain_layout?.sdk_client_entry === 'node/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js'],
++  ['brain_linux_amd64_mode', manifest.runtime?.brain_runtime_modes?.['linux-amd64'] === 'native'],
++  ['brain_linux_arm64_mode', manifest.runtime?.brain_runtime_modes?.['linux-arm64'] === 'native'],
++  ['brain_darwin_arm64_mode', manifest.runtime?.brain_runtime_modes?.['darwin-arm64'] === 'native'],
++  ['brain_darwin_amd64_mode', manifest.runtime?.brain_runtime_modes?.['darwin-amd64'] === 'node'],
++  ['brain_windows_amd64_mode', manifest.runtime?.brain_runtime_modes?.['windows-amd64'] === 'native'],
+ ]);
+ 
+ // invalidKeys 收集所有未满足的必要字段，一次输出可避免修复后反复运行。
