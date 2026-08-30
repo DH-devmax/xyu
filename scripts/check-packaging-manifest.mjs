@@ -43,6 +43,8 @@ const requiredFiles = [
   'scripts/build-brain-runtime.mjs',
   'scripts/check-brain-runtime-package.mjs',
   'scripts/brain-runtime-package.test.mjs',
+  'scripts/normalize-harness-runtime-closure.mjs',
+  'scripts/normalize-harness-runtime-closure.test.mjs',
   'brain/gateway/index.mjs',
   'brain/profile/customer-service.patch.yml',
   'packaging/windows/installer.iss',
@@ -162,6 +164,7 @@ await assertText('.github/workflows/desktop-cd.yml', [
   `packaging/linux/${expected.linuxService}`,
   'build-brain-runtime.mjs',
   'check-brain-runtime-package.mjs',
+  'normalize-harness-runtime-closure.mjs',
   'brain/vendor/deepseek-harness',
   '验证 Windows 品牌数据迁移与回滚',
   'migrate-data.test.ps1',
@@ -178,6 +181,9 @@ await assertText('Dockerfile.debian13', [
 await assertText('.github/workflows/docker-publish.yml', [
   'build-brain-runtime.mjs',
   '.docker/brain-runtime',
+  '释放 Harness 构建空间',
+  'harness-workspace-cleanup: released',
+  'cache-to: type=gha,mode=min,ignore-error=true',
 ]);
 await assertText('.github/workflows/release.yml', [
   `${expected.slug}-linux-amd64-`,

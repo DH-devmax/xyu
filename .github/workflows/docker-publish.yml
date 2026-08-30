@@ -190,6 +190,26 @@ jobs:
           path: .docker/playwright-runtime/${{ matrix.arch }}
           key: ${{ steps.cache-docker-playwright.outputs.cache-primary-key }}
 
+      - name: 释放 Harness 构建空间
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          harness_root="$PWD/brain/vendor/deepseek-harness"
+          test -f "$harness_root/package.json"
+          test -f "$PWD/.docker/brain-runtime/runtime/runtime.json"
+          harness_kib="$(du -sk "$harness_root" | cut -f1)"
+          node -e '
+            const { rmSync } = require("node:fs")
+            const { resolve } = require("node:path")
+            const expected = resolve(process.cwd(), "brain/vendor/deepseek-harness")
+            const requested = resolve(process.argv[1])
+            if (requested !== expected) throw new Error(`拒绝清理边界外路径: ${requested}`)
+            rmSync(requested, { recursive: true, force: true })
+          ' "$harness_root"
+          test ! -e "$harness_root"
+          printf 'harness-workspace-cleanup: released %s KiB\n' "$harness_kib"
+          df -h "$PWD"
+
       - name: 配置 Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -219,7 +239,7 @@ jobs:
             VCS_REF=${{ github.sha }}
             BUILD_TIME=${{ needs.verify.outputs.build_time }}
           cache-from: type=gha,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,ignore-error=true,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
           provenance: mode=max
           sbom: true
 

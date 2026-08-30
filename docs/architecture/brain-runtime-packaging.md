@@ -36,6 +36,8 @@ brain/
 
 Intel Mac 使用 Node 模式，是因为 Harness 当前没有 macOS x64 原生目标。Node carrier 必须是官方 Node 24 分发版本；Homebrew 的动态 `node` 可能依赖机器上的 `libnode` 和 Homebrew 动态库，构建器会先执行 `--version`，检查器会在打包前实际启动它。
 
+Intel runner 不伪造 arm64 原生目标：CI 直接用 Harness 锁定 workspace 执行 `pnpm deploy`，再由产品侧 `scripts/normalize-harness-runtime-closure.mjs` 恢复 legacy hoist、解引用 workspace 链接并删除 deploy 文档。正负 fixture 检查缺失依赖、嵌套 `node_modules`、`.bin` 与残留符号链接；因此 `sdk-native-launch.patch` 仍是唯一 Harness vendor 补丁。Windows 的 SDK 导入探针使用 `file://` URL，与 POSIX 和驱动器号路径都兼容。
+
 ## 插件裁剪
 
 客服 profile 的工具边界由 `brain/profile/customer-service.patch.yml` 和 allowlist 检查确定，只暴露五个只读 MCP 工具及 `submit_reply_draft`。Harness 的官方闭包仍保留运行时所需的传递依赖；coding、shell、文件系统、浏览器和编辑器工具不会注册到客服 profile。物理删除传递包会破坏 Cordis 依赖图，因此作为后续体积优化，不作为当前安全边界。
@@ -65,7 +67,8 @@ node scripts/check-brain-runtime-package.mjs \
 
 ```bash
 node --test scripts/brain-runtime-package.test.mjs
+node --test scripts/normalize-harness-runtime-closure.test.mjs
 make brain-check
 ```
 
-Docker 构建只把已经检查的 `.docker/brain-runtime` 和 Playwright runtime 放入上下文；Harness workspace、`node_modules`、`dist-exe` 和 `.dsh-build` 均由 `.dockerignore` 排除。
+Docker 构建只把已经检查的 `.docker/brain-runtime` 和 Playwright runtime 放入上下文；Harness workspace、`node_modules`、`dist-exe` 和 `.dsh-build` 均由 `.dockerignore` 排除。两个运行时载荷检查后，CI 会通过固定绝对路径边界删除不再使用的 Harness 构建树，再启动 Buildx；GHA 缓存只保留最终镜像层且配额错误不影响已构建制品，避免标准 amd64 runner 的磁盘和远端缓存峰值。

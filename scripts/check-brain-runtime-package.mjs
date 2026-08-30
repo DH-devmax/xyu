@@ -6,7 +6,7 @@ import { access, lstat, readdir, readFile, stat } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { promisify } from 'node:util'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const execFileAsync = promisify(execFile)
 const rootDir = fileURLToPath(new URL('..', import.meta.url))
@@ -181,7 +181,8 @@ if (manifest.mode === 'native') {
 
 // SDK import probe 确认闭包内协议依赖和 ESM 入口均可由 carrier 解析。
 if (nodeVersion !== 'skipped-cross-target') {
-  await runVersion(nodeCarrier, ['--input-type=module', '-e', `await import(${JSON.stringify(sdkEntry)}); console.log('sdk-ok')`])
+  const sdkEntryURL = pathToFileURL(sdkEntry).href
+  await runVersion(nodeCarrier, ['--input-type=module', '-e', `await import(${JSON.stringify(sdkEntryURL)}); console.log('sdk-ok')`])
 }
 
 console.log(JSON.stringify({

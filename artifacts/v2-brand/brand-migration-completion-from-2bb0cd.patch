@@ -1,8 +1,8 @@
 diff --git a/.github/workflows/desktop-cd.yml b/.github/workflows/desktop-cd.yml
-index 9431191f5a..98ae718e26 100644
+index 9431191f5a..d2aec47ae0 100644
 --- a/.github/workflows/desktop-cd.yml
 +++ b/.github/workflows/desktop-cd.yml
-@@ -99,6 +99,14 @@ jobs:
+@@ -99,12 +99,21 @@ jobs:
            go build -trimpath -ldflags="$version_ldflags" -o "$package_dir/xianyu-server" ./cmd/server
            go build -trimpath -ldflags='-s -w' -o "$package_dir/browser-install" ./cmd/browser-install
  
@@ -17,7 +17,46 @@ index 9431191f5a..98ae718e26 100644
        - name: 构建 Linux Harness runtime
          working-directory: brain/vendor/deepseek-harness
          env:
-@@ -252,19 +260,27 @@ jobs:
+           HARNESS_TARGET: node24-linux-${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }}
+         run: |
+           set -Eeuo pipefail
++          corepack enable
+           corepack pnpm install --frozen-lockfile
+           CI=true corepack pnpm run build
+           CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
+@@ -197,6 +206,7 @@ jobs:
+           tar -C dist -czf "dist/dh-xianyu-agentpanel-linux-${{ matrix.arch }}-${APP_VERSION}.tar.gz" "$(basename "$package_dir")"
+ 
+       - name: 上传 Linux 安装包
++        if: inputs.app_version != ''
+         uses: actions/upload-artifact@v7
+         with:
+           name: dh-xianyu-agentpanel-linux-${{ matrix.arch }}-${{ env.APP_VERSION }}
+@@ -211,6 +221,9 @@ jobs:
+       APP_VERSION: ${{ needs.prepare.outputs.app_version }}
+       BUILD_VERSION: ${{ needs.prepare.outputs.build_version }}
+       BUILD_TIME: ${{ needs.prepare.outputs.build_time }}
++      WINDOWS_SIGNING_PFX_BASE64: ${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}
++      WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
++      WINDOWS_SIGNING_IDENTITY: ${{ secrets.WINDOWS_SIGNING_IDENTITY }}
+     steps:
+       - name: 检出代码
+         uses: actions/checkout@v6
+@@ -236,6 +249,13 @@ jobs:
+         shell: pwsh
+         working-directory: brain/vendor/deepseek-harness
+         run: |
++          corepack enable
++          $nodeHome = Split-Path -Parent (Get-Command node.exe -ErrorAction Stop).Source
++          $pnpmEntrypoint = Join-Path $nodeHome 'node_modules\corepack\dist\pnpm.js'
++          if (-not (Test-Path -LiteralPath $pnpmEntrypoint -PathType Leaf)) {
++            throw "Corepack pnpm JavaScript 入口不存在: $pnpmEntrypoint"
++          }
++          $env:npm_execpath = $pnpmEntrypoint
+           corepack pnpm install --frozen-lockfile
+           $env:CI = 'true'
+           corepack pnpm run build
+@@ -252,19 +272,27 @@ jobs:
          shell: pwsh
          run: |
            go test ./cmd/tray
@@ -55,7 +94,7 @@ index 9431191f5a..98ae718e26 100644
            & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
              -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
              -File $serviceScript -Mode stop -ServiceName "DhSyntaxCheck-$PID"
-@@ -282,6 +298,17 @@ jobs:
+@@ -282,6 +310,17 @@ jobs:
            go build -trimpath -ldflags "-s -w" -o dist/windows/browser-install.exe ./cmd/browser-install
            go build -trimpath -ldflags "-s -w -H=windowsgui" -o dist/windows/xianyu-tray.exe ./cmd/tray
  
@@ -73,7 +112,50 @@ index 9431191f5a..98ae718e26 100644
        - name: 恢复 Windows Chromium runtime 缓存
          id: cache-windows-playwright
          uses: actions/cache/restore@v5
-@@ -526,7 +553,28 @@ jobs:
+@@ -415,12 +454,14 @@ jobs:
+           path: dist/windows/playwright-runtime/amd64
+           key: ${{ steps.cache-windows-playwright.outputs.cache-primary-key }}
+ 
++      - name: 校验 Windows 正式发布签名配置
++        if: inputs.app_version != '' && (env.WINDOWS_SIGNING_PFX_BASE64 == '' || env.WINDOWS_SIGNING_PFX_PASSWORD == '' || env.WINDOWS_SIGNING_IDENTITY == '')
++        shell: pwsh
++        run: throw '正式发布必须配置完整的 Windows PFX、密码和签名标识'
++
+       - name: 导入 Windows 签名证书
++        if: env.WINDOWS_SIGNING_PFX_BASE64 != ''
+         shell: pwsh
+-        env:
+-          WINDOWS_SIGNING_PFX_BASE64: ${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}
+-          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+-          WINDOWS_SIGNING_IDENTITY: ${{ secrets.WINDOWS_SIGNING_IDENTITY }}
+         run: |
+           $pfxPath = Join-Path $env:RUNNER_TEMP 'dh-xianyu-agentpanel-windows-signing.pfx'
+           [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:WINDOWS_SIGNING_PFX_BASE64))
+@@ -428,10 +469,8 @@ jobs:
+           "WINDOWS_SIGNING_PFX_PATH=$pfxPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+ 
+       - name: 签名 Windows 桌面程序
++        if: env.WINDOWS_SIGNING_PFX_BASE64 != ''
+         shell: pwsh
+-        env:
+-          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+-          WINDOWS_SIGNING_IDENTITY: ${{ secrets.WINDOWS_SIGNING_IDENTITY }}
+         run: |
+           $signingFiles = @('dist/windows/xianyu-server.exe','dist/windows/xianyu-tray.exe')
+           $signingFiles += @(Get-ChildItem -LiteralPath 'dist/windows/brain/runtime' -Recurse -File |
+@@ -509,10 +548,8 @@ jobs:
+           }
+ 
+       - name: 签名 Windows 安装器
++        if: env.WINDOWS_SIGNING_PFX_BASE64 != ''
+         shell: pwsh
+-        env:
+-          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+-          WINDOWS_SIGNING_IDENTITY: ${{ secrets.WINDOWS_SIGNING_IDENTITY }}
+         run: |
+           & packaging/windows/sign.ps1 `
+             -PfxPath $env:WINDOWS_SIGNING_PFX_PATH `
+@@ -526,7 +563,28 @@ jobs:
            $installLog = Join-Path $env:RUNNER_TEMP 'dh-xianyu-agentpanel-windows-installer.log'
            $installDir = Join-Path $env:ProgramFiles 'DH Xianyu AgentPanel'
            $uninstaller = Join-Path $installDir 'unins000.exe'
@@ -102,7 +184,7 @@ index 9431191f5a..98ae718e26 100644
              $installerProcess = Start-Process -FilePath $installer `
                -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$installLog") `
                -Wait -PassThru
-@@ -580,10 +628,51 @@ jobs:
+@@ -580,10 +638,51 @@ jobs:
              if ($null -eq $health -or $health.status -ne 'ok' -or $health.database -ne 'ok') {
                throw "安装器服务健康检查失败: $($health | ConvertTo-Json -Compress)"
              }
@@ -154,7 +236,7 @@ index 9431191f5a..98ae718e26 100644
              $startMenuRoots = @(
                (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'),
                (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs')
-@@ -629,6 +718,18 @@ jobs:
+@@ -629,6 +728,18 @@ jobs:
              if ($null -ne (Get-CimInstance -ClassName Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue)) {
                throw 'Windows 安装器卸载后服务仍然存在'
              }
@@ -173,20 +255,394 @@ index 9431191f5a..98ae718e26 100644
            }
  
        - name: 准备唯一 Windows 构建产物
-@@ -713,6 +814,13 @@ jobs:
-             GOOS=darwin GOARCH="$arch" CGO_ENABLED=1 go build -trimpath -ldflags='-s -w' -o "dist/macos/$arch/xianyu-tray" ./cmd/tray
-           done
+@@ -643,6 +754,7 @@ jobs:
+           }
  
+       - name: 上传 Windows 安装包
++        if: inputs.app_version != ''
+         uses: actions/upload-artifact@v7
+         with:
+           name: dh-xianyu-agentpanel-windows-${{ env.APP_VERSION }}
+@@ -650,13 +762,32 @@ jobs:
+           if-no-files-found: error
+ 
+   macos:
+-    name: macOS 安装包
++    name: macOS 安装包 (${{ matrix.arch }})
+     needs: prepare
+-    runs-on: macos-14
++    runs-on: ${{ matrix.runner }}
+     env:
+       APP_VERSION: ${{ needs.prepare.outputs.app_version }}
+       BUILD_VERSION: ${{ needs.prepare.outputs.build_version }}
+       BUILD_TIME: ${{ needs.prepare.outputs.build_time }}
++      MACOS_SIGNING_P12_BASE64: ${{ secrets.MACOS_SIGNING_P12_BASE64 }}
++      MACOS_INSTALLER_SIGNING_P12_BASE64: ${{ secrets.MACOS_INSTALLER_SIGNING_P12_BASE64 }}
++      MACOS_SIGNING_P12_PASSWORD: ${{ secrets.MACOS_SIGNING_P12_PASSWORD }}
++      MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
++      MACOS_INSTALLER_SIGNING_IDENTITY: ${{ secrets.MACOS_INSTALLER_SIGNING_IDENTITY }}
++    strategy:
++      fail-fast: false
++      matrix:
++        include:
++          - arch: arm64
++            runner: macos-14
++            playwright_platform: mac14-arm64
++            harness_target: node24-macos-arm64
++            runtime_mode: native
++          - arch: amd64
++            runner: macos-15-intel
++            playwright_platform: mac15
++            harness_target: ''
++            runtime_mode: node
+     steps:
+       - name: 检出代码
+         uses: actions/checkout@v6
+@@ -678,111 +809,138 @@ jobs:
+         run: npm ci --prefix frontend && npm run build --prefix frontend
+ 
+       - name: 构建 macOS Harness runtime
++        env:
++          HARNESS_TARGET: ${{ matrix.harness_target }}
+         working-directory: brain/vendor/deepseek-harness
+         run: |
+           set -Eeuo pipefail
++          corepack enable
+           corepack pnpm install --frozen-lockfile
+           CI=true corepack pnpm run build
+-          CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets=node24-macos-arm64 --skip-build
++          if [ -n "$HARNESS_TARGET" ]; then
++            CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
++          else
++            closure="$PWD/python/sdk-runtime/src/deepseek_harness_runtime/runtime/node"
++            corepack pnpm --filter dsh-python-runtime-closure deploy --legacy --prod \
++              --config.node-linker=hoisted \
++              --config.auto-install-peers=false \
++              --config.link-workspace-packages=true \
++              "$closure"
++            node "$GITHUB_WORKSPACE/scripts/normalize-harness-runtime-closure.mjs" \
++              --root "$closure" \
++              --source-node-modules "$PWD/python/sdk-runtime/node_modules"
++          fi
+ 
+       - name: 组装并检查 macOS Brain runtime
++        env:
++          PRODUCT_ARCH: ${{ matrix.arch }}
++          RUNTIME_MODE: ${{ matrix.runtime_mode }}
+         run: |
+           set -Eeuo pipefail
+-          node_binary_arm64="$(node -p 'process.execPath')"
+-          node_version="$(node -p 'process.versions.node')"
+-          node_archive="$RUNNER_TEMP/node-v${node_version}-darwin-x64.tar.gz"
+-          curl --fail --silent --show-error --location "https://nodejs.org/dist/v${node_version}/node-v${node_version}-darwin-x64.tar.gz" --output "$node_archive"
+-          tar -xzf "$node_archive" -C "$RUNNER_TEMP"
+-          node_binary_amd64="$RUNNER_TEMP/node-v${node_version}-darwin-x64/bin/node"
+-          test -x "$node_binary_amd64"
+-          node scripts/build-brain-runtime.mjs --output dist/macos/brain/arm64 --platform darwin --arch arm64 --mode native --node-binary "$node_binary_arm64"
+-          node scripts/build-brain-runtime.mjs --output dist/macos/brain/amd64 --platform darwin --arch amd64 --mode node --node-binary "$node_binary_amd64"
+-          node scripts/check-brain-runtime-package.mjs --root dist/macos/brain/arm64 --probe
+-          node scripts/check-brain-runtime-package.mjs --root dist/macos/brain/amd64
++          node_binary="$(node -p 'process.execPath')"
++          node scripts/build-brain-runtime.mjs \
++            --output "dist/macos/brain/$PRODUCT_ARCH" \
++            --platform darwin \
++            --arch "$PRODUCT_ARCH" \
++            --mode "$RUNTIME_MODE" \
++            --node-binary "$node_binary"
++          node scripts/check-brain-runtime-package.mjs --root "dist/macos/brain/$PRODUCT_ARCH" --probe
++
++          if [ "$PRODUCT_ARCH" = amd64 ]; then
++            empty_path="$RUNNER_TEMP/empty-system-path"
++            empty_home="$RUNNER_TEMP/empty-home"
++            mkdir -p "$empty_path" "$empty_home"
++            carrier="$PWD/dist/macos/brain/amd64/runtime/node-carrier"
++            dsh_entry="$PWD/dist/macos/brain/amd64/runtime/node/node_modules/@deepseek-ai/dsh/lib/bin.js"
++            env -i HOME="$empty_home" PATH="$empty_path" "$carrier" --version | grep -Eq '^v24\.'
++            env -i HOME="$empty_home" PATH="$empty_path" "$carrier" "$dsh_entry" --version | grep -Fxq '0.1.2-alpha.1'
++          fi
+ 
+       - name: 验证 macOS 托盘逻辑
+         run: go test ./cmd/tray
+ 
+       - name: 编译 macOS 桌面程序
++        env:
++          PRODUCT_ARCH: ${{ matrix.arch }}
+         run: |
+-          mkdir -p dist/macos/arm64 dist/macos/amd64
++          mkdir -p "dist/macos/$PRODUCT_ARCH"
+           version_ldflags="-s -w -X github.com/DH-devmax/xyu/internal/version.Version=$BUILD_VERSION -X github.com/DH-devmax/xyu/internal/version.Commit=$GITHUB_SHA -X github.com/DH-devmax/xyu/internal/version.BuildTime=$BUILD_TIME"
+-          for arch in arm64 amd64; do
+-            GOOS=darwin GOARCH="$arch" CGO_ENABLED=1 go build -trimpath -ldflags="$version_ldflags" -o "dist/macos/$arch/xianyu-server" ./cmd/server
+-            GOOS=darwin GOARCH="$arch" CGO_ENABLED=1 go build -trimpath -ldflags='-s -w' -o "dist/macos/$arch/browser-install" ./cmd/browser-install
+-            GOOS=darwin GOARCH="$arch" CGO_ENABLED=1 go build -trimpath -ldflags='-s -w' -o "dist/macos/$arch/xianyu-tray" ./cmd/tray
+-          done
++          GOOS=darwin GOARCH="$PRODUCT_ARCH" CGO_ENABLED=1 go build -trimpath -ldflags="$version_ldflags" -o "dist/macos/$PRODUCT_ARCH/xianyu-server" ./cmd/server
++          GOOS=darwin GOARCH="$PRODUCT_ARCH" CGO_ENABLED=1 go build -trimpath -ldflags='-s -w' -o "dist/macos/$PRODUCT_ARCH/browser-install" ./cmd/browser-install
++          GOOS=darwin GOARCH="$PRODUCT_ARCH" CGO_ENABLED=1 go build -trimpath -ldflags='-s -w' -o "dist/macos/$PRODUCT_ARCH/xianyu-tray" ./cmd/tray
++
 +      - name: 验证 macOS 品牌数据迁移与回滚
++        env:
++          PRODUCT_ARCH: ${{ matrix.arch }}
 +        run: |
 +          set -Eeuo pipefail
-+          native_arch="$(go env GOARCH)"
-+          MIGRATION_VALIDATOR="$PWD/dist/macos/${native_arch}/xianyu-server" \
++          MIGRATION_VALIDATOR="$PWD/dist/macos/${PRODUCT_ARCH}/xianyu-server" \
 +            bash scripts/migrate-product-data.test.sh
-+
+ 
        - name: 缓存 macOS Chromium runtime
          id: cache-macos-playwright
          uses: actions/cache/restore@v5
+         with:
+-          path: |
+-            dist/macos/playwright-runtime/arm64
+-            dist/macos/playwright-runtime/amd64
+-          key: dh-xianyu-agentpanel-playwright-runtime-v6-macos-mac14-universal-${{ hashFiles('go.mod', 'go.sum', 'cmd/browser-install/**') }}
++          path: dist/macos/playwright-runtime/${{ matrix.arch }}
++          key: dh-xianyu-agentpanel-playwright-runtime-v7-macos-${{ matrix.arch }}-${{ matrix.playwright_platform }}-${{ hashFiles('go.mod', 'go.sum', 'cmd/browser-install/**') }}
+ 
+       - name: 预下载 macOS Chromium runtime
+         if: steps.cache-macos-playwright.outputs.cache-hit != 'true'
++        env:
++          PRODUCT_ARCH: ${{ matrix.arch }}
++          PLAYWRIGHT_PLATFORM: ${{ matrix.playwright_platform }}
+         run: |
+           set -Eeuo pipefail
+-          mkdir -p dist/macos/playwright-runtime/arm64/playwright-driver
+-          mkdir -p dist/macos/playwright-runtime/arm64/playwright-browsers
+-          mkdir -p dist/macos/playwright-runtime/amd64/playwright-driver
+-          mkdir -p dist/macos/playwright-runtime/amd64/playwright-browsers
+-          PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=mac14-arm64 \
+-            dist/macos/arm64/browser-install \
+-            -driver-dir "$PWD/dist/macos/playwright-runtime/arm64/playwright-driver" \
+-            -browser-dir "$PWD/dist/macos/playwright-runtime/arm64/playwright-browsers"
+-          PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=mac14 \
+-            arch -x86_64 dist/macos/amd64/browser-install \
+-            -driver-dir "$PWD/dist/macos/playwright-runtime/amd64/playwright-driver" \
+-            -browser-dir "$PWD/dist/macos/playwright-runtime/amd64/playwright-browsers"
++          runtime_dir="dist/macos/playwright-runtime/$PRODUCT_ARCH"
++          mkdir -p "$runtime_dir/playwright-driver" "$runtime_dir/playwright-browsers"
++          PLAYWRIGHT_HOST_PLATFORM_OVERRIDE="$PLAYWRIGHT_PLATFORM" \
++            "dist/macos/$PRODUCT_ARCH/browser-install" \
++            -driver-dir "$PWD/$runtime_dir/playwright-driver" \
++            -browser-dir "$PWD/$runtime_dir/playwright-browsers"
+ 
+       - name: 校验 macOS Chromium runtime
++        env:
++          PRODUCT_ARCH: ${{ matrix.arch }}
+         run: |
+           set -Eeuo pipefail
+-          for runtime_arch in arm64 amd64; do
+-            runtime_dir="dist/macos/playwright-runtime/$runtime_arch"
+-            node_path="$runtime_dir/playwright-driver/node"
+-            spec_path="$PWD/$runtime_dir/playwright-driver/package/browsers.json"
+-            test -x "$node_path"
+-            test -f "$runtime_dir/playwright-driver/package/cli.js"
+-            test -f "$spec_path"
+-            chromium_revision="$(RUNTIME_SPEC="$spec_path" node -e 'const b=require(process.env.RUNTIME_SPEC).browsers; console.log(b.find(x=>x.name==="chromium").revision)')"
+-            headless_revision="$(RUNTIME_SPEC="$spec_path" node -e 'const b=require(process.env.RUNTIME_SPEC).browsers; console.log(b.find(x=>x.name==="chromium-headless-shell").revision)')"
+-            test -d "$runtime_dir/playwright-browsers/chromium-$chromium_revision"
+-            test -d "$runtime_dir/playwright-browsers/chromium_headless_shell-$headless_revision"
+-            chromium_path="$(find "$runtime_dir/playwright-browsers/chromium-$chromium_revision" -type f -path '*/Contents/MacOS/Google Chrome for Testing' -print -quit)"
+-            headless_path="$(find "$runtime_dir/playwright-browsers/chromium_headless_shell-$headless_revision" -type f -name chrome-headless-shell -print -quit)"
+-            test -n "$chromium_path"
+-            test -n "$headless_path"
+-            node_type="$(file -b "$node_path")"
+-            chromium_type="$(file -b "$chromium_path")"
+-            headless_type="$(file -b "$headless_path")"
+-            case "$runtime_arch:$node_type:$chromium_type:$headless_type" in
+-              arm64:*arm64*:*arm64*:*arm64*) ;;
+-              amd64:*x86_64*:*x86_64*:*x86_64*) ;;
+-              *) echo "macOS Playwright runtime 架构错误：$runtime_arch / $node_type / $chromium_type / $headless_type" >&2; exit 1 ;;
+-            esac
+-          done
++          runtime_dir="dist/macos/playwright-runtime/$PRODUCT_ARCH"
++          node_path="$runtime_dir/playwright-driver/node"
++          spec_path="$PWD/$runtime_dir/playwright-driver/package/browsers.json"
++          test -x "$node_path"
++          test -f "$runtime_dir/playwright-driver/package/cli.js"
++          test -f "$spec_path"
++          chromium_revision="$(RUNTIME_SPEC="$spec_path" node -e 'const b=require(process.env.RUNTIME_SPEC).browsers; console.log(b.find(x=>x.name==="chromium").revision)')"
++          headless_revision="$(RUNTIME_SPEC="$spec_path" node -e 'const b=require(process.env.RUNTIME_SPEC).browsers; console.log(b.find(x=>x.name==="chromium-headless-shell").revision)')"
++          test -d "$runtime_dir/playwright-browsers/chromium-$chromium_revision"
++          test -d "$runtime_dir/playwright-browsers/chromium_headless_shell-$headless_revision"
++          chromium_path="$(find "$runtime_dir/playwright-browsers/chromium-$chromium_revision" -type f -path '*/Contents/MacOS/Google Chrome for Testing' -print -quit)"
++          headless_path="$(find "$runtime_dir/playwright-browsers/chromium_headless_shell-$headless_revision" -type f -name chrome-headless-shell -print -quit)"
++          test -n "$chromium_path"
++          test -n "$headless_path"
++          node_type="$(file -b "$node_path")"
++          chromium_type="$(file -b "$chromium_path")"
++          headless_type="$(file -b "$headless_path")"
++          case "$PRODUCT_ARCH:$node_type:$chromium_type:$headless_type" in
++            arm64:*arm64*:*arm64*:*arm64*) ;;
++            amd64:*x86_64*:*x86_64*:*x86_64*) ;;
++            *) echo "macOS Playwright runtime 架构错误：$PRODUCT_ARCH / $node_type / $chromium_type / $headless_type" >&2; exit 1 ;;
++          esac
+ 
+       - name: 保存 macOS Chromium runtime 缓存
+         if: steps.cache-macos-playwright.outputs.cache-hit != 'true'
+         uses: actions/cache/save@v5
+         with:
+-          path: |
+-            dist/macos/playwright-runtime/arm64
+-            dist/macos/playwright-runtime/amd64
++          path: dist/macos/playwright-runtime/${{ matrix.arch }}
+           key: ${{ steps.cache-macos-playwright.outputs.cache-primary-key }}
+ 
++      - name: 校验 macOS 正式发布签名配置
++        if: inputs.app_version != '' && (env.MACOS_SIGNING_P12_BASE64 == '' || env.MACOS_INSTALLER_SIGNING_P12_BASE64 == '' || env.MACOS_SIGNING_P12_PASSWORD == '' || env.MACOS_SIGNING_IDENTITY == '' || env.MACOS_INSTALLER_SIGNING_IDENTITY == '')
++        run: |
++          echo '正式发布必须配置完整的 macOS 应用与安装器签名证书。' >&2
++          exit 1
++
+       - name: 导入 macOS 签名证书
+-        env:
+-          MACOS_SIGNING_P12_BASE64: ${{ secrets.MACOS_SIGNING_P12_BASE64 }}
+-          MACOS_INSTALLER_SIGNING_P12_BASE64: ${{ secrets.MACOS_INSTALLER_SIGNING_P12_BASE64 }}
+-          MACOS_SIGNING_P12_PASSWORD: ${{ secrets.MACOS_SIGNING_P12_PASSWORD }}
+-          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+-          MACOS_INSTALLER_SIGNING_IDENTITY: ${{ secrets.MACOS_INSTALLER_SIGNING_IDENTITY }}
++        if: env.MACOS_SIGNING_P12_BASE64 != ''
+         run: |
+           set -Eeuo pipefail
+           keychain_path="$RUNNER_TEMP/dh-xianyu-agentpanel-signing.keychain-db"
+@@ -809,27 +967,18 @@ jobs:
+           security unlock-keychain -p "$keychain_password" "$keychain_path"
+           echo "MACOS_SIGNING_KEYCHAIN=$keychain_path" >> "$GITHUB_ENV"
+ 
+-      - name: 构建 macOS arm64 与 amd64 安装包
++      - name: 构建 macOS 安装包
+         env:
+-          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+-          MACOS_INSTALLER_SIGNING_IDENTITY: ${{ secrets.MACOS_INSTALLER_SIGNING_IDENTITY }}
++          PRODUCT_ARCH: ${{ matrix.arch }}
+         run: |
+           set -Eeuo pipefail
+           chmod +x packaging/macos/build-pkg.sh
+-          for arch in arm64 amd64; do
+-            packaging/macos/build-pkg.sh "$APP_VERSION" "$PWD/dist/macos" "$arch"
+-          done
+-
+-      - name: 上传 macOS arm64 安装包
+-        uses: actions/upload-artifact@v7
+-        with:
+-          name: dh-xianyu-agentpanel-macos-arm64-${{ env.APP_VERSION }}
+-          path: dist/macos/DH-Xianyu-AgentPanel-${{ env.APP_VERSION }}-arm64.pkg
+-          if-no-files-found: error
++          packaging/macos/build-pkg.sh "$APP_VERSION" "$PWD/dist/macos" "$PRODUCT_ARCH"
+ 
+-      - name: 上传 macOS amd64 安装包
++      - name: 上传 macOS 安装包
++        if: inputs.app_version != ''
+         uses: actions/upload-artifact@v7
+         with:
+-          name: dh-xianyu-agentpanel-macos-amd64-${{ env.APP_VERSION }}
+-          path: dist/macos/DH-Xianyu-AgentPanel-${{ env.APP_VERSION }}-amd64.pkg
++          name: dh-xianyu-agentpanel-macos-${{ matrix.arch }}-${{ env.APP_VERSION }}
++          path: dist/macos/DH-Xianyu-AgentPanel-${{ env.APP_VERSION }}-${{ matrix.arch }}.pkg
+           if-no-files-found: error
+diff --git a/.github/workflows/docker-publish.yml b/.github/workflows/docker-publish.yml
+index 9943c1fc48..e09e9cfc34 100644
+--- a/.github/workflows/docker-publish.yml
++++ b/.github/workflows/docker-publish.yml
+@@ -129,6 +129,7 @@ jobs:
+         working-directory: brain/vendor/deepseek-harness
+         run: |
+           set -Eeuo pipefail
++          corepack enable
+           corepack pnpm install --frozen-lockfile
+           CI=true corepack pnpm run build
+           CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
+@@ -189,6 +190,26 @@ jobs:
+           path: .docker/playwright-runtime/${{ matrix.arch }}
+           key: ${{ steps.cache-docker-playwright.outputs.cache-primary-key }}
+ 
++      - name: 释放 Harness 构建空间
++        shell: bash
++        run: |
++          set -Eeuo pipefail
++          harness_root="$PWD/brain/vendor/deepseek-harness"
++          test -f "$harness_root/package.json"
++          test -f "$PWD/.docker/brain-runtime/runtime/runtime.json"
++          harness_kib="$(du -sk "$harness_root" | cut -f1)"
++          node -e '
++            const { rmSync } = require("node:fs")
++            const { resolve } = require("node:path")
++            const expected = resolve(process.cwd(), "brain/vendor/deepseek-harness")
++            const requested = resolve(process.argv[1])
++            if (requested !== expected) throw new Error(`拒绝清理边界外路径: ${requested}`)
++            rmSync(requested, { recursive: true, force: true })
++          ' "$harness_root"
++          test ! -e "$harness_root"
++          printf 'harness-workspace-cleanup: released %s KiB\n' "$harness_kib"
++          df -h "$PWD"
++
+       - name: 配置 Docker Buildx
+         uses: docker/setup-buildx-action@v4
+ 
+@@ -211,13 +232,14 @@ jobs:
+           context: .
+           file: Dockerfile.debian13
+           platforms: ${{ matrix.platform }}
++          tags: ${{ steps.image.outputs.name }}:build-${{ github.sha }}-${{ matrix.arch }}
++          push: true
+           build-args: |
+             APP_VERSION=${{ needs.verify.outputs.app_version }}
+             VCS_REF=${{ github.sha }}
+             BUILD_TIME=${{ needs.verify.outputs.build_time }}
+-          outputs: type=image,name=${{ steps.image.outputs.name }},push-by-digest=true,name-canonical=true,push=true
+           cache-from: type=gha,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
+-          cache-to: type=gha,mode=max,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
++          cache-to: type=gha,mode=min,ignore-error=true,scope=dh-xianyu-agentpanel-docker-${{ matrix.arch }}
+           provenance: mode=max
+           sbom: true
+ 
+@@ -273,6 +295,7 @@ jobs:
+           touch "dist/digests/${IMAGE_DIGEST#sha256:}"
+ 
+       - name: 上传镜像摘要
++        if: inputs.app_version != ''
+         uses: actions/upload-artifact@v7
+         with:
+           name: dh-xianyu-agentpanel-docker-digest-${{ matrix.arch }}
+@@ -289,13 +312,6 @@ jobs:
+       - name: 配置 Docker Buildx
+         uses: docker/setup-buildx-action@v4
+ 
+-      - name: 下载镜像摘要
+-        uses: actions/download-artifact@v8
+-        with:
+-          pattern: dh-xianyu-agentpanel-docker-digest-*
+-          path: dist/digests
+-          merge-multiple: true
+-
+       - name: 登录 GitHub Container Registry
+         uses: docker/login-action@v4
+         with:
+@@ -325,20 +341,15 @@ jobs:
+           IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+         run: |
+           set -Eeuo pipefail
+-          mapfile -t digest_files < <(find dist/digests -maxdepth 1 -type f -print | sort)
+-          if [ "${#digest_files[@]}" -ne 2 ]; then
+-            echo "预期 2 个镜像摘要，实际 ${#digest_files[@]} 个。" >&2
+-            exit 1
+-          fi
+-          digest_args=()
+-          for digest_file in "${digest_files[@]}"; do
+-            digest_args+=("$IMAGE_NAME@sha256:$(basename "$digest_file")")
+-          done
++          image_args=(
++            "$IMAGE_NAME:build-$GITHUB_SHA-amd64"
++            "$IMAGE_NAME:build-$GITHUB_SHA-arm64"
++          )
+           tag_args=()
+           while IFS= read -r tag; do
+             [ -n "$tag" ] && tag_args+=(--tag "$tag")
+           done <<< "$IMAGE_TAGS"
+-          docker buildx imagetools create "${tag_args[@]}" "${digest_args[@]}"
++          docker buildx imagetools create "${tag_args[@]}" "${image_args[@]}"
+ 
+       - name: 检查多架构 manifest
+         shell: bash
 diff --git a/AGENTS.md b/AGENTS.md
 index 6aa002d923..22803202d4 100644
 --- a/AGENTS.md
@@ -231,10 +687,18 @@ index 6aa002d923..22803202d4 100644
  curl -fsS http://127.0.0.1:59189/health
  ```
 diff --git a/Makefile b/Makefile
-index e3b6948660..baa5c153f9 100644
+index e3b6948660..4edbfb3ab3 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -94,7 +94,7 @@ packaging-check:
+@@ -21,6 +21,7 @@ build-tray:
+ brain-check:
+ 	node --test brain/runtime/result-tool.test.mjs
+ 	node --test scripts/brain-runtime-package.test.mjs
++	node --test scripts/normalize-harness-runtime-closure.test.mjs
+ 	node brain/profile/verify-tool-allowlist.mjs
+ 
+ ## brain-profile-integration: 使用本地 MCP/模型 fixture 启动真实 DSH profile 并断言最终工具目录
+@@ -94,7 +95,7 @@ packaging-check:
  brand-assets-check:
  	node scripts/check-brand-assets.mjs
  
@@ -261,202 +725,6 @@ index 8683adeb08..eab13bebde 100644
  
  Windows 和 macOS 托盘启动时会自动启动后台服务，并显示检查中、启动中、运行正常、正在停止
  等状态。选择“退出托盘”时，只有确认后台服务已经停止后托盘才会退出；“打开日志目录”可直接
-diff --git a/artifacts/v2-brand/brand-migration-verification.md b/artifacts/v2-brand/brand-migration-verification.md
-new file mode 100644
-index 0000000000..65d8371361
---- /dev/null
-+++ b/artifacts/v2-brand/brand-migration-verification.md
-@@ -0,0 +1,135 @@
-+# DH闲不下来 v2 品牌迁移验证记录
-+
-+## 变更身份
-+
-+- 基线提交：`2bb0cd20a016fe9e3104f860ae0b7568bb0fb508`
-+- 基线含义：仓库接管与工程治理完成，品牌数据迁移尚未使用新二进制验证。
-+- 目标分支：`main`
-+- 产品身份：`DH闲不下来` / `dh-xianyu-agentpanel` / `github.com/DH-devmax/xyu`
-+- 服务身份：`dh-xianyu-agentpanel.service` / `DhXianyuAgentPanel` /
-+  `com.dhdevmax.xianyu-agentpanel`
-+
-+## 四个验证角色
-+
-+| 角色 | 路径 | 验证方式 |
-+| --- | --- | --- |
-+| 修改后制品 | `dist/verification/dh-xianyu-agentpanel-server` | 执行 `-version` 及真实加密数据迁移回归 |
-+| 可分发补丁 | `artifacts/v2-brand/brand-migration-completion-from-2bb0cd.patch` | 基线临时 worktree 中 `git apply --check` 和正向应用 |
-+| 验证记录 | `artifacts/v2-brand/brand-migration-verification.md` | 重新打开并检查基线、命令、输入、输出和退出码 |
-+| 仓库回滚 | `artifacts/v2-brand/rollback-brand-migration.sh` | `--check` 验证；`--apply` 创建普通 `git revert` 提交 |
-+
-+修改后制品为本地可重建验证输出，受 `.gitignore` 的 `/dist/` 规则管理，不作为源码提交或发布包。
-+
-+## 基线与修改后行为
-+
-+### 基线
-+
-+命令：
-+
-+```bash
-+git worktree add --detach /tmp/xyu-brand-baseline 2bb0cd20a016fe9e3104f860ae0b7568bb0fb508
-+bash /tmp/xyu-brand-baseline/scripts/migrate-product-data.sh --help
-+```
-+
-+字面输出：
-+
-+```text
-+用法：migrate-product-data.sh --source DIR --destination DIR [--rollback-dir DIR] [--record FILE]
-+```
-+
-+退出码：`0`。输入中没有新版数据验证器、旧环境文件或敏感字段解密契约。
-+
-+命令：
-+
-+```bash
-+git -C /tmp/xyu-brand-baseline grep -n -- '-verify-data' -- cmd/server/main.go
-+```
-+
-+字面输出为空，退出码：`1`。
-+
-+### 修改后
-+
-+命令：
-+
-+```bash
-+bash scripts/migrate-product-data.sh --help
-+```
-+
-+字面输出：
-+
-+```text
-+用法：migrate-product-data.sh --source DIR --destination DIR --validator FILE [--environment-file FILE] [--rollback-dir DIR] [--record FILE]
-+```
-+
-+退出码：`0`。
-+
-+命令：
-+
-+```bash
-+dist/verification/dh-xianyu-agentpanel-server -version
-+```
-+
-+字面输出：
-+
-+```text
-+DH闲不下来 dev (commit unknown, built unknown)
-+```
-+
-+退出码：`0`。制品 SHA-256：
-+`8a2c0f705b50b2ad8ad8c703d1ad0a4e6b9e5b7bf7159afc1915b94a194fa5b4`。
-+
-+迁移回归输入为 SQLite v38、`system_settings.ai_api_key` 真实 AES-256-GCM 密文、
-+AAD `system-setting\0ai_api_key`、正确测试密钥、错误测试密钥及一个回滚后应恢复的
-+`settings.env`。测试值均为仓库内固定 fixture，不包含生产凭证。
-+
-+命令：
-+
-+```bash
-+MIGRATION_VALIDATOR="$PWD/dist/verification/dh-xianyu-agentpanel-server" \
-+  bash scripts/migrate-product-data.test.sh
-+```
-+
-+关键字面输出：
-+
-+```text
-+data-verification: ok
-+product-data-migration: 通过（哈希、解密、失败原子性、只读副本、回滚）
-+```
-+
-+退出码：`0`。错误密钥分支在目标目录切换前返回非零；正确密钥分支记录
-+`database_integrity=ok`、`database_decryption=ok` 和 `legacy_readonly=true`，随后真实执行回滚脚本并恢复旧内容。
-+
-+## 本地门禁
-+
-+以下命令于 2026-08-30 执行，退出码均为 `0`：
-+
-+| 命令 | 关键字面输出 |
-+| --- | --- |
-+| `make check` | `0 issues.`；Go 全量测试、Harness 结果插件、runtime package、allowlist、架构、OpenAPI 和中文注释通过 |
-+| `make cover` | `total: (statements) 70.3%` |
-+| `npm run typecheck --prefix frontend` | `tsc --noEmit` |
-+| `npm test --prefix frontend` | `Test Files 73 passed (73)`；`Tests 426 passed (426)` |
-+| `npm run test:coverage --prefix frontend` | Statements `77.41%`；Branches `54.84%`；Functions `66.24%`；Lines `79.73%` |
-+| `npm run api:check --prefix frontend` | OpenAPI 生成到 `dh-xianyu-agentpanel-openapi-*`并通过 |
-+| `npm run build --prefix frontend` | Vite `8.2.2`；`2983 modules transformed`；`built in 685ms` |
-+| `node scripts/check-packaging-manifest.mjs` | `packaging-manifest: 通过` |
-+| Windows 加密 fixture 语法与本地密钥回归 | `windows-encrypted-fixture: ok` |
-+| `make product-data-migration-check` | `product-data-migration: 通过（哈希、解密、失败原子性、只读副本、回滚）` |
-+| `git diff --check` | 无输出 |
-+
-+`make cover` 未设置 `RUN_BROWSER_INTEGRATION=1`。实账号、外部闲鱼平台、外部通知渠道、
-+MySQL/PostgreSQL 实例和真实浏览器风控仍是环境依赖例外。本阶段新增的数据验证、错误密钥、
-+失败原子性、前端兼容键和回滚均使用本地确定性 fixture。
-+
-+## 跨平台门禁
-+
-+`.github/workflows/desktop-cd.yml` 在 `main` 提交上必须完成：
-+
-+- Linux amd64/arm64 分别用当前架构新服务器运行共享的真实加密迁移与回滚回归。
-+- macOS 根据 `go env GOARCH` 选择本机可执行新服务器，运行同一回归。
-+- Windows 使用 Windows PowerShell 5.1、Node 24 `node:sqlite` 和 `node:crypto` 构造真实密文，
-+  验证错误密钥、验证器崩溃、成功切换、只读副本和真实回滚。
-+- Windows Inno Setup 安装器将待安装的服务器作为临时验证器，完成 v1 数据升级、
-+  服务健康检查、安装后数据回滚和回滚后再次健康检查。
-+
-+同一阶段提交的远端结果由 GitHub check suite 按提交 SHA 保存，避免在该提交内写入自引用结果。
-diff --git a/artifacts/v2-brand/rollback-brand-migration.sh b/artifacts/v2-brand/rollback-brand-migration.sh
-new file mode 100755
-index 0000000000..552b9a96c6
---- /dev/null
-+++ b/artifacts/v2-brand/rollback-brand-migration.sh
-@@ -0,0 +1,49 @@
-+#!/usr/bin/env bash
-+set -Eeuo pipefail
-+
-+# script_directory 是回滚脚本的实际所在目录，不依赖调用者的当前目录。
-+script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-+# repo_root 是包含本脚本的产品 Git 根目录。
-+repo_root="$(git -C "$script_directory" rev-parse --show-toplevel)"
-+# script_path 用于查找首次引入本回滚入口的品牌迁移提交。
-+script_path="artifacts/v2-brand/rollback-brand-migration.sh"
-+# target_commit 是应通过普通 revert 撤销的单一品牌迁移提交。
-+target_commit="$(git -C "$repo_root" log --diff-filter=A --format=%H -n 1 -- "$script_path")"
-+
-+# usage 输出稳定的回滚脚本用法。
-+usage() {
-+  printf '用法: %s --check|--apply\n' "$0"
-+}
-+
-+# assert_clean 保护用户尚未提交的变更，避免 revert 覆盖当前工作。
-+assert_clean() {
-+  if [[ -n "$(git -C "$repo_root" status --porcelain --untracked-files=all)" ]]; then
-+    printf 'rollback: 工作树存在未提交变更\n' >&2
-+    exit 1
-+  fi
-+}
-+
-+if [[ -z "$target_commit" ]]; then
-+  printf 'rollback: 未找到引入本脚本的品牌迁移提交\n' >&2
-+  exit 1
-+fi
-+if ! git -C "$repo_root" merge-base --is-ancestor "$target_commit" HEAD; then
-+  printf 'rollback: 品牌迁移提交不在当前历史中: %s\n' "$target_commit" >&2
-+  exit 1
-+fi
-+
-+case "${1:-}" in
-+  --check)
-+    assert_clean
-+    printf 'rollback-check: 通过，工作树干净且 %s 可回滚\n' "$target_commit"
-+    ;;
-+  --apply)
-+    assert_clean
-+    git -C "$repo_root" revert --no-edit "$target_commit"
-+    printf 'rollback: 已创建 revert commit，目标 %s\n' "$target_commit"
-+    ;;
-+  *)
-+    usage >&2
-+    exit 2
-+    ;;
-+esac
 diff --git a/cmd/server/main.go b/cmd/server/main.go
 index cb5f864deb..497effba78 100644
 --- a/cmd/server/main.go
@@ -670,6 +938,29 @@ index ed78f00e2b..0000000000
 @@ -1 +0,0 @@
 -xianyu.ydisks.com
 \ No newline at end of file
+diff --git a/docs/architecture/brain-runtime-packaging.md b/docs/architecture/brain-runtime-packaging.md
+index b31ed17a55..d9f17840ea 100644
+--- a/docs/architecture/brain-runtime-packaging.md
++++ b/docs/architecture/brain-runtime-packaging.md
+@@ -36,6 +36,8 @@ brain/
+ 
+ Intel Mac 使用 Node 模式，是因为 Harness 当前没有 macOS x64 原生目标。Node carrier 必须是官方 Node 24 分发版本；Homebrew 的动态 `node` 可能依赖机器上的 `libnode` 和 Homebrew 动态库，构建器会先执行 `--version`，检查器会在打包前实际启动它。
+ 
++Intel runner 不伪造 arm64 原生目标：CI 直接用 Harness 锁定 workspace 执行 `pnpm deploy`，再由产品侧 `scripts/normalize-harness-runtime-closure.mjs` 恢复 legacy hoist、解引用 workspace 链接并删除 deploy 文档。正负 fixture 检查缺失依赖、嵌套 `node_modules`、`.bin` 与残留符号链接；因此 `sdk-native-launch.patch` 仍是唯一 Harness vendor 补丁。Windows 的 SDK 导入探针使用 `file://` URL，与 POSIX 和驱动器号路径都兼容。
++
+ ## 插件裁剪
+ 
+ 客服 profile 的工具边界由 `brain/profile/customer-service.patch.yml` 和 allowlist 检查确定，只暴露五个只读 MCP 工具及 `submit_reply_draft`。Harness 的官方闭包仍保留运行时所需的传递依赖；coding、shell、文件系统、浏览器和编辑器工具不会注册到客服 profile。物理删除传递包会破坏 Cordis 依赖图，因此作为后续体积优化，不作为当前安全边界。
+@@ -65,7 +67,8 @@ node scripts/check-brain-runtime-package.mjs \
+ 
+ ```bash
+ node --test scripts/brain-runtime-package.test.mjs
++node --test scripts/normalize-harness-runtime-closure.test.mjs
+ make brain-check
+ ```
+ 
+-Docker 构建只把已经检查的 `.docker/brain-runtime` 和 Playwright runtime 放入上下文；Harness workspace、`node_modules`、`dist-exe` 和 `.dsh-build` 均由 `.dockerignore` 排除。
++Docker 构建只把已经检查的 `.docker/brain-runtime` 和 Playwright runtime 放入上下文；Harness workspace、`node_modules`、`dist-exe` 和 `.dsh-build` 均由 `.dockerignore` 排除。两个运行时载荷检查后，CI 会通过固定绝对路径边界删除不再使用的 Harness 构建树，再启动 Buildx；GHA 缓存只保留最终镜像层且配额错误不影响已构建制品，避免标准 amd64 runner 的磁盘和远端缓存峰值。
 diff --git a/docs/architecture/unified-product-v2.md b/docs/architecture/unified-product-v2.md
 index 603f72e3f7..a02e30504d 100644
 --- a/docs/architecture/unified-product-v2.md
@@ -1644,8 +1935,31 @@ index 0000000000..0e389864e8
 +        Remove-Item -LiteralPath $root -Recurse -Force
 +    }
 +}
+diff --git a/scripts/check-brain-runtime-package.mjs b/scripts/check-brain-runtime-package.mjs
+index b5bef4a0c8..7d4392a14f 100644
+--- a/scripts/check-brain-runtime-package.mjs
++++ b/scripts/check-brain-runtime-package.mjs
+@@ -6,7 +6,7 @@ import { access, lstat, readdir, readFile, stat } from 'node:fs/promises'
+ import { constants } from 'node:fs'
+ import { promisify } from 'node:util'
+ import { isAbsolute, join, relative, resolve, sep } from 'node:path'
+-import { fileURLToPath } from 'node:url'
++import { fileURLToPath, pathToFileURL } from 'node:url'
+ 
+ const execFileAsync = promisify(execFile)
+ const rootDir = fileURLToPath(new URL('..', import.meta.url))
+@@ -181,7 +181,8 @@ if (manifest.mode === 'native') {
+ 
+ // SDK import probe 确认闭包内协议依赖和 ESM 入口均可由 carrier 解析。
+ if (nodeVersion !== 'skipped-cross-target') {
+-  await runVersion(nodeCarrier, ['--input-type=module', '-e', `await import(${JSON.stringify(sdkEntry)}); console.log('sdk-ok')`])
++  const sdkEntryURL = pathToFileURL(sdkEntry).href
++  await runVersion(nodeCarrier, ['--input-type=module', '-e', `await import(${JSON.stringify(sdkEntryURL)}); console.log('sdk-ok')`])
+ }
+ 
+ console.log(JSON.stringify({
 diff --git a/scripts/check-packaging-manifest.mjs b/scripts/check-packaging-manifest.mjs
-index 3b498d693a..4e708b8d89 100644
+index 3b498d693a..7342b30300 100644
 --- a/scripts/check-packaging-manifest.mjs
 +++ b/scripts/check-packaging-manifest.mjs
 @@ -1,5 +1,6 @@
@@ -1655,7 +1969,14 @@ index 3b498d693a..4e708b8d89 100644
  import { join } from 'node:path';
  import { fileURLToPath } from 'node:url';
  
-@@ -47,6 +48,8 @@ const requiredFiles = [
+@@ -42,11 +43,15 @@ const requiredFiles = [
+   'scripts/build-brain-runtime.mjs',
+   'scripts/check-brain-runtime-package.mjs',
+   'scripts/brain-runtime-package.test.mjs',
++  'scripts/normalize-harness-runtime-closure.mjs',
++  'scripts/normalize-harness-runtime-closure.test.mjs',
+   'brain/gateway/index.mjs',
+   'brain/profile/customer-service.patch.yml',
    'packaging/windows/installer.iss',
    'packaging/windows/service-control.ps1',
    'packaging/windows/migrate-data.ps1',
@@ -1664,7 +1985,7 @@ index 3b498d693a..4e708b8d89 100644
    'packaging/macos/Info.plist',
    'packaging/macos/component.plist',
    'packaging/macos/com.dhdevmax.xianyu-agentpanel.server.plist.template',
-@@ -59,6 +62,10 @@ const requiredFiles = [
+@@ -59,6 +64,10 @@ const requiredFiles = [
  for (const relativePath of requiredFiles) {
    await access(join(rootDir, relativePath), constants.R_OK);
  }
@@ -1675,7 +1996,7 @@ index 3b498d693a..4e708b8d89 100644
  try {
    await access(join(rootDir, 'icon/macos/Assets.car'), constants.R_OK);
    throw new Error('打包 manifest 校验失败: icon/macos/Assets.car 不应再作为输入');
-@@ -79,11 +86,19 @@ await assertText('packaging/linux/install.sh', [
+@@ -79,11 +88,19 @@ await assertText('packaging/linux/install.sh', [
    `APP_NAME="${expected.slug}"`,
    `SERVICE_NAME="$APP_NAME.service"`,
    'migrate-product-data.sh',
@@ -1695,7 +2016,7 @@ index 3b498d693a..4e708b8d89 100644
  await assertText('packaging/linux/uninstall.sh', [
    `APP_NAME="${expected.slug}"`,
    `LEGACY_APP_NAME="ydisks-xianyu-helper"`,
-@@ -93,6 +108,8 @@ await assertText('packaging/windows/installer.iss', [
+@@ -93,6 +110,8 @@ await assertText('packaging/windows/installer.iss', [
    'OutputBaseFilename=DH-Xianyu-AgentPanel-Setup',
    `AppDataDir "{commonappdata}\\DhXianyuAgentPanel"`,
    `Source: "migrate-data.ps1"`,
@@ -1704,7 +2025,7 @@ index 3b498d693a..4e708b8d89 100644
    `Source: "{#WindowsBrainDir}\\*"`,
    '-BrainRuntimeRoot',
    expected.windowsService,
-@@ -104,6 +121,11 @@ await assertText('packaging/windows/service-control.ps1', [
+@@ -104,6 +123,11 @@ await assertText('packaging/windows/service-control.ps1', [
    '-brain-runtime-root',
    expected.displayName,
  ]);
@@ -1716,7 +2037,7 @@ index 3b498d693a..4e708b8d89 100644
  
  await assertText('packaging/macos/Info.plist', [
    `<string>${expected.macBundleID}</string>`,
-@@ -123,6 +145,10 @@ await assertText('packaging/macos/build-pkg.sh', [
+@@ -123,6 +147,10 @@ await assertText('packaging/macos/build-pkg.sh', [
    'runtime/node-carrier',
    'runtime/result-tool.mjs',
  ]);
@@ -1727,9 +2048,11 @@ index 3b498d693a..4e708b8d89 100644
  await assertText('packaging/macos/com.dhdevmax.xianyu-agentpanel.tray.plist.template', [
    expected.macBundleID,
    '__TRAY__',
-@@ -137,6 +163,10 @@ await assertText('.github/workflows/desktop-cd.yml', [
+@@ -136,7 +164,12 @@ await assertText('.github/workflows/desktop-cd.yml', [
+   `packaging/linux/${expected.linuxService}`,
    'build-brain-runtime.mjs',
    'check-brain-runtime-package.mjs',
++  'normalize-harness-runtime-closure.mjs',
    'brain/vendor/deepseek-harness',
 +  '验证 Windows 品牌数据迁移与回滚',
 +  'migrate-data.test.ps1',
@@ -1738,7 +2061,16 @@ index 3b498d693a..4e708b8d89 100644
    "Extension -in '.exe', '.dll', '.node'",
  ]);
  await assertText('Dockerfile.debian13', [
-@@ -154,5 +184,31 @@ await assertText('.github/workflows/release.yml', [
+@@ -148,11 +181,40 @@ await assertText('Dockerfile.debian13', [
+ await assertText('.github/workflows/docker-publish.yml', [
+   'build-brain-runtime.mjs',
+   '.docker/brain-runtime',
++  '释放 Harness 构建空间',
++  'harness-workspace-cleanup: released',
++  'cache-to: type=gha,mode=min,ignore-error=true',
+ ]);
+ await assertText('.github/workflows/release.yml', [
+   `${expected.slug}-linux-amd64-`,
    'DH-Xianyu-AgentPanel-Setup.exe',
    'DH-Xianyu-AgentPanel-',
  ]);
@@ -2140,3 +2472,294 @@ index a400a716e6..bb255d3c83 100755
  grep -q '^rollback_status=ok$' "$ROOT/rollback.out"
 -echo 'product-data-migration: 通过'
 +echo 'product-data-migration: 通过（哈希、解密、失败原子性、只读副本、回滚）'
+diff --git a/scripts/normalize-harness-runtime-closure.mjs b/scripts/normalize-harness-runtime-closure.mjs
+new file mode 100644
+index 0000000000..c277ae7adc
+--- /dev/null
++++ b/scripts/normalize-harness-runtime-closure.mjs
+@@ -0,0 +1,153 @@
++#!/usr/bin/env node
++
++import { access, cp, lstat, mkdir, readFile, readdir, realpath, rm } from 'node:fs/promises'
++import { constants } from 'node:fs'
++import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
++
++// deployOnlyDocs 是 pnpm deploy 生成、但不属于运行时闭包的根目录文档。
++const deployOnlyDocs = ['README.md', 'README.zh.md', 'README.i18n.yaml']
++// requiredDshEntry 是安装包中 Node 模式的固定 DSH 入口。
++const requiredDshEntry = 'node_modules/@deepseek-ai/dsh/lib/bin.js'
++
++// usage 输出闭包归一化器的稳定命令行格式。
++function usage() {
++  return '用法: node scripts/normalize-harness-runtime-closure.mjs --root <deploy-dir> --source-node-modules <dir>'
++}
++
++// parseArgs 解析必需路径，拒绝默认到当前目录的破坏性操作。
++function parseArgs(argv) {
++  const values = {}
++  for (let index = 0; index < argv.length; index += 1) {
++    const argument = argv[index]
++    if (argument === '--help' || argument === '-h') {
++      console.log(usage())
++      process.exit(0)
++    }
++    if (argument !== '--root' && argument !== '--source-node-modules') {
++      throw new Error(`未知参数: ${argument ?? ''}`)
++    }
++    const value = argv[index + 1]
++    if (value === undefined || value.startsWith('--')) throw new Error(`${argument} 缺少值`)
++    if (argument === '--root') values.root = value
++    else values.source_node_modules = value
++    index += 1
++  }
++  if (!values.root) throw new Error('缺少 --root')
++  if (!values.source_node_modules) throw new Error('缺少 --source-node-modules')
++  return values
++}
++
++// assertDirectory 确认输入目录在任何复制或删除前已存在且可读。
++async function assertDirectory(path, label) {
++  await access(path, constants.R_OK).catch(() => { throw new Error(`${label} 不可读: ${path}`) })
++  const metadata = await lstat(path)
++  if (!metadata.isDirectory()) throw new Error(`${label} 不是目录: ${path}`)
++}
++
++// copyPackage 把 workspace 包解引用为真实文件，并排除会引入第二套 Cordis 实例的嵌套 node_modules。
++async function copyPackage(source, destination) {
++  const nestedNodeModules = join(source, 'node_modules')
++  await rm(destination, { recursive: true, force: true })
++  await mkdir(dirname(destination), { recursive: true })
++  await cp(source, destination, {
++    recursive: true,
++    dereference: true,
++    filter: path => path !== nestedNodeModules && !path.startsWith(nestedNodeModules + sep),
++  })
++}
++
++// findSymlink 深度优先返回目录中第一个符号链接，供循环逐个解引用。
++async function findSymlink(directory) {
++  for (const entry of await readdir(directory, { withFileTypes: true })) {
++    const path = join(directory, entry.name)
++    const metadata = await lstat(path)
++    if (metadata.isSymbolicLink()) return path
++    if (metadata.isDirectory()) {
++      const nested = await findSymlink(path)
++      if (nested !== undefined) return nested
++    }
++  }
++  return undefined
++}
++
++// restoreMissingDependencies 恢复 legacy deploy 错误留在源 node_modules 中的顶层直接依赖。
++async function restoreMissingDependencies(root, sourceNodeModules, dependencies) {
++  const restored = []
++  for (const dependency of dependencies) {
++    const destination = join(root, 'node_modules', dependency)
++    try {
++      await access(destination, constants.R_OK)
++      continue
++    } catch {
++      // 目标不存在时才从 deploy 源恢复，保留 pnpm 已生成的其他包。
++    }
++    const source = join(sourceNodeModules, dependency)
++    await access(source, constants.R_OK).catch(() => {
++      throw new Error(`部署依赖 ${dependency} 在目标与源目录中均不存在`)
++    })
++    await copyPackage(source, destination)
++    restored.push(dependency)
++  }
++  return restored
++}
++
++// materializeLinks 删除命令链接目录并将所有其他 workspace 链接复制为独立文件。
++async function materializeLinks(nodeModules) {
++  let operations = 0
++  let remaining = await findSymlink(nodeModules)
++  while (remaining !== undefined) {
++    const segments = relative(nodeModules, remaining).split(sep)
++    const binIndex = segments.lastIndexOf('.bin')
++    if (binIndex >= 0) {
++      await rm(join(nodeModules, ...segments.slice(0, binIndex + 1)), { recursive: true, force: true })
++      operations += 1
++      remaining = await findSymlink(nodeModules)
++      continue
++    }
++    const source = await realpath(remaining)
++    await copyPackage(source, remaining)
++    operations += 1
++    remaining = await findSymlink(nodeModules)
++  }
++  return operations
++}
++
++// normalizeClosure 使 Intel macOS 的纯 Node 运行时与 Harness 上游原生构建产生的闭包保持同一不变量。
++async function normalizeClosure(root, sourceNodeModules) {
++  if (root === resolve('/') || root.length < 8 || !isAbsolute(root)) {
++    throw new Error(`拒绝处理危险闭包路径: ${root}`)
++  }
++  await assertDirectory(root, '部署闭包')
++  await assertDirectory(sourceNodeModules, '源 node_modules')
++  const manifestPath = join(root, 'package.json')
++  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
++  const dependencies = Object.keys(manifest.dependencies ?? {}).sort()
++  if (dependencies.length === 0) throw new Error(`部署闭包没有直接依赖: ${manifestPath}`)
++
++  const restored = await restoreMissingDependencies(root, sourceNodeModules, dependencies)
++  const nodeModules = join(root, 'node_modules')
++  const linkOperations = await materializeLinks(nodeModules)
++  await Promise.all(deployOnlyDocs.map(name => rm(join(root, name), { force: true })))
++
++  const missing = []
++  for (const dependency of dependencies) {
++    try {
++      await access(join(nodeModules, dependency), constants.R_OK)
++    } catch {
++      missing.push(dependency)
++    }
++  }
++  if (missing.length > 0) throw new Error(`归一化后仍缺少依赖: ${missing.join(', ')}`)
++  await access(join(root, requiredDshEntry), constants.R_OK).catch(() => {
++    throw new Error(`归一化后缺少 DSH 入口: ${requiredDshEntry}`)
++  })
++  const remainingLink = await findSymlink(nodeModules)
++  if (remainingLink !== undefined) throw new Error(`归一化后仍存在符号链接: ${remainingLink}`)
++  return { dependencies: dependencies.length, restored, linkOperations }
++}
++
++const options = parseArgs(process.argv.slice(2))
++const root = resolve(options.root)
++const sourceNodeModules = resolve(options.source_node_modules)
++const result = await normalizeClosure(root, sourceNodeModules)
++console.log(`harness-runtime-closure: 通过（依赖 ${result.dependencies}，恢复 ${result.restored.length}，解除链接 ${result.linkOperations}）`)
+diff --git a/scripts/normalize-harness-runtime-closure.test.mjs b/scripts/normalize-harness-runtime-closure.test.mjs
+new file mode 100644
+index 0000000000..9748e46a56
+--- /dev/null
++++ b/scripts/normalize-harness-runtime-closure.test.mjs
+@@ -0,0 +1,126 @@
++import assert from 'node:assert/strict'
++import { spawn } from 'node:child_process'
++import { lstat, mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises'
++import test from 'node:test'
++import { tmpdir } from 'node:os'
++import { dirname, join, resolve } from 'node:path'
++import { fileURLToPath } from 'node:url'
++
++// projectRoot 是产品脚本的仓库根目录。
++const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
++// normalizeScript 是本测试通过真实子进程调用的闭包归一化器。
++const normalizeScript = join(projectRoot, 'scripts/normalize-harness-runtime-closure.mjs')
++
++// runNormalizer 执行归一化器并保留成功或失败的完整输出。
++function runNormalizer(root, sourceNodeModules) {
++  return new Promise((resolvePromise, reject) => {
++    const child = spawn(process.execPath, [
++      normalizeScript,
++      '--root', root,
++      '--source-node-modules', sourceNodeModules,
++    ], { cwd: projectRoot, env: process.env })
++    let stdout = ''
++    let stderr = ''
++    child.stdout.setEncoding('utf8')
++    child.stderr.setEncoding('utf8')
++    child.stdout.on('data', chunk => { stdout += chunk })
++    child.stderr.on('data', chunk => { stderr += chunk })
++    child.once('error', reject)
++    child.once('close', code => resolvePromise({ code, stdout, stderr }))
++  })
++}
++
++// collectSymlinks 递归收集 fixture 中的符号链接，用于确认发布输出可独立移动。
++async function collectSymlinks(directory) {
++  const links = []
++  for (const entry of await readdir(directory, { withFileTypes: true })) {
++    const path = join(directory, entry.name)
++    const metadata = await lstat(path)
++    if (metadata.isSymbolicLink()) links.push(path)
++    else if (metadata.isDirectory()) links.push(...await collectSymlinks(path))
++  }
++  return links
++}
++
++// writePackage 创建一个最小可读包，避免测试依赖完整 Harness 安装。
++async function writePackage(path, name, files = {}) {
++  await mkdir(path, { recursive: true })
++  await writeFile(join(path, 'package.json'), `${JSON.stringify({ name, version: '1.0.0', type: 'module' })}\n`)
++  for (const [relativePath, content] of Object.entries(files)) {
++    const filePath = join(path, relativePath)
++    await mkdir(dirname(filePath), { recursive: true })
++    await writeFile(filePath, content)
++  }
++}
++
++test('normalizer restores omitted packages and materializes deploy links', async () => {
++  // fixtureRoot 隔离部署目标、workspace 源包和源 node_modules。
++  const fixtureRoot = await mkdtemp(join(tmpdir(), 'dh-harness-closure-'))
++  try {
++    const closure = join(fixtureRoot, 'runtime/node')
++    const nodeModules = join(closure, 'node_modules')
++    const sourceNodeModules = join(fixtureRoot, 'source-node-modules')
++    const linkedSource = join(fixtureRoot, 'workspace/linked-package')
++    await mkdir(join(nodeModules, '.bin'), { recursive: true })
++    await mkdir(sourceNodeModules, { recursive: true })
++    await writePackage(linkedSource, '@fixture/linked', {
++      'lib/index.js': 'export const linked = true\n',
++      'node_modules/duplicate/package.json': '{}\n',
++    })
++    await writePackage(join(sourceNodeModules, '@fixture/restored'), '@fixture/restored', {
++      'lib/index.js': 'export const restored = true\n',
++      'node_modules/duplicate/package.json': '{}\n',
++    })
++    await writePackage(join(sourceNodeModules, '@deepseek-ai/dsh'), '@deepseek-ai/dsh', {
++      'lib/bin.js': "console.log('fixture')\n",
++    })
++    await symlink(linkedSource, join(nodeModules, 'linked-package'), 'dir')
++    await symlink('../linked-package/lib/index.js', join(nodeModules, '.bin/tool'))
++    await mkdir(closure, { recursive: true })
++    await writeFile(join(closure, 'package.json'), `${JSON.stringify({
++      name: 'fixture-closure',
++      dependencies: {
++        '@deepseek-ai/dsh': 'workspace:^',
++        '@fixture/restored': 'workspace:^',
++        'linked-package': 'workspace:^',
++      },
++    })}\n`)
++    for (const name of ['README.md', 'README.zh.md', 'README.i18n.yaml']) {
++      await writeFile(join(closure, name), 'deploy-only\n')
++    }
++
++    const result = await runNormalizer(closure, sourceNodeModules)
++    assert.equal(result.code, 0, `${result.stdout}\n${result.stderr}`)
++    assert.match(result.stdout, /harness-runtime-closure: 通过（依赖 3，恢复 2，解除链接 2）/)
++    assert.equal((await collectSymlinks(nodeModules)).length, 0)
++    assert.equal(await readFile(join(nodeModules, 'linked-package/lib/index.js'), 'utf8'), 'export const linked = true\n')
++    assert.equal(await readFile(join(nodeModules, '@fixture/restored/lib/index.js'), 'utf8'), 'export const restored = true\n')
++    await assert.rejects(readFile(join(nodeModules, 'linked-package/node_modules/duplicate/package.json'), 'utf8'))
++    await assert.rejects(readFile(join(nodeModules, '@fixture/restored/node_modules/duplicate/package.json'), 'utf8'))
++    await assert.rejects(readFile(join(nodeModules, '.bin/tool'), 'utf8'))
++    await assert.rejects(readFile(join(closure, 'README.md'), 'utf8'))
++  } finally {
++    await rm(fixtureRoot, { recursive: true, force: true })
++  }
++})
++
++test('normalizer rejects a direct dependency absent from both deploy roots', async () => {
++  // fixtureRoot 构造缺包输入，确认失败而不会产生不完整发布闭包。
++  const fixtureRoot = await mkdtemp(join(tmpdir(), 'dh-harness-closure-missing-'))
++  try {
++    const closure = join(fixtureRoot, 'runtime/node')
++    const sourceNodeModules = join(fixtureRoot, 'source-node-modules')
++    await mkdir(join(closure, 'node_modules'), { recursive: true })
++    await mkdir(sourceNodeModules, { recursive: true })
++    await writeFile(join(closure, 'package.json'), `${JSON.stringify({
++      name: 'fixture-closure',
++      dependencies: { '@fixture/missing': 'workspace:^' },
++    })}\n`)
++
++    const result = await runNormalizer(closure, sourceNodeModules)
++    assert.notEqual(result.code, 0)
++    assert.match(`${result.stdout}\n${result.stderr}`, /部署依赖 @fixture\/missing 在目标与源目录中均不存在/)
++  } finally {
++    await rm(fixtureRoot, { recursive: true, force: true })
++  }
++})

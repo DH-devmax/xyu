@@ -19,7 +19,11 @@
 | 仓库回滚 | `artifacts/v2-brand/rollback-brand-migration.sh` | `--check` 验证；`--apply` 创建普通 `git revert` 提交 |
 
 修改后制品为本地可重建验证输出，受 `.gitignore` 的 `/dist/` 规则管理，不作为源码提交或发布包。
-补丁聚焦产品品牌迁移提交；workflow 可移植性修复保留在普通后续提交中。回滚脚本以
+可分发补丁 SHA-256 为
+`61ae54bdb8a08029ebbd9d39c41f47a3ce44354587ae442a69e2a11114f1357a`；已在基线临时 worktree 执行
+`git apply --check`、正向应用、关键文件断言、反向应用，最终工作树重新为干净状态。
+补丁覆盖从工程治理基线到品牌阶段终点的产品源码与发布门禁，只排除本补丁、验证记录和
+回滚脚本三个元工件，避免自引用。回滚脚本以
 最近一次修改自身的提交锁定品牌阶段终点，只能从该干净 HEAD 执行，并按最新到最旧撤销
 阶段全部提交；提交前通过 tree 哈希确认结果精确等于工程治理基线。
 
@@ -116,6 +120,9 @@ product-data-migration: 通过（哈希、解密、失败原子性、只读副�
 | `npm run api:check --prefix frontend` | OpenAPI 生成到 `dh-xianyu-agentpanel-openapi-*`并通过 |
 | `npm run build --prefix frontend` | Vite `8.2.2`；`2983 modules transformed`；`built in 685ms` |
 | `node scripts/check-packaging-manifest.mjs` | `packaging-manifest: 通过` |
+| `node --test scripts/normalize-harness-runtime-closure.test.mjs` | `tests 2`；恢复缺包、解引用和缺失依赖负向分支通过 |
+| 锁定 Harness 真实 `pnpm deploy` 与归一化 | `依赖 124，恢复 5，解除链接 4`；`symlinks=0`；`dsh-entry=true` |
+| 全部 GitHub Actions YAML 本地解析 | `yaml-ok`；5 个 workflow 均通过 |
 | 官方 Node 24 macOS arm64 载荷重建 | `node-v24.19.0-darwin-arm64.tar.gz: OK`；native/node manifest 与摘要复验通过 |
 | 包内 Node 空 PATH 启动 | `macos-brain-empty-path: ok` |
 | Windows 加密 fixture 语法与本地密钥回归 | `windows-encrypted-fixture: ok` |
@@ -132,14 +139,17 @@ MySQL/PostgreSQL 实例和真实浏览器风控仍是环境依赖例外。本阶
 
 - Linux amd64/arm64 分别用当前架构新服务器运行共享的真实加密迁移与回滚回归。
 - macOS arm64 使用 `macos-14`，amd64 使用 `macos-15-intel`，各自在原生 runner 构建
-  Go、Brain、Playwright runtime 和安装包并运行同一迁移回归；Intel 额外清空 `PATH` 后
-  直接执行包内 Node 24 与 DSH 版本探针。
+  Go、Brain、Playwright runtime 和安装包并运行同一迁移回归；Intel 使用产品侧归一化器生成
+  无链接 Node 闭包，再清空 `PATH` 直接执行包内 Node 24 与 DSH 版本探针。
 - Windows 使用 Windows PowerShell 5.1、Node 24 `node:sqlite` 和 `node:crypto` 构造真实密文，
-  验证错误密钥、验证器崩溃、成功切换、只读副本和真实回滚。
+  验证错误密钥、验证器崩溃、成功切换、只读副本和真实回滚；Brain SDK ESM 探针把
+  驱动器号路径转换为标准 `file://` URL。
 - Windows Inno Setup 安装器将待安装的服务器作为临时验证器，完成 v1 数据升级、
   服务健康检查、安装后数据回滚和回滚后再次健康检查。
 - `main` 构建在没有证书 Secret 时生成无签名安装包并完成安装/升级/回滚门禁，但不长期上传
   大体积安装产物；正式版本输入存在时，Windows/macOS 缺少任一签名 Secret 都会终止发布，
   且桌面安装包与 Docker 摘要仍作为 release artifact 上传。
+- Docker 在 Brain 与 Chromium 载荷复验后释放已排除于构建上下文的 Harness 中间树，Buildx 只写入
+  `mode=min` 缓存且忽略缓存配额错误；双架构镜像、SBOM、provenance、Chromium 与服务健康探针仍为必跑。
 
 同一阶段提交的远端结果由 GitHub check suite 按提交 SHA 保存，避免在该提交内写入自引用结果。

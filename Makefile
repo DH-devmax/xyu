@@ -21,6 +21,7 @@ build-tray:
 brain-check:
 	node --test brain/runtime/result-tool.test.mjs
 	node --test scripts/brain-runtime-package.test.mjs
+	node --test scripts/normalize-harness-runtime-closure.test.mjs
 	node brain/profile/verify-tool-allowlist.mjs
 
 ## brain-profile-integration: 使用本地 MCP/模型 fixture 启动真实 DSH profile 并断言最终工具目录

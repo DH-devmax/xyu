@@ -819,6 +819,16 @@ jobs:
           CI=true corepack pnpm run build
           if [ -n "$HARNESS_TARGET" ]; then
             CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
+          else
+            closure="$PWD/python/sdk-runtime/src/deepseek_harness_runtime/runtime/node"
+            corepack pnpm --filter dsh-python-runtime-closure deploy --legacy --prod \
+              --config.node-linker=hoisted \
+              --config.auto-install-peers=false \
+              --config.link-workspace-packages=true \
+              "$closure"
+            node "$GITHUB_WORKSPACE/scripts/normalize-harness-runtime-closure.mjs" \
+              --root "$closure" \
+              --source-node-modules "$PWD/python/sdk-runtime/node_modules"
           fi
 
       - name: 组装并检查 macOS Brain runtime
