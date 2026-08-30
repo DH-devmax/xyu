@@ -39,18 +39,37 @@ jobs:
             echo '::warning::仓库 Wiki 未启用或当前订阅计划不支持 Wiki；保留 docs/wiki/ 为仓库内文档事实来源，跳过远端同步。'
           fi
 
-      - name: 克隆 GitHub Wiki 仓库
+      - name: 准备 GitHub Wiki 仓库
+        id: wiki-repository
         if: steps.wiki-capability.outputs.enabled == 'true'
         env:
-          WIKI_REPOSITORY: https://x-access-token:${{ github.token }}@github.com/DH-devmax/xyu.wiki.git
-        run: git clone "$WIKI_REPOSITORY" wiki
+          WIKI_REPOSITORY: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.wiki.git
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          clone_log="$RUNNER_TEMP/wiki-clone.log"
+          set +e
+          git clone "$WIKI_REPOSITORY" wiki > /dev/null 2>"$clone_log"
+          clone_status=$?
+          set -e
+          if [ "$clone_status" -eq 0 ]; then
+            echo 'available=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if grep -Eqi 'repository not found|does not exist' "$clone_log"; then
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            echo '::warning::GitHub Wiki 尚未创建首个页面，跳过本次同步；请先在仓库 Wiki 页面创建 Home 页面，后续推送会自动同步 docs/wiki/。'
+            exit 0
+          fi
+          cat "$clone_log" >&2
+          exit "$clone_status"
 
       - name: 镜像 Wiki 页面
-        if: steps.wiki-capability.outputs.enabled == 'true'
+        if: steps.wiki-capability.outputs.enabled == 'true' && steps.wiki-repository.outputs.available == 'true'
         run: rsync -a --delete --exclude='.git' docs/wiki/ wiki/
 
       - name: 提交并推送 Wiki
-        if: steps.wiki-capability.outputs.enabled == 'true'
+        if: steps.wiki-capability.outputs.enabled == 'true' && steps.wiki-repository.outputs.available == 'true'
         working-directory: wiki
         env:
           GIT_AUTHOR_NAME: github-actions[bot]
