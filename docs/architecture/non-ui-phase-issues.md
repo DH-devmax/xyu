@@ -17,7 +17,7 @@
 | 范围 | 当前证据 | 结论 |
 | --- | --- | --- |
 | 仓库接管与品牌标识 | `origin/main` 已指向 `DH-devmax/xyu`；`product/manifest.json`、Go module、服务名和 Bundle ID 已统一 | 已完成 |
-| CI 基础门禁 | `ci.yml`、桌面构建、Docker、Wiki 工作流均已进入 `main` | 已完成；每次依赖或 UI 变更仍需重新跑完整门禁 |
+| CI 基础门禁 | `ci.yml`、桌面构建、Docker、Wiki 工作流均已进入 `main` | 已完成；必要大批量变更或发布前按 CI 运行策略触发完整门禁 |
 | OpenAPI 与 React adapter | `make api-check`、前端 API 检查和真实 Router 校验已纳入门禁 | 已完成基线 |
 | 生命周期与数据库边界 | 组合根、Context、三方言迁移和业务所有权文档已存在 | 已完成基线；发布前仍需目标环境实测 |
 | Harness vendor 与客服 profile | subtree、SDK 补丁、结果插件、工具 allowlist 和 runtime 检查脚本已存在 | 已完成基线；上游更新时按锁定流程复核 |

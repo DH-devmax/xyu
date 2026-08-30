@@ -5,19 +5,39 @@ on:
   push:
     branches:
       - main
-      - dev
+    paths:
+      - '.github/workflows/**'
+      - 'api/**'
+      - 'brain/**'
+      - 'cmd/**'
+      - 'frontend/**'
+      - 'go.mod'
+      - 'go.sum'
+      - 'internal/**'
+      - 'migrations/**'
+      - 'Makefile'
+      - 'packaging/**'
+      - 'product/**'
+      - 'scripts/**'
   workflow_dispatch:
+    inputs:
+      full:
+        description: 运行完整质量矩阵
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}-${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[ci full]') && 'full' || 'light' }}
   cancel-in-progress: true
 
 jobs:
   go:
     name: Go 检查
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.full == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[ci full]')) }}
     runs-on: ubuntu-24.04
     steps:
       - name: 检出代码
@@ -70,6 +90,7 @@ jobs:
 
   frontend:
     name: React 前端检查
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.full == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[ci full]')) }}
     runs-on: ubuntu-24.04
     steps:
       - name: 检出代码
@@ -106,6 +127,7 @@ jobs:
 
   brain:
     name: Harness 客服大脑检查
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.full == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[ci full]')) }}
     runs-on: ubuntu-24.04
     steps:
       - name: 检出完整 subtree 历史
@@ -136,6 +158,7 @@ jobs:
 
   multidb:
     name: MySQL/PostgreSQL 多数据库回归
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.full == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[ci full]')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
@@ -182,3 +205,34 @@ jobs:
 
       - name: 执行三方言实测回归
         run: make test-multidb
+
+  summary:
+    name: 质量门禁汇总
+    if: ${{ always() }}
+    needs:
+      - go
+      - frontend
+      - brain
+      - multidb
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 汇总门禁结果
+        env:
+          GO_RESULT: ${{ needs.go.result }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          BRAIN_RESULT: ${{ needs.brain.result }}
+          MULTIDB_RESULT: ${{ needs.multidb.result }}
+        run: |
+          set -Eeuo pipefail
+          printf 'Go=%s Frontend=%s Brain=%s MultiDB=%s\n' "$GO_RESULT" "$FRONTEND_RESULT" "$BRAIN_RESULT" "$MULTIDB_RESULT"
+          for result in "$GO_RESULT" "$FRONTEND_RESULT" "$BRAIN_RESULT" "$MULTIDB_RESULT"; do
+            if [[ "$result" == failure || "$result" == cancelled ]]; then
+              echo '质量门禁存在失败或取消的作业。' >&2
+              exit 1
+            fi
+          done
+          if [[ "$GO_RESULT" == skipped ]]; then
+            echo '本次仅运行轻量汇总；完整矩阵使用 [ci full] 或手动 dispatch full=true。'
+          else
+            echo '完整质量矩阵通过。'
+          fi

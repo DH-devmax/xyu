@@ -1,11 +1,12 @@
 name: 构建桌面端安装包
 
 on:
-  push:
-    branches:
-      - dev
-      - main
   workflow_dispatch:
+    inputs:
+      app_version:
+        description: 手动构建版本号（留空则使用运行编号）
+        required: false
+        type: string
   workflow_call:
     inputs:
       app_version:

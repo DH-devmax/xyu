@@ -1,11 +1,12 @@
 name: 构建并发布 Docker 镜像
 
 on:
-  push:
-    branches:
-      - dev
-      - main
   workflow_dispatch:
+    inputs:
+      app_version:
+        description: 手动构建版本号（留空则使用分支和提交标识）
+        required: false
+        type: string
   workflow_call:
     inputs:
       app_version:
