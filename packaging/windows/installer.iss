@@ -131,7 +131,8 @@ begin
           ExpandConstant('{commonappdata}\DhXianyuAgentPanel') + '" -RollbackDir "' +
           ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration') + '" -Record "' +
           ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration\migration.env') + '" -Validator "' +
-          ExpandConstant('{tmp}\data-validator.exe') + '"',
+          ExpandConstant('{tmp}\data-validator.exe') + '" -LogFile "' +
+          ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration\installer-migration.log') + '"',
         '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
       then
         Result := '无法执行数据迁移脚本。'

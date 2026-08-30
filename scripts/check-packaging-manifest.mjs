@@ -119,6 +119,7 @@ await assertText('packaging/windows/installer.iss', [
   `Source: "migrate-data.ps1"`,
   `DestName: "data-validator.exe"`,
   `-Validator "`,
+  `-LogFile "`,
   `Source: "{#WindowsBrainDir}\\*"`,
   '-BrainRuntimeRoot',
   expected.windowsService,
@@ -132,8 +133,14 @@ await assertText('packaging/windows/service-control.ps1', [
 ]);
 await assertText('packaging/windows/migrate-data.ps1', [
   '-verify-data',
+  'function Write-DiagnosticLog',
+  'migration_failed type=',
   "('database_integrity=' + $databaseVerification)",
   "('database_decryption=' + $databaseVerification)",
+]);
+await assertText('packaging/windows/migrate-data.test.ps1', [
+  '-LogFile $migrationLog',
+  'migration_complete',
 ]);
 for (const windowsPowerShellScript of [
   'packaging/windows/service-control.ps1',
@@ -182,6 +189,7 @@ await assertText('.github/workflows/desktop-cd.yml', [
   'brain/vendor/deepseek-harness',
   '验证 Windows 品牌数据迁移与回滚',
   'migrate-data.test.ps1',
+  'migration diagnostic log',
   '验证 macOS 品牌数据迁移与回滚',
   '验证 Linux 品牌数据迁移与回滚',
   "Extension -in '.exe', '.dll', '.node'",

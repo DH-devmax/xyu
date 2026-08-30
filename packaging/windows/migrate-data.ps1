@@ -8,10 +8,28 @@
     [Parameter(Mandatory = $true)]
     [string]$Record,
     [Parameter(Mandatory = $true)]
-    [string]$Validator
+    [string]$Validator,
+    [string]$LogFile = ''
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Write-DiagnosticLog {
+    param([Parameter(Mandatory = $true)][string]$Message)
+    if ([string]::IsNullOrWhiteSpace($LogFile)) {
+        return
+    }
+    try {
+        $parent = Split-Path -Parent $LogFile
+        if (-not [string]::IsNullOrWhiteSpace($parent)) {
+            New-Item -ItemType Directory -Force -Path $parent | Out-Null
+        }
+        $timestamp = [DateTime]::UtcNow.ToString('o')
+        Add-Content -LiteralPath $LogFile -Value ("$timestamp $Message") -Encoding UTF8
+    } catch {
+        # 诊断日志不能改变迁移的原子性或失败状态。
+    }
+}
 
 function Get-TreeDigest {
     param([Parameter(Mandatory = $true)][string]$Root)
@@ -108,6 +126,12 @@ if ([StringComparer]::OrdinalIgnoreCase.Equals($Source, $Destination)) {
     throw '迁移源和目标不能相同'
 }
 
+Write-DiagnosticLog -Message 'migration_start'
+Write-DiagnosticLog -Message ("source_exists={0} destination_exists={1} validator_exists={2}" -f `
+    (Test-Path -LiteralPath $Source -PathType Container),
+    (Test-Path -LiteralPath $Destination),
+    (Test-Path -LiteralPath $Validator -PathType Leaf))
+
 New-Item -ItemType Directory -Force -Path $RollbackDir | Out-Null
 $recordParent = Split-Path -Parent $Record
 if (-not [string]::IsNullOrWhiteSpace($recordParent)) {
@@ -121,11 +145,13 @@ try {
     New-Item -ItemType Directory -Force -Path $staging | Out-Null
     Get-ChildItem -LiteralPath $Source -Force | Copy-Item -Destination $staging -Recurse -Force
     $stagingDigest = Get-TreeDigest -Root $staging
+    Write-DiagnosticLog -Message 'stage_copy_complete'
     if ($sourceDigest -ne $stagingDigest) {
         throw "复制后哈希不一致: source=$sourceDigest staging=$stagingDigest"
     }
 
     $databaseVerification = Invoke-DataVerification -StagingRoot $staging
+    Write-DiagnosticLog -Message ("data_verification={0}" -f $databaseVerification)
     if ($databaseVerification -notin @('ok', 'not_present')) {
         throw "数据库验证未返回成功状态: $databaseVerification"
     }
@@ -133,6 +159,7 @@ try {
     Move-Item -LiteralPath $staging -Destination $Destination
     $destinationCreated = $true
     $destinationDigest = Get-TreeDigest -Root $Destination
+    Write-DiagnosticLog -Message 'destination_switch_complete'
     if ($sourceDigest -ne $destinationDigest) {
         throw "切换后哈希不一致: source=$sourceDigest destination=$destinationDigest"
     }
@@ -194,6 +221,7 @@ Write-Output ('destination_hash=' + $after)
         $_.Attributes = $_.Attributes -bor [IO.FileAttributes]::ReadOnly
     }
     $sourceReadOnly = $true
+    Write-DiagnosticLog -Message 'legacy_source_readonly=true'
 
     $recordContent = @(
         'status=ok'
@@ -210,10 +238,12 @@ Write-Output ('destination_hash=' + $after)
         ('completed_at=' + [DateTime]::UtcNow.ToString('o'))
     )
     Set-Content -LiteralPath $Record -Value $recordContent -Encoding UTF8
+    Write-DiagnosticLog -Message 'migration_complete'
     Write-Output "数据迁移完成: $Source -> $Destination"
     Write-Output "回滚脚本: $rollbackScript"
     Write-Output "校验记录: $Record"
 } catch {
+    Write-DiagnosticLog -Message ("migration_failed type={0} message={1}" -f $_.Exception.GetType().FullName, $_.Exception.Message)
     if (Test-Path -LiteralPath $staging) {
         Remove-Item -LiteralPath $staging -Recurse -Force
     }

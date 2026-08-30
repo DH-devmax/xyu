@@ -1,5 +1,5 @@
 diff --git a/.github/workflows/desktop-cd.yml b/.github/workflows/desktop-cd.yml
-index 9431191f5a..d2aec47ae0 100644
+index 9431191f5a..efec2b14c6 100644
 --- a/.github/workflows/desktop-cd.yml
 +++ b/.github/workflows/desktop-cd.yml
 @@ -99,12 +99,21 @@ jobs:
@@ -155,13 +155,14 @@ index 9431191f5a..d2aec47ae0 100644
          run: |
            & packaging/windows/sign.ps1 `
              -PfxPath $env:WINDOWS_SIGNING_PFX_PATH `
-@@ -526,7 +563,28 @@ jobs:
+@@ -526,7 +563,29 @@ jobs:
            $installLog = Join-Path $env:RUNNER_TEMP 'dh-xianyu-agentpanel-windows-installer.log'
            $installDir = Join-Path $env:ProgramFiles 'DH Xianyu AgentPanel'
            $uninstaller = Join-Path $installDir 'unins000.exe'
 +          $legacyData = Join-Path $env:ProgramData 'YdisksXianyuHelper'
 +          $currentData = Join-Path $env:ProgramData 'DhXianyuAgentPanel'
 +          $migrationEvidence = Join-Path $env:ProgramData 'DhXianyuAgentPanel-migration'
++          $migrationLog = Join-Path $migrationEvidence 'installer-migration.log'
 +          $fixtureServer = (Resolve-Path 'dist/windows/xianyu-server.exe').Path
            try {
 +            foreach ($fixturePath in @($legacyData, $currentData, $migrationEvidence)) {
@@ -184,7 +185,18 @@ index 9431191f5a..d2aec47ae0 100644
              $installerProcess = Start-Process -FilePath $installer `
                -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$installLog") `
                -Wait -PassThru
-@@ -580,10 +638,51 @@ jobs:
+@@ -535,6 +594,10 @@ jobs:
+               if (Test-Path -LiteralPath $installLog) {
+                 Get-Content -LiteralPath $installLog -Tail 200
+               }
++              if (Test-Path -LiteralPath $migrationLog) {
++                Write-Host '--- migration diagnostic log ---'
++                Get-Content -LiteralPath $migrationLog -Tail 200
++              }
+               throw "Windows 安装器执行失败，错误码: $installerExitCode"
+             }
+ 
+@@ -580,10 +643,51 @@ jobs:
              if ($null -eq $health -or $health.status -ne 'ok' -or $health.database -ne 'ok') {
                throw "安装器服务健康检查失败: $($health | ConvertTo-Json -Compress)"
              }
@@ -236,7 +248,7 @@ index 9431191f5a..d2aec47ae0 100644
              $startMenuRoots = @(
                (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'),
                (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs')
-@@ -629,6 +728,18 @@ jobs:
+@@ -629,6 +733,18 @@ jobs:
              if ($null -ne (Get-CimInstance -ClassName Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue)) {
                throw 'Windows 安装器卸载后服务仍然存在'
              }
@@ -255,7 +267,7 @@ index 9431191f5a..d2aec47ae0 100644
            }
  
        - name: 准备唯一 Windows 构建产物
-@@ -643,6 +754,7 @@ jobs:
+@@ -643,6 +759,7 @@ jobs:
            }
  
        - name: 上传 Windows 安装包
@@ -263,7 +275,7 @@ index 9431191f5a..d2aec47ae0 100644
          uses: actions/upload-artifact@v7
          with:
            name: dh-xianyu-agentpanel-windows-${{ env.APP_VERSION }}
-@@ -650,13 +762,32 @@ jobs:
+@@ -650,13 +767,32 @@ jobs:
            if-no-files-found: error
  
    macos:
@@ -298,7 +310,7 @@ index 9431191f5a..d2aec47ae0 100644
      steps:
        - name: 检出代码
          uses: actions/checkout@v6
-@@ -678,111 +809,138 @@ jobs:
+@@ -678,111 +814,138 @@ jobs:
          run: npm ci --prefix frontend && npm run build --prefix frontend
  
        - name: 构建 macOS Harness runtime
@@ -504,7 +516,7 @@ index 9431191f5a..d2aec47ae0 100644
          run: |
            set -Eeuo pipefail
            keychain_path="$RUNNER_TEMP/dh-xianyu-agentpanel-signing.keychain-db"
-@@ -809,27 +967,18 @@ jobs:
+@@ -809,27 +972,18 @@ jobs:
            security unlock-keychain -p "$keychain_password" "$keychain_path"
            echo "MACOS_SIGNING_KEYCHAIN=$keychain_path" >> "$GITHUB_ENV"
  
@@ -1619,7 +1631,7 @@ index f5b63ff1ee..d2b313f8c0 100755
  fi
  mkdir -p "$DATA_DIR" "$LOG_DIR" "$AGENT_DIR"
 diff --git a/packaging/windows/installer.iss b/packaging/windows/installer.iss
-index 4a35a8f116..5226a48837 100644
+index 4a35a8f116..acf1227246 100644
 --- a/packaging/windows/installer.iss
 +++ b/packaging/windows/installer.iss
 @@ -50,6 +50,7 @@ chinesetraditional.StartTray=启动托盘控制器
@@ -1638,13 +1650,14 @@ index 4a35a8f116..5226a48837 100644
      if DirExists(ExpandConstant('{commonappdata}\YdisksXianyuHelper')) and
         (not DirExists(ExpandConstant('{commonappdata}\DhXianyuAgentPanel')))
      then
-@@ -128,7 +130,8 @@ begin
+@@ -128,7 +130,9 @@ begin
            ExpandConstant('{commonappdata}\YdisksXianyuHelper') + '" -Destination "' +
            ExpandConstant('{commonappdata}\DhXianyuAgentPanel') + '" -RollbackDir "' +
            ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration') + '" -Record "' +
 -          ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration\migration.env') + '"',
 +          ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration\migration.env') + '" -Validator "' +
-+          ExpandConstant('{tmp}\data-validator.exe') + '"',
++          ExpandConstant('{tmp}\data-validator.exe') + '" -LogFile "' +
++          ExpandConstant('{commonappdata}\DhXianyuAgentPanel-migration\installer-migration.log') + '"',
          '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
        then
          Result := '无法执行数据迁移脚本。'
@@ -1683,7 +1696,7 @@ index 0000000000..2ecac2b08d
 +database.prepare("UPDATE system_settings SET value = ? WHERE key = 'ai_api_key'").run(encryptedValue);
 +database.close();
 diff --git a/packaging/windows/migrate-data.ps1 b/packaging/windows/migrate-data.ps1
-index 6a3aef8e88..371b22fb77 100644
+index 6a3aef8e88..9117250632 100644
 --- a/packaging/windows/migrate-data.ps1
 +++ b/packaging/windows/migrate-data.ps1
 @@ -1,4 +1,4 @@
@@ -1692,18 +1705,40 @@ index 6a3aef8e88..371b22fb77 100644
      [Parameter(Mandatory = $true)]
      [string]$Source,
      [Parameter(Mandatory = $true)]
-@@ -6,7 +6,9 @@ param(
+@@ -6,11 +6,31 @@ param(
      [Parameter(Mandatory = $true)]
      [string]$RollbackDir,
      [Parameter(Mandatory = $true)]
 -    [string]$Record
 +    [string]$Record,
 +    [Parameter(Mandatory = $true)]
-+    [string]$Validator
++    [string]$Validator,
++    [string]$LogFile = ''
  )
  
  $ErrorActionPreference = 'Stop'
-@@ -30,12 +32,81 @@ function Get-TreeDigest {
+ 
++function Write-DiagnosticLog {
++    param([Parameter(Mandatory = $true)][string]$Message)
++    if ([string]::IsNullOrWhiteSpace($LogFile)) {
++        return
++    }
++    try {
++        $parent = Split-Path -Parent $LogFile
++        if (-not [string]::IsNullOrWhiteSpace($parent)) {
++            New-Item -ItemType Directory -Force -Path $parent | Out-Null
++        }
++        $timestamp = [DateTime]::UtcNow.ToString('o')
++        Add-Content -LiteralPath $LogFile -Value ("$timestamp $Message") -Encoding UTF8
++    } catch {
++        # 诊断日志不能改变迁移的原子性或失败状态。
++    }
++}
++
+ function Get-TreeDigest {
+     param([Parameter(Mandatory = $true)][string]$Root)
+     $lines = New-Object System.Collections.Generic.List[string]
+@@ -30,12 +50,87 @@ function Get-TreeDigest {
      }
  }
  
@@ -1782,10 +1817,16 @@ index 6a3aef8e88..371b22fb77 100644
 +if ([StringComparer]::OrdinalIgnoreCase.Equals($Source, $Destination)) {
 +    throw '迁移源和目标不能相同'
 +}
++
++Write-DiagnosticLog -Message 'migration_start'
++Write-DiagnosticLog -Message ("source_exists={0} destination_exists={1} validator_exists={2}" -f `
++    (Test-Path -LiteralPath $Source -PathType Container),
++    (Test-Path -LiteralPath $Destination),
++    (Test-Path -LiteralPath $Validator -PathType Leaf))
  
  New-Item -ItemType Directory -Force -Path $RollbackDir | Out-Null
  $recordParent = Split-Path -Parent $Record
-@@ -44,6 +115,8 @@ if (-not [string]::IsNullOrWhiteSpace($recordParent)) {
+@@ -44,45 +139,34 @@ if (-not [string]::IsNullOrWhiteSpace($recordParent)) {
  }
  $sourceDigest = Get-TreeDigest -Root $Source
  $staging = $Destination + '.staging-' + $PID
@@ -1794,7 +1835,9 @@ index 6a3aef8e88..371b22fb77 100644
  try {
      New-Item -ItemType Directory -Force -Path $staging | Out-Null
      Get-ChildItem -LiteralPath $Source -Force | Copy-Item -Destination $staging -Recurse -Force
-@@ -52,37 +125,21 @@ try {
+     $stagingDigest = Get-TreeDigest -Root $staging
++    Write-DiagnosticLog -Message 'stage_copy_complete'
+     if ($sourceDigest -ne $stagingDigest) {
          throw "复制后哈希不一致: source=$sourceDigest staging=$stagingDigest"
      }
  
@@ -1812,6 +1855,7 @@ index 6a3aef8e88..371b22fb77 100644
 -            $databaseCheck = 'ok'
 -        }
 +    $databaseVerification = Invoke-DataVerification -StagingRoot $staging
++    Write-DiagnosticLog -Message ("data_verification={0}" -f $databaseVerification)
 +    if ($databaseVerification -notin @('ok', 'not_present')) {
 +        throw "数据库验证未返回成功状态: $databaseVerification"
      }
@@ -1819,6 +1863,7 @@ index 6a3aef8e88..371b22fb77 100644
      Move-Item -LiteralPath $staging -Destination $Destination
 +    $destinationCreated = $true
      $destinationDigest = Get-TreeDigest -Root $Destination
++    Write-DiagnosticLog -Message 'destination_switch_complete'
      if ($sourceDigest -ne $destinationDigest) {
          throw "切换后哈希不一致: source=$sourceDigest destination=$destinationDigest"
      }
@@ -1837,7 +1882,7 @@ index 6a3aef8e88..371b22fb77 100644
  $ErrorActionPreference = 'Stop'
  if (-not (Test-Path -LiteralPath $Source -PathType Container) -or -not (Test-Path -LiteralPath $Destination -PathType Container)) {
      throw '回滚源或目标目录不存在'
-@@ -101,17 +158,43 @@ function Get-TreeDigest {
+@@ -101,17 +185,44 @@ function Get-TreeDigest {
      $sha = [Security.Cryptography.SHA256]::Create()
      try { return ($sha.ComputeHash($payload) | ForEach-Object { $_.ToString('x2') }) -join '' } finally { $sha.Dispose() }
  }
@@ -1882,11 +1927,12 @@ index 6a3aef8e88..371b22fb77 100644
 +        $_.Attributes = $_.Attributes -bor [IO.FileAttributes]::ReadOnly
 +    }
 +    $sourceReadOnly = $true
++    Write-DiagnosticLog -Message 'legacy_source_readonly=true'
 +
      $recordContent = @(
          'status=ok'
          ('source=' + $Source)
-@@ -119,17 +202,26 @@ Write-Output ('backup=' + $backup)
+@@ -119,17 +230,28 @@ Write-Output ('backup=' + $backup)
          ('source_hash=' + $sourceDigest)
          ('staging_hash=' + $stagingDigest)
          ('destination_hash=' + $destinationDigest)
@@ -1899,10 +1945,12 @@ index 6a3aef8e88..371b22fb77 100644
          ('completed_at=' + [DateTime]::UtcNow.ToString('o'))
      )
      Set-Content -LiteralPath $Record -Value $recordContent -Encoding UTF8
++    Write-DiagnosticLog -Message 'migration_complete'
      Write-Output "数据迁移完成: $Source -> $Destination"
      Write-Output "回滚脚本: $rollbackScript"
 +    Write-Output "校验记录: $Record"
  } catch {
++    Write-DiagnosticLog -Message ("migration_failed type={0} message={1}" -f $_.Exception.GetType().FullName, $_.Exception.Message)
      if (Test-Path -LiteralPath $staging) {
          Remove-Item -LiteralPath $staging -Recurse -Force
      }
@@ -1916,10 +1964,10 @@ index 6a3aef8e88..371b22fb77 100644
  }
 diff --git a/packaging/windows/migrate-data.test.ps1 b/packaging/windows/migrate-data.test.ps1
 new file mode 100644
-index 0000000000..f030ab0a4e
+index 0000000000..e8b2bbae0f
 --- /dev/null
 +++ b/packaging/windows/migrate-data.test.ps1
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,95 @@
 +﻿param(
 +    [Parameter(Mandatory = $true)]
 +    [string]$Validator
@@ -1931,6 +1979,7 @@ index 0000000000..f030ab0a4e
 +$destination = Join-Path $root 'current data'
 +$rollbackDir = Join-Path $root 'rollback evidence'
 +$record = Join-Path $rollbackDir 'migration.env'
++$migrationLog = Join-Path $rollbackDir 'migration.log'
 +$migrationScript = Join-Path $PSScriptRoot 'migrate-data.ps1'
 +$failedValidator = Join-Path $root 'failed-validator.cmd'
 +$dataKey = 'windows-brand-migration-key'
@@ -1990,10 +2039,15 @@ index 0000000000..f030ab0a4e
 +        -Destination $destination `
 +        -RollbackDir $rollbackDir `
 +        -Record $record `
-+        -Validator $Validator | Out-Host
++        -Validator $Validator `
++        -LogFile $migrationLog | Out-Host
 +    if (-not (Test-Path -LiteralPath $destination -PathType Container)) { throw 'Windows 迁移目标不存在' }
 +    $recordText = Get-Content -Raw -LiteralPath $record
 +    if ($recordText -notmatch '(?m)^database_decryption=ok\r?$') { throw 'Windows 迁移记录缺少解密成功状态' }
++    $migrationLogText = Get-Content -Raw -LiteralPath $migrationLog
++    if ($migrationLogText -notmatch 'migration_start' -or $migrationLogText -notmatch 'migration_complete') {
++        throw 'Windows 迁移诊断日志缺少开始或完成阶段'
++    }
 +    if (-not (Get-Item -LiteralPath (Join-Path $source 'settings.env')).IsReadOnly) { throw 'Windows 旧副本不是只读状态' }
 +
 +    Set-Content -LiteralPath (Join-Path $destination 'settings.env') -Value 'changed' -Encoding ASCII
@@ -2033,7 +2087,7 @@ index b5bef4a0c8..7d4392a14f 100644
  
  console.log(JSON.stringify({
 diff --git a/scripts/check-packaging-manifest.mjs b/scripts/check-packaging-manifest.mjs
-index 3b498d693a..a0b96efc3b 100644
+index 3b498d693a..4c99bca492 100644
 --- a/scripts/check-packaging-manifest.mjs
 +++ b/scripts/check-packaging-manifest.mjs
 @@ -1,5 +1,6 @@
@@ -2104,23 +2158,30 @@ index 3b498d693a..a0b96efc3b 100644
  await assertText('packaging/linux/uninstall.sh', [
    `APP_NAME="${expected.slug}"`,
    `LEGACY_APP_NAME="ydisks-xianyu-helper"`,
-@@ -93,6 +117,8 @@ await assertText('packaging/windows/installer.iss', [
+@@ -93,6 +117,9 @@ await assertText('packaging/windows/installer.iss', [
    'OutputBaseFilename=DH-Xianyu-AgentPanel-Setup',
    `AppDataDir "{commonappdata}\\DhXianyuAgentPanel"`,
    `Source: "migrate-data.ps1"`,
 +  `DestName: "data-validator.exe"`,
 +  `-Validator "`,
++  `-LogFile "`,
    `Source: "{#WindowsBrainDir}\\*"`,
    '-BrainRuntimeRoot',
    expected.windowsService,
-@@ -104,6 +130,18 @@ await assertText('packaging/windows/service-control.ps1', [
+@@ -104,6 +131,24 @@ await assertText('packaging/windows/service-control.ps1', [
    '-brain-runtime-root',
    expected.displayName,
  ]);
 +await assertText('packaging/windows/migrate-data.ps1', [
 +  '-verify-data',
++  'function Write-DiagnosticLog',
++  'migration_failed type=',
 +  "('database_integrity=' + $databaseVerification)",
 +  "('database_decryption=' + $databaseVerification)",
++]);
++await assertText('packaging/windows/migrate-data.test.ps1', [
++  '-LogFile $migrationLog',
++  'migration_complete',
 +]);
 +for (const windowsPowerShellScript of [
 +  'packaging/windows/service-control.ps1',
@@ -2132,7 +2193,7 @@ index 3b498d693a..a0b96efc3b 100644
  
  await assertText('packaging/macos/Info.plist', [
    `<string>${expected.macBundleID}</string>`,
-@@ -123,6 +161,10 @@ await assertText('packaging/macos/build-pkg.sh', [
+@@ -123,6 +168,10 @@ await assertText('packaging/macos/build-pkg.sh', [
    'runtime/node-carrier',
    'runtime/result-tool.mjs',
  ]);
@@ -2143,7 +2204,7 @@ index 3b498d693a..a0b96efc3b 100644
  await assertText('packaging/macos/com.dhdevmax.xianyu-agentpanel.tray.plist.template', [
    expected.macBundleID,
    '__TRAY__',
-@@ -136,7 +178,12 @@ await assertText('.github/workflows/desktop-cd.yml', [
+@@ -136,7 +185,13 @@ await assertText('.github/workflows/desktop-cd.yml', [
    `packaging/linux/${expected.linuxService}`,
    'build-brain-runtime.mjs',
    'check-brain-runtime-package.mjs',
@@ -2151,12 +2212,13 @@ index 3b498d693a..a0b96efc3b 100644
    'brain/vendor/deepseek-harness',
 +  '验证 Windows 品牌数据迁移与回滚',
 +  'migrate-data.test.ps1',
++  'migration diagnostic log',
 +  '验证 macOS 品牌数据迁移与回滚',
 +  '验证 Linux 品牌数据迁移与回滚',
    "Extension -in '.exe', '.dll', '.node'",
  ]);
  await assertText('Dockerfile.debian13', [
-@@ -148,11 +195,50 @@ await assertText('Dockerfile.debian13', [
+@@ -148,11 +203,50 @@ await assertText('Dockerfile.debian13', [
  await assertText('.github/workflows/docker-publish.yml', [
    'build-brain-runtime.mjs',
    '.docker/brain-runtime',

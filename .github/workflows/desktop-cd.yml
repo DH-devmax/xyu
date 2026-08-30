@@ -566,6 +566,7 @@ jobs:
           $legacyData = Join-Path $env:ProgramData 'YdisksXianyuHelper'
           $currentData = Join-Path $env:ProgramData 'DhXianyuAgentPanel'
           $migrationEvidence = Join-Path $env:ProgramData 'DhXianyuAgentPanel-migration'
+          $migrationLog = Join-Path $migrationEvidence 'installer-migration.log'
           $fixtureServer = (Resolve-Path 'dist/windows/xianyu-server.exe').Path
           try {
             foreach ($fixturePath in @($legacyData, $currentData, $migrationEvidence)) {
@@ -592,6 +593,10 @@ jobs:
             if ($installerExitCode -ne 0) {
               if (Test-Path -LiteralPath $installLog) {
                 Get-Content -LiteralPath $installLog -Tail 200
+              }
+              if (Test-Path -LiteralPath $migrationLog) {
+                Write-Host '--- migration diagnostic log ---'
+                Get-Content -LiteralPath $migrationLog -Tail 200
               }
               throw "Windows 安装器执行失败，错误码: $installerExitCode"
             }

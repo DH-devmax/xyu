@@ -9,6 +9,7 @@ $source = Join-Path $root 'legacy data'
 $destination = Join-Path $root 'current data'
 $rollbackDir = Join-Path $root 'rollback evidence'
 $record = Join-Path $rollbackDir 'migration.env'
+$migrationLog = Join-Path $rollbackDir 'migration.log'
 $migrationScript = Join-Path $PSScriptRoot 'migrate-data.ps1'
 $failedValidator = Join-Path $root 'failed-validator.cmd'
 $dataKey = 'windows-brand-migration-key'
@@ -68,10 +69,15 @@ try {
         -Destination $destination `
         -RollbackDir $rollbackDir `
         -Record $record `
-        -Validator $Validator | Out-Host
+        -Validator $Validator `
+        -LogFile $migrationLog | Out-Host
     if (-not (Test-Path -LiteralPath $destination -PathType Container)) { throw 'Windows 迁移目标不存在' }
     $recordText = Get-Content -Raw -LiteralPath $record
     if ($recordText -notmatch '(?m)^database_decryption=ok\r?$') { throw 'Windows 迁移记录缺少解密成功状态' }
+    $migrationLogText = Get-Content -Raw -LiteralPath $migrationLog
+    if ($migrationLogText -notmatch 'migration_start' -or $migrationLogText -notmatch 'migration_complete') {
+        throw 'Windows 迁移诊断日志缺少开始或完成阶段'
+    }
     if (-not (Get-Item -LiteralPath (Join-Path $source 'settings.env')).IsReadOnly) { throw 'Windows 旧副本不是只读状态' }
 
     Set-Content -LiteralPath (Join-Path $destination 'settings.env') -Value 'changed' -Encoding ASCII
