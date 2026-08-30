@@ -4,14 +4,13 @@ import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNone
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import AppBar from '@mui/material/AppBar';
 import type { Item } from '../features/items/api';
 import Sidebar from '../../shared/ui/Sidebar';
-import { MinimalMainSection } from '../../shared/ui/minimal';
+import { MinimalMainSection, MinimalPageHeader } from '../../shared/ui/minimal';
 import { useChatTitleNotification } from '../features/chat/titleNotification';
 import { getHealth } from '../features/system/api';
 import type { BuildInfo } from '../features/system/types';
@@ -217,16 +216,12 @@ const AuthenticatedShell: React.FC<AuthenticatedShellProps> = ({
           </Toolbar>
         </AppBar>
         <Box sx={{ px: { xs: 1.5, sm: 3, lg: 4 }, py: { xs: 2, sm: 3, lg: 4 }, maxWidth: 1600, mx: 'auto' }}>
-          <Stack direction="row" sx={{ mb: { xs: 2, sm: 3 }, alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <Box>
-              <Typography variant="h2" sx={{ fontSize: { xs: '1.35rem', sm: '1.6rem' } }}>
-                {pageTitle[activeTab] || '仪表盘'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                DH闲不下来 · 运营工作台
-              </Typography>
-            </Box>
-          </Stack>
+          <MinimalPageHeader
+            sx={{ mb: { xs: 2, sm: 3 } }}
+            eyebrow="DH闲不下来"
+            title={pageTitle[activeTab] || '仪表盘'}
+            description="运营工作台"
+          />
           <AppContent
             activeTab={activeTab}
             isAdmin={isAdmin}

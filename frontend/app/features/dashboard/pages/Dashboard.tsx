@@ -1,8 +1,19 @@
 import { Activity,AlertCircle,DollarSign,ExternalLink,Package,PackageCheck,ShoppingCart,TrendingUp,Users } from 'lucide-react';
 import React,{ useState } from 'react';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Typography from '@mui/material/Typography';
 import { Cell,Legend,Pie,PieChart,ResponsiveContainer,Tooltip } from 'recharts';
 import { getDateRange,TimeRange } from '../../../../dateRange';
 import { formatLocalDateTime } from '../../../../dateTime';
+import { MinimalPageHeader,MinimalSectionCard } from '../../../../shared/ui/minimal';
 import { OrderStatus } from '../api';
 import { DashboardTrendChart } from '../DashboardTrendChart';
 import { useDashboard } from '../hooks';
@@ -14,21 +25,10 @@ const cssColor = (token: string, alpha?: number) => (
     : `rgb(var(--color-${token}) / ${alpha})`
 );
 
-// 状态徽章组件
+// StatusBadge 将订单状态适配为 Minimal/MUI 的紧凑状态芯片。
 export const StatusBadge: React.FC<{ /** status 表示状态。 */ status: OrderStatus }> = ({ status }) => {
-  // styles 样式表。
-  const styles = {
-    processing: 'bg-blue-100 text-blue-800',
-    pending_ship: 'bg-brand text-white',
-    shipped: 'bg-blue-100 text-blue-700',
-    completed: 'bg-green-100 text-green-700',
-    cancelled: 'bg-gray-100 text-gray-500',
-    refunding: 'bg-red-100 text-red-600',
-    unknown: 'bg-gray-100 text-gray-500',
-  };
-
-  // labels labels，负责当前功能中的对应处理。
-  const labels = {
+  // labels 是稳定的订单状态中文文案。
+  const labels: Record<OrderStatus, string> = {
     processing: '处理中',
     pending_ship: '待发货',
     shipped: '已发货',
@@ -37,32 +37,91 @@ export const StatusBadge: React.FC<{ /** status 表示状态。 */ status: Order
     refunding: '退款中',
     unknown: '未知',
   };
+  // colors 将业务状态映射为 MUI 语义色，不改变服务端状态值。
+  const colors: Record<OrderStatus, 'primary' | 'info' | 'success' | 'warning' | 'error' | 'default'> = {
+    processing: 'info',
+    pending_ship: 'primary',
+    shipped: 'info',
+    completed: 'success',
+    cancelled: 'default',
+    refunding: 'error',
+    unknown: 'default',
+  };
 
   return (
-    <span className={`inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 rounded-lg text-xs leading-none font-bold ${styles[status] || styles.cancelled}`}>
-      {labels[status] || status}
-    </span>
+    <Chip
+      className="inline-flex whitespace-nowrap"
+      color={colors[status] || 'default'}
+      label={labels[status] || status}
+      size="small"
+      variant="outlined"
+      sx={{ fontWeight: 700 }}
+    />
   );
 };
 
-// StatCard 渲染统计卡片组件。
-const StatCard: React.FC<{ /** title 表示标题。 */ title: string; /** value 表示值。 */ value: string | number; /** icon 表示icon。 */ icon: React.ElementType; /** colorClass 表示颜色Class。 */ colorClass: string; /** trend 表示趋势。 */ trend?: string }> = ({ title, value, icon: Icon, colorClass, trend }) => (
-  <div className="ios-card p-6 rounded-xl flex flex-col justify-between hover:translate-y-[-4px] transition-all duration-300 h-full relative overflow-hidden group border-0">
-    <div className={`absolute -right-6 -top-6 w-32 h-32 ${colorClass} opacity-10 rounded-full group-hover:scale-125 transition-transform duration-500 blur-2xl`}></div>
-    <div className="flex justify-between items-start mb-6">
-      <div className={`p-4 rounded-2xl ${colorClass} bg-opacity-10 backdrop-blur-sm`}>
-        <Icon className={`w-6 h-6 ${colorClass.replace('bg-', 'text-')}`} />
-      </div>
-      {trend && <span className="text-xs font-bold text-white bg-brand px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
-        <TrendingUp className="w-3 h-3" /> {trend}
-      </span>}
-    </div>
-    <div className="relative z-10">
-      <h3 className="text-3xl font-extrabold text-gray-900 tracking-tight font-feature-settings-tnum">{value}</h3>
-      <p className="text-gray-500 text-sm font-medium mt-1">{title}</p>
-    </div>
-  </div>
-);
+// StatTone 是统计卡片使用的有限语义色集合。
+type StatTone = 'primary' | 'success' | 'warning' | 'info';
+
+// StatToneStyle 描述统计图标容器需要的两项颜色令牌。
+interface StatToneStyle {
+  // backgroundColor 是图标容器的浅色背景。
+  backgroundColor: string;
+  // color 是图标和前景文字颜色。
+  color: string;
+}
+
+// statToneStyles 提供不依赖 Tailwind 的图标容器颜色。
+const statToneStyles: Record<StatTone, StatToneStyle> = {
+  primary: { backgroundColor: 'rgb(var(--color-brand) / 0.12)', color: 'rgb(var(--color-brand))' },
+  success: { backgroundColor: 'rgb(var(--color-success-500) / 0.12)', color: 'rgb(var(--color-success-500))' },
+  warning: { backgroundColor: 'rgb(var(--color-warning-500) / 0.12)', color: 'rgb(var(--color-warning-500))' },
+  info: { backgroundColor: 'rgb(var(--color-brand-highlight) / 0.12)', color: 'rgb(var(--color-brand-highlight))' },
+};
+
+// StatCard 渲染使用 Minimal outlined card 结构的统计指标。
+interface StatCardProps {
+  // title 是指标名称。
+  title: string;
+  // value 是指标当前值。
+  value: string | number;
+  // icon 是指标对应的 Lucide 图标组件。
+  icon: React.ElementType;
+  // tone 是指标的语义色调。
+  tone: StatTone;
+  // trend 是可选的环比趋势文案。
+  trend?: string;
+}
+
+// StatCard 将统计指标、图标和趋势统一到 MUI 卡片语义中。
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, tone, trend }) => {
+  // toneStyle 是当前指标图标容器的颜色配置。
+  const toneStyle = statToneStyles[tone];
+  return (
+    <MinimalSectionCard
+      data-stat-card={title}
+      contentSx={{ height: '100%' }}
+      sx={{ height: '100%', transition: 'transform 180ms ease', '&:hover': { transform: 'translateY(-2px)' } }}
+    >
+      <Stack sx={{ height: '100%', justifyContent: 'space-between', gap: 2 }}>
+        <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+          <Box sx={{ display: 'inline-flex', p: 1.25, borderRadius: 2, bgcolor: toneStyle.backgroundColor, color: toneStyle.color }}>
+            <Icon size={22} aria-hidden="true" />
+          </Box>
+          {trend ? <Chip color="primary" icon={<TrendingUp size={14} />} label={trend} size="small" variant="filled" /> : null}
+        </Stack>
+        <Box>
+          <Typography variant="h3" sx={{ fontSize: { xs: '1.55rem', sm: '1.8rem' }, fontVariantNumeric: 'tabular-nums' }}>
+            {value}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {title}
+          </Typography>
+        </Box>
+      </Stack>
+    </MinimalSectionCard>
+  );
+};
 
 // Dashboard 渲染仪表盘页面组件。
 const Dashboard: React.FC = () => {
@@ -108,14 +167,19 @@ const Dashboard: React.FC = () => {
 
   if (loadError && (!stats || !analytics)) {
     return (
-      <div className="p-8 flex flex-col items-center gap-3 text-red-600">
-        <AlertCircle className="w-8 h-8" />
-        <span>{loadError}</span>
-        <button type="button" className="ios-btn-primary px-4 py-2 rounded-xl" onClick={refresh}>重新加载</button>
-      </div>
+      <Stack sx={{ p: { xs: 3, sm: 6 }, alignItems: 'center', gap: 1.5 }}>
+        <Alert severity="error" icon={<AlertCircle size={20} />} sx={{ width: '100%', maxWidth: 640 }}>{loadError}</Alert>
+        <Button type="button" variant="contained" onClick={refresh}>重新加载</Button>
+      </Stack>
     );
   }
-  if (!stats || !analytics) return <div className="p-8 flex justify-center text-gray-400"><Activity className="w-8 h-8 animate-spin text-brand" /></div>;
+  if (!stats || !analytics) {
+    return (
+      <Stack role="status" aria-label="正在加载仪表盘" sx={{ p: { xs: 3, sm: 6 }, alignItems: 'center', justifyContent: 'center' }}>
+        <CircularProgress size={32} />
+      </Stack>
+    );
+  }
   // totalOrders 总数订单列表，负责当前功能中的对应处理。
   const totalOrders = analytics.revenue_stats.total_orders || 0;
   // totalAmount 订单总金额。
@@ -148,102 +212,100 @@ const Dashboard: React.FC = () => {
   );
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <Stack data-page-template="minimal-dashboard" spacing={{ xs: 2.5, sm: 3.5 }}>
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <span>{loadError}</span>
-          <button type="button" className="font-bold underline" onClick={refresh}>重试</button>
-        </div>
+        <Alert
+          severity="warning"
+          action={<Button color="inherit" size="small" onClick={refresh}>重试</Button>}
+        >
+          {loadError}
+        </Alert>
       )}
-      <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
-        <div>
-          <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">运营概览</h2>
-          <p className="text-gray-500 mt-2 text-base">欢迎回来，以下是闲鱼店铺的实时经营数据。</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="text-sm font-bold text-gray-700 bg-white px-5 py-2.5 rounded-full shadow-sm border border-gray-100 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
-            系统正常运行
-          </div>
-        </div>
-      </div>
+      <MinimalPageHeader
+        eyebrow="DH闲不下来"
+        title="运营概览"
+        description="欢迎回来，以下是闲鱼店铺的实时经营数据。"
+        actions={<Chip color="success" label="系统正常运行" size="small" variant="outlined" />}
+      />
 
       {/* Time Range Selector */}
-      <div className="flex flex-wrap gap-2 p-2 bg-gray-100/50 rounded-2xl">
-        {timeRangeOptions.map(/* 当前回调处理集合中的单个元素。 */ (option) => (
-          <button
-            key={option.key}
-            onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => setTimeRange(option.key)}
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              timeRange === option.key
-                ? 'bg-brand text-white shadow-md'
-                : 'bg-white text-gray-600 hover:text-black hover:bg-gray-50'
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={1}
+        sx={{ p: 1, alignItems: { xs: 'stretch', md: 'center' }, flexWrap: 'wrap', bgcolor: 'action.hover', borderRadius: 2 }}
+      >
+        <ToggleButtonGroup
+          aria-label="统计时间范围"
+          exclusive
+          onChange={/* rangeChange 只在选择有效范围时更新仪表盘请求。 */ (_event, nextRange: TimeRange | null) => {
+            if (nextRange) setTimeRange(nextRange);
+          }}
+          size="small"
+          value={timeRange}
+        >
+          {timeRangeOptions.map(/* option 是当前时间范围的展示选项。 */ option => (
+            <ToggleButton key={option.key} value={option.key}>{option.label}</ToggleButton>
+          ))}
+        </ToggleButtonGroup>
         {timeRange === 'custom' && (
-          <>
-            <input
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { xs: 'stretch', sm: 'center' }, flex: 1 }}>
+            <TextField
+              label="开始日期"
               type="date"
               value={customStartDate}
-              onChange={/* 当前回调处理用户交互或异步状态变化。 */ (e) => setCustomStartDate(e.target.value)}
-              className="px-3 py-2 rounded-xl text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand"
+              onChange={/* startDateChange 更新自定义统计范围的起始日期。 */ event => setCustomStartDate(event.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={{ minWidth: { sm: 170 } }}
             />
-            <span className="self-center text-gray-400">-</span>
-            <input
+            <Typography color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>至</Typography>
+            <TextField
+              label="结束日期"
               type="date"
               value={customEndDate}
-              onChange={/* 当前回调处理用户交互或异步状态变化。 */ (e) => setCustomEndDate(e.target.value)}
-              className="px-3 py-2 rounded-xl text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand"
+              onChange={/* endDateChange 更新自定义统计范围的结束日期。 */ event => setCustomEndDate(event.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={{ minWidth: { sm: 170 } }}
             />
-            <button
-              onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => setCustomRangeVersion(/* 当前回调处理用户交互或异步状态变化。 */ value => value + 1)}
-              className="px-4 py-2 rounded-xl text-sm font-bold bg-black text-white hover:bg-gray-800 transition-colors"
-            >
-              应用
-            </button>
-          </>
+            <Button variant="contained" color="inherit" onClick={/* applyRange 触发自定义日期范围重新查询。 */ () => setCustomRangeVersion(/* version 是当前自定义范围请求版本。 */ value => value + 1)}>应用</Button>
+          </Stack>
         )}
-      </div>
+      </Stack>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' }, gap: { xs: 2, sm: 3 } }}>
         <StatCard
           title="累计营收 (CNY)"
           value={`¥${analytics.revenue_stats.total_amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`}
           icon={DollarSign}
-          colorClass="bg-blue-400"
+          tone="primary"
           trend={trendPercent || undefined}
         />
         <StatCard
           title="活跃账号 / 总数"
           value={`${stats.active_cookies} / ${stats.total_cookies}`}
           icon={Users}
-          colorClass="bg-blue-500"
+          tone="info"
         />
         <StatCard
           title="订单数"
           value={analytics.revenue_stats.total_orders.toLocaleString()}
           icon={ShoppingCart}
-          colorClass="bg-blue-500"
+          tone="success"
         />
         <StatCard
           title="库存卡密余量"
           value={stats.available_card_stock}
           icon={Package}
-          colorClass="bg-purple-500"
+          tone="warning"
         />
-      </div>
+      </Box>
 
       <DashboardTrendChart chartData={chartData} selectedRangeLabel={selectedRangeLabel} totalAmount={totalAmount} />
 
       {/* 商品销量排行和订单来源分布 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' }, gap: { xs: 2.5, sm: 3.5 } }}>
         {/* 商品销量排行 */}
-        <div className="ios-card p-6 rounded-xl">
-          <h3 className="font-bold text-lg text-gray-900 mb-6">商品销量排行</h3>
+        <MinimalSectionCard title="商品销量排行">
           <div className="h-[280px]">
             {productSalesData.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-400">暂无数据</div>
@@ -271,11 +333,10 @@ const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </MinimalSectionCard>
 
         {/* 商品下单占比 */}
-        <div className="ios-card p-6 rounded-xl">
-          <h3 className="font-bold text-lg text-gray-900 mb-6">商品下单占比</h3>
+        <MinimalSectionCard title="商品下单占比">
           <div
             className="dashboard-pie-chart h-[280px] relative"
             role="img"
@@ -333,13 +394,16 @@ const Dashboard: React.FC = () => {
               </>
             )}
           </div>
-        </div>
-      </div>
+        </MinimalSectionCard>
+      </Box>
 
       {/* 收支明细和品类营收 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(3, minmax(0, 1fr))' }, gap: { xs: 2.5, sm: 3.5 } }}>
         {/* 参与统计的订单列表 */}
-        <div className="lg:col-span-2 ios-card p-0 rounded-xl border-0 bg-white overflow-hidden flex flex-col">
+        <MinimalSectionCard
+          className="lg:col-span-2 ios-card p-0 rounded-xl border-0 bg-white overflow-hidden flex flex-col"
+          contentSx={{ p: 0, '&:last-child': { pb: 0 }, display: 'flex', flexDirection: 'column', minHeight: 320 }}
+        >
           <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-surface-muted">
 			<div>
 			  <h3 className="font-bold text-lg text-gray-900">参与统计的订单</h3>
@@ -443,11 +507,10 @@ const Dashboard: React.FC = () => {
               </table>
             )}
           </div>
-        </div>
+        </MinimalSectionCard>
 
         {/* 商品金额分析 */}
-        <div className="ios-card p-6 rounded-xl bg-white">
-          <h3 className="font-bold text-lg text-gray-900 mb-6">商品金额分析 (TOP5)</h3>
+        <MinimalSectionCard title="商品金额分析 (TOP5)" className="bg-white">
           {categoryDataData.length === 0 ? (
             <div className="flex items-center justify-center h-[300px] text-gray-400">暂无数据</div>
           ) : (
@@ -516,9 +579,9 @@ const Dashboard: React.FC = () => {
               </div>
             </>
           )}
-        </div>
-      </div>
-    </div>
+        </MinimalSectionCard>
+      </Box>
+    </Stack>
   );
 };
 

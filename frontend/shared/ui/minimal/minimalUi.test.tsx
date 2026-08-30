@@ -1,6 +1,6 @@
 import ReactDOMServer from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
-import { MinimalAuthCenteredLayout, MinimalFormHead, MinimalMainSection } from './index';
+import { MinimalAuthCenteredLayout, MinimalFormHead, MinimalMainSection, MinimalPageHeader, MinimalSectionCard } from './index';
 
 // render 将模板原语转换为静态 HTML，验证布局契约不依赖浏览器尺寸或网络状态。
 const render = (element: React.ReactElement): string => ReactDOMServer.renderToStaticMarkup(element);
@@ -36,5 +36,35 @@ describe('Minimal UI 模板原语', /* 当前回调验证模板适配层的固�
 
     expect(markup).toContain('data-layout-contract="minimal-main-section"');
     expect(markup).toContain('页面内容');
+  });
+
+  test('页面头部提供业务标题和动作插槽', /* 当前回调验证仪表盘等业务页调用 Minimal 标题结构。 */ () => {
+    // markup 是带上下文、标题、说明和动作节点的页面头部静态结果。
+    const markup = render(
+      <MinimalPageHeader
+        eyebrow="DH闲不下来"
+        title="运营概览"
+        description="实时经营数据"
+        actions={<button type="button">刷新</button>}
+      />,
+    );
+
+    expect(markup).toContain('data-layout-contract="minimal-page-header"');
+    expect(markup).toContain('运营概览');
+    expect(markup).toContain('实时经营数据');
+    expect(markup).toContain('刷新');
+  });
+
+  test('区块卡片提供标题和内容插槽', /* 当前回调验证仪表盘分析区块的 Minimal outlined card 契约。 */ () => {
+    // markup 是带标题和业务内容的区块卡片静态结果。
+    const markup = render(
+      <MinimalSectionCard title="商品销量排行">
+        <span>商品数据</span>
+      </MinimalSectionCard>,
+    );
+
+    expect(markup).toContain('data-layout-contract="minimal-section-card"');
+    expect(markup).toContain('商品销量排行');
+    expect(markup).toContain('商品数据');
   });
 });

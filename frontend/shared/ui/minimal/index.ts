@@ -5,3 +5,7 @@ export { MinimalFormHead } from './FormHead';
 export type { MinimalFormHeadProps } from './FormHead';
 export { MinimalMainSection } from './MainSection';
 export type { MinimalMainSectionProps } from './MainSection';
+export { MinimalPageHeader } from './PageHeader';
+export type { MinimalPageHeaderProps } from './PageHeader';
+export { MinimalSectionCard } from './SectionCard';
+export type { MinimalSectionCardProps } from './SectionCard';

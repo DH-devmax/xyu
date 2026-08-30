@@ -1,6 +1,7 @@
 import { ShoppingCart } from 'lucide-react';
 import React from 'react';
 import { Area,AreaChart,Bar,BarChart,CartesianGrid,Cell,ResponsiveContainer,Tooltip,XAxis,YAxis } from 'recharts';
+import { MinimalSectionCard } from '../../../shared/ui/minimal';
 import type { DashboardChartPoint } from './state';
 
 /** 趋势图组件的输入参数。 */
@@ -19,7 +20,7 @@ const cssColor = (token: string, alpha?: number): string => (
 );
 /** 展示 Dashboard 营收趋势，并根据数据点数量选择柱状图或面积图。 */
 export const DashboardTrendChart: React.FC<DashboardTrendChartProps> = ({ chartData, selectedRangeLabel, totalAmount }) => (
-  <div className="ios-card p-8 rounded-xl">
+  <MinimalSectionCard className="ios-card p-8 rounded-xl" contentSx={{ p: 0, '&:last-child': { pb: 0 } }}>
     <div className="mb-10">
       <h3 className="text-xl font-bold text-gray-900">营收趋势分析</h3>
       <p className="text-sm text-gray-400 mt-1">{selectedRangeLabel}的销售额走势</p>
@@ -82,5 +83,5 @@ export const DashboardTrendChart: React.FC<DashboardTrendChartProps> = ({ chartD
         </ResponsiveContainer>
       )}
     </div>
-  </div>
+  </MinimalSectionCard>
 );

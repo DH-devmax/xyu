@@ -22,6 +22,13 @@ describe('Dashboard presentation safeguards', /* 当前回调处理用户交互�
     expect(dashboardSource).toContain('min-w-[760px]');
   });
 
+  test('invokes Minimal page and section adapters without replacing business data hooks', /* 当前回调验证仪表盘已经进入模板适配切片。 */ () => {
+    expect(dashboardSource).toContain('<MinimalPageHeader');
+    expect(dashboardSource).toContain('<MinimalSectionCard');
+    expect(dashboardSource).toContain('useDashboard({ range: timeRange');
+    expect(dashboardSource).toContain('<DashboardTrendChart');
+  });
+
   test('pie charts use enlarged active sectors without focus rings or external label lines', /* 当前回调处理用户交互或异步状态变化。 */ () => {
     expect(dashboardSource.match(/accessibilityLayer=\{false\}/g)).toHaveLength(2);
     expect(dashboardSource.match(/activeShape=\{\{/g)).toHaveLength(2);
