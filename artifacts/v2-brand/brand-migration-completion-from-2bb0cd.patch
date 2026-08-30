@@ -540,7 +540,7 @@ index 9431191f5a..d2aec47ae0 100644
 +          path: dist/macos/DH-Xianyu-AgentPanel-${{ env.APP_VERSION }}-${{ matrix.arch }}.pkg
            if-no-files-found: error
 diff --git a/.github/workflows/docker-publish.yml b/.github/workflows/docker-publish.yml
-index 9943c1fc48..4b6bea0db8 100644
+index 9943c1fc48..370903c011 100644
 --- a/.github/workflows/docker-publish.yml
 +++ b/.github/workflows/docker-publish.yml
 @@ -129,6 +129,7 @@ jobs:
@@ -551,7 +551,7 @@ index 9943c1fc48..4b6bea0db8 100644
            corepack pnpm install --frozen-lockfile
            CI=true corepack pnpm run build
            CI=true corepack pnpm exec tsx scripts/build-exe-for-python-sdk.ts --targets="$HARNESS_TARGET" --skip-build
-@@ -189,6 +190,52 @@ jobs:
+@@ -189,6 +190,50 @@ jobs:
            path: .docker/playwright-runtime/${{ matrix.arch }}
            key: ${{ steps.cache-docker-playwright.outputs.cache-primary-key }}
  
@@ -582,14 +582,11 @@ index 9943c1fc48..4b6bea0db8 100644
 +              resolve(home, '.local/share/pnpm/store'),
 +              resolve(home, '.cache/pnpm'),
 +              resolve(home, '.npm'),
-+              resolve(home, 'go/pkg/mod'),
-+              resolve(home, '.cache/go-build'),
 +            ]
 +            const allowed = [
 +              resolve(home, '.local/share/pnpm'),
 +              resolve(home, '.cache'),
 +              resolve(home, '.npm'),
-+              resolve(home, 'go/pkg'),
 +            ]
 +            for (const candidate of candidates) {
 +              if (!allowed.some(parent => candidate === parent || candidate.startsWith(`${parent}/`))) {
@@ -598,13 +595,14 @@ index 9943c1fc48..4b6bea0db8 100644
 +              rmSync(candidate, { recursive: true, force: true })
 +            }
 +          NODE
++          go clean -cache -modcache
 +          docker builder prune --all --force
 +          df -h "$PWD"
 +
        - name: 配置 Docker Buildx
          uses: docker/setup-buildx-action@v4
  
-@@ -211,15 +258,16 @@ jobs:
+@@ -211,15 +256,16 @@ jobs:
            context: .
            file: Dockerfile.debian13
            platforms: ${{ matrix.platform }}
@@ -626,7 +624,7 @@ index 9943c1fc48..4b6bea0db8 100644
  
        - name: 验证待发布镜像中的 Chromium 与服务
          shell: bash
-@@ -273,6 +321,7 @@ jobs:
+@@ -273,6 +319,7 @@ jobs:
            touch "dist/digests/${IMAGE_DIGEST#sha256:}"
  
        - name: 上传镜像摘要
@@ -634,7 +632,7 @@ index 9943c1fc48..4b6bea0db8 100644
          uses: actions/upload-artifact@v7
          with:
            name: dh-xianyu-agentpanel-docker-digest-${{ matrix.arch }}
-@@ -289,13 +338,6 @@ jobs:
+@@ -289,13 +336,6 @@ jobs:
        - name: 配置 Docker Buildx
          uses: docker/setup-buildx-action@v4
  
@@ -648,7 +646,7 @@ index 9943c1fc48..4b6bea0db8 100644
        - name: 登录 GitHub Container Registry
          uses: docker/login-action@v4
          with:
-@@ -325,20 +367,15 @@ jobs:
+@@ -325,20 +365,15 @@ jobs:
            IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
          run: |
            set -Eeuo pipefail
@@ -2035,7 +2033,7 @@ index b5bef4a0c8..7d4392a14f 100644
  
  console.log(JSON.stringify({
 diff --git a/scripts/check-packaging-manifest.mjs b/scripts/check-packaging-manifest.mjs
-index 3b498d693a..14ad1aea96 100644
+index 3b498d693a..a0b96efc3b 100644
 --- a/scripts/check-packaging-manifest.mjs
 +++ b/scripts/check-packaging-manifest.mjs
 @@ -1,5 +1,6 @@
@@ -2158,12 +2156,13 @@ index 3b498d693a..14ad1aea96 100644
    "Extension -in '.exe', '.dll', '.node'",
  ]);
  await assertText('Dockerfile.debian13', [
-@@ -148,11 +195,49 @@ await assertText('Dockerfile.debian13', [
+@@ -148,11 +195,50 @@ await assertText('Dockerfile.debian13', [
  await assertText('.github/workflows/docker-publish.yml', [
    'build-brain-runtime.mjs',
    '.docker/brain-runtime',
 +  '释放 Harness 构建空间',
 +  'harness-workspace-cleanup: released',
++  'go clean -cache -modcache',
 +  "cache-from: ${{ inputs.app_version != '' && format(",
 +  "cache-to: ${{ inputs.app_version != '' && format(",
 +  "provenance: ${{ inputs.app_version != '' && 'mode=max'",

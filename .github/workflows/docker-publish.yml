@@ -217,14 +217,11 @@ jobs:
               resolve(home, '.local/share/pnpm/store'),
               resolve(home, '.cache/pnpm'),
               resolve(home, '.npm'),
-              resolve(home, 'go/pkg/mod'),
-              resolve(home, '.cache/go-build'),
             ]
             const allowed = [
               resolve(home, '.local/share/pnpm'),
               resolve(home, '.cache'),
               resolve(home, '.npm'),
-              resolve(home, 'go/pkg'),
             ]
             for (const candidate of candidates) {
               if (!allowed.some(parent => candidate === parent || candidate.startsWith(`${parent}/`))) {
@@ -233,6 +230,7 @@ jobs:
               rmSync(candidate, { recursive: true, force: true })
             }
           NODE
+          go clean -cache -modcache
           docker builder prune --all --force
           df -h "$PWD"
 

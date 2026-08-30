@@ -197,6 +197,7 @@ await assertText('.github/workflows/docker-publish.yml', [
   '.docker/brain-runtime',
   '释放 Harness 构建空间',
   'harness-workspace-cleanup: released',
+  'go clean -cache -modcache',
   "cache-from: ${{ inputs.app_version != '' && format(",
   "cache-to: ${{ inputs.app_version != '' && format(",
   "provenance: ${{ inputs.app_version != '' && 'mode=max'",
