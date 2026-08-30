@@ -82,6 +82,10 @@ try {
 
     Set-Content -LiteralPath (Join-Path $destination 'settings.env') -Value 'changed' -Encoding ASCII
     $rollbackScript = Join-Path $rollbackDir 'rollback-data.ps1'
+    $rollbackText = Get-Content -Raw -LiteralPath $rollbackScript
+    if ($rollbackText -notmatch 'function Get-FileDigest' -or $rollbackText -match 'Get-FileHash') {
+        throw 'Windows 回滚脚本未使用独立 .NET 哈希实现'
+    }
     & $rollbackScript | Out-Host
     $restored = (Get-Content -Raw -LiteralPath (Join-Path $destination 'settings.env')).Trim()
     if ($restored -ne 'legacy') { throw "Windows 回滚内容异常: $restored" }

@@ -134,12 +134,15 @@ await assertText('packaging/windows/service-control.ps1', [
 await assertText('packaging/windows/migrate-data.ps1', [
   '-verify-data',
   'function Write-DiagnosticLog',
+  'function Get-FileDigest',
+  '[Security.Cryptography.SHA256]::Create()',
   'migration_failed type=',
   "('database_integrity=' + $databaseVerification)",
   "('database_decryption=' + $databaseVerification)",
 ]);
 await assertText('packaging/windows/migrate-data.test.ps1', [
   '-LogFile $migrationLog',
+  'function Get-FileDigest',
   'migration_complete',
 ]);
 for (const windowsPowerShellScript of [

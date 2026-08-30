@@ -1696,7 +1696,7 @@ index 0000000000..2ecac2b08d
 +database.prepare("UPDATE system_settings SET value = ? WHERE key = 'ai_api_key'").run(encryptedValue);
 +database.close();
 diff --git a/packaging/windows/migrate-data.ps1 b/packaging/windows/migrate-data.ps1
-index 6a3aef8e88..7162ed21f2 100644
+index 6a3aef8e88..e53311a719 100644
 --- a/packaging/windows/migrate-data.ps1
 +++ b/packaging/windows/migrate-data.ps1
 @@ -1,4 +1,4 @@
@@ -1705,7 +1705,7 @@ index 6a3aef8e88..7162ed21f2 100644
      [Parameter(Mandatory = $true)]
      [string]$Source,
      [Parameter(Mandatory = $true)]
-@@ -6,11 +6,31 @@ param(
+@@ -6,11 +6,43 @@ param(
      [Parameter(Mandatory = $true)]
      [string]$RollbackDir,
      [Parameter(Mandatory = $true)]
@@ -1735,10 +1735,31 @@ index 6a3aef8e88..7162ed21f2 100644
 +    }
 +}
 +
++function Get-FileDigest {
++    param([Parameter(Mandatory = $true)][string]$Path)
++    $sha = [Security.Cryptography.SHA256]::Create()
++    $stream = [IO.File]::OpenRead($Path)
++    try {
++        return ($sha.ComputeHash($stream) | ForEach-Object { $_.ToString('x2') }) -join ''
++    } finally {
++        $stream.Dispose()
++        $sha.Dispose()
++    }
++}
++
  function Get-TreeDigest {
      param([Parameter(Mandatory = $true)][string]$Root)
      $lines = New-Object System.Collections.Generic.List[string]
-@@ -30,59 +50,126 @@ function Get-TreeDigest {
+@@ -18,7 +50,7 @@ function Get-TreeDigest {
+         Sort-Object FullName |
+         ForEach-Object {
+             $relative = $_.FullName.Substring($Root.Length).TrimStart('\', '/').Replace('\', '/')
+-            $digest = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
++            $digest = Get-FileDigest -Path $_.FullName
+             $lines.Add("$digest  $relative")
+         }
+     $payload = [Text.Encoding]::UTF8.GetBytes(($lines -join [Environment]::NewLine))
+@@ -30,63 +62,141 @@ function Get-TreeDigest {
      }
  }
  
@@ -1885,13 +1906,37 @@ index 6a3aef8e88..7162ed21f2 100644
 -    }
 -
      $rollbackScript = Join-Path $RollbackDir 'rollback-data.ps1'
-     $rollbackContent = @'
+-    $rollbackContent = @'
 -param([string]$Source = '__SOURCE__', [string]$Destination = '__DESTINATION__')
++$rollbackContent = @'
 +param([string]$Source = '__SOURCE__', [string]$Destination = '__DESTINATION__', [string]$ExpectedSourceHash = '__EXPECTED_SOURCE_HASH__')
  $ErrorActionPreference = 'Stop'
  if (-not (Test-Path -LiteralPath $Source -PathType Container) -or -not (Test-Path -LiteralPath $Destination -PathType Container)) {
      throw '回滚源或目标目录不存在'
-@@ -101,17 +188,44 @@ function Get-TreeDigest {
+ }
++function Get-FileDigest {
++    param([Parameter(Mandatory = $true)][string]$Path)
++    $sha = [Security.Cryptography.SHA256]::Create()
++    $stream = [IO.File]::OpenRead($Path)
++    try {
++        return ($sha.ComputeHash($stream) | ForEach-Object { $_.ToString('x2') }) -join ''
++    } finally {
++        $stream.Dispose()
++        $sha.Dispose()
++    }
++}
+ function Get-TreeDigest {
+     param([Parameter(Mandatory = $true)][string]$Root)
+     $lines = New-Object System.Collections.Generic.List[string]
+@@ -94,24 +204,51 @@ function Get-TreeDigest {
+         Sort-Object FullName |
+         ForEach-Object {
+             $relative = $_.FullName.Substring($Root.Length).TrimStart('\', '/').Replace('\', '/')
+-            $digest = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
++            $digest = Get-FileDigest -Path $_.FullName
+             $lines.Add("$digest  $relative")
+         }
+     $payload = [Text.Encoding]::UTF8.GetBytes(($lines -join [Environment]::NewLine))
      $sha = [Security.Cryptography.SHA256]::Create()
      try { return ($sha.ComputeHash($payload) | ForEach-Object { $_.ToString('x2') }) -join '' } finally { $sha.Dispose() }
  }
@@ -1941,7 +1986,7 @@ index 6a3aef8e88..7162ed21f2 100644
      $recordContent = @(
          'status=ok'
          ('source=' + $Source)
-@@ -119,17 +233,28 @@ Write-Output ('backup=' + $backup)
+@@ -119,17 +256,28 @@ Write-Output ('backup=' + $backup)
          ('source_hash=' + $sourceDigest)
          ('staging_hash=' + $stagingDigest)
          ('destination_hash=' + $destinationDigest)
@@ -1973,10 +2018,10 @@ index 6a3aef8e88..7162ed21f2 100644
  }
 diff --git a/packaging/windows/migrate-data.test.ps1 b/packaging/windows/migrate-data.test.ps1
 new file mode 100644
-index 0000000000..e8b2bbae0f
+index 0000000000..af4860024b
 --- /dev/null
 +++ b/packaging/windows/migrate-data.test.ps1
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,99 @@
 +﻿param(
 +    [Parameter(Mandatory = $true)]
 +    [string]$Validator
@@ -2061,6 +2106,10 @@ index 0000000000..e8b2bbae0f
 +
 +    Set-Content -LiteralPath (Join-Path $destination 'settings.env') -Value 'changed' -Encoding ASCII
 +    $rollbackScript = Join-Path $rollbackDir 'rollback-data.ps1'
++    $rollbackText = Get-Content -Raw -LiteralPath $rollbackScript
++    if ($rollbackText -notmatch 'function Get-FileDigest' -or $rollbackText -match 'Get-FileHash') {
++        throw 'Windows 回滚脚本未使用独立 .NET 哈希实现'
++    }
 +    & $rollbackScript | Out-Host
 +    $restored = (Get-Content -Raw -LiteralPath (Join-Path $destination 'settings.env')).Trim()
 +    if ($restored -ne 'legacy') { throw "Windows 回滚内容异常: $restored" }
@@ -2096,7 +2145,7 @@ index b5bef4a0c8..7d4392a14f 100644
  
  console.log(JSON.stringify({
 diff --git a/scripts/check-packaging-manifest.mjs b/scripts/check-packaging-manifest.mjs
-index 3b498d693a..4c99bca492 100644
+index 3b498d693a..db730f1754 100644
 --- a/scripts/check-packaging-manifest.mjs
 +++ b/scripts/check-packaging-manifest.mjs
 @@ -1,5 +1,6 @@
@@ -2177,19 +2226,22 @@ index 3b498d693a..4c99bca492 100644
    `Source: "{#WindowsBrainDir}\\*"`,
    '-BrainRuntimeRoot',
    expected.windowsService,
-@@ -104,6 +131,24 @@ await assertText('packaging/windows/service-control.ps1', [
+@@ -104,6 +131,27 @@ await assertText('packaging/windows/service-control.ps1', [
    '-brain-runtime-root',
    expected.displayName,
  ]);
 +await assertText('packaging/windows/migrate-data.ps1', [
 +  '-verify-data',
 +  'function Write-DiagnosticLog',
++  'function Get-FileDigest',
++  '[Security.Cryptography.SHA256]::Create()',
 +  'migration_failed type=',
 +  "('database_integrity=' + $databaseVerification)",
 +  "('database_decryption=' + $databaseVerification)",
 +]);
 +await assertText('packaging/windows/migrate-data.test.ps1', [
 +  '-LogFile $migrationLog',
++  'function Get-FileDigest',
 +  'migration_complete',
 +]);
 +for (const windowsPowerShellScript of [
@@ -2202,7 +2254,7 @@ index 3b498d693a..4c99bca492 100644
  
  await assertText('packaging/macos/Info.plist', [
    `<string>${expected.macBundleID}</string>`,
-@@ -123,6 +168,10 @@ await assertText('packaging/macos/build-pkg.sh', [
+@@ -123,6 +171,10 @@ await assertText('packaging/macos/build-pkg.sh', [
    'runtime/node-carrier',
    'runtime/result-tool.mjs',
  ]);
@@ -2213,7 +2265,7 @@ index 3b498d693a..4c99bca492 100644
  await assertText('packaging/macos/com.dhdevmax.xianyu-agentpanel.tray.plist.template', [
    expected.macBundleID,
    '__TRAY__',
-@@ -136,7 +185,13 @@ await assertText('.github/workflows/desktop-cd.yml', [
+@@ -136,7 +188,13 @@ await assertText('.github/workflows/desktop-cd.yml', [
    `packaging/linux/${expected.linuxService}`,
    'build-brain-runtime.mjs',
    'check-brain-runtime-package.mjs',
@@ -2227,7 +2279,7 @@ index 3b498d693a..4c99bca492 100644
    "Extension -in '.exe', '.dll', '.node'",
  ]);
  await assertText('Dockerfile.debian13', [
-@@ -148,11 +203,50 @@ await assertText('Dockerfile.debian13', [
+@@ -148,11 +206,50 @@ await assertText('Dockerfile.debian13', [
  await assertText('.github/workflows/docker-publish.yml', [
    'build-brain-runtime.mjs',
    '.docker/brain-runtime',

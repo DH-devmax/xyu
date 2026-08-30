@@ -31,6 +31,18 @@ function Write-DiagnosticLog {
     }
 }
 
+function Get-FileDigest {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        return ($sha.ComputeHash($stream) | ForEach-Object { $_.ToString('x2') }) -join ''
+    } finally {
+        $stream.Dispose()
+        $sha.Dispose()
+    }
+}
+
 function Get-TreeDigest {
     param([Parameter(Mandatory = $true)][string]$Root)
     $lines = New-Object System.Collections.Generic.List[string]
@@ -38,7 +50,7 @@ function Get-TreeDigest {
         Sort-Object FullName |
         ForEach-Object {
             $relative = $_.FullName.Substring($Root.Length).TrimStart('\', '/').Replace('\', '/')
-            $digest = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            $digest = Get-FileDigest -Path $_.FullName
             $lines.Add("$digest  $relative")
         }
     $payload = [Text.Encoding]::UTF8.GetBytes(($lines -join [Environment]::NewLine))
@@ -168,11 +180,22 @@ try {
     }
 
     $rollbackScript = Join-Path $RollbackDir 'rollback-data.ps1'
-    $rollbackContent = @'
+$rollbackContent = @'
 param([string]$Source = '__SOURCE__', [string]$Destination = '__DESTINATION__', [string]$ExpectedSourceHash = '__EXPECTED_SOURCE_HASH__')
 $ErrorActionPreference = 'Stop'
 if (-not (Test-Path -LiteralPath $Source -PathType Container) -or -not (Test-Path -LiteralPath $Destination -PathType Container)) {
     throw '回滚源或目标目录不存在'
+}
+function Get-FileDigest {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        return ($sha.ComputeHash($stream) | ForEach-Object { $_.ToString('x2') }) -join ''
+    } finally {
+        $stream.Dispose()
+        $sha.Dispose()
+    }
 }
 function Get-TreeDigest {
     param([Parameter(Mandatory = $true)][string]$Root)
@@ -181,7 +204,7 @@ function Get-TreeDigest {
         Sort-Object FullName |
         ForEach-Object {
             $relative = $_.FullName.Substring($Root.Length).TrimStart('\', '/').Replace('\', '/')
-            $digest = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            $digest = Get-FileDigest -Path $_.FullName
             $lines.Add("$digest  $relative")
         }
     $payload = [Text.Encoding]::UTF8.GetBytes(($lines -join [Environment]::NewLine))
