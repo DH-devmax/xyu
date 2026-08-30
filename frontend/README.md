@@ -1,6 +1,11 @@
 # DH闲不下来前端
 
-React 19、Vite 6 与 TypeScript 单页应用，是 Go 后端提供的管理界面。
+React 19、Vite 8、TypeScript 5.9、MUI 9、Emotion 与 React Router 7 单页应用，是 Go 后端提供的管理界面。
+
+认证页和应用壳复用 Minimal Vite TS 7.7.0 的 centered auth、FormHead、MainSection
+原语，适配层位于 `shared/ui/minimal/`。Minimal 只提供视觉布局和组件令牌；会话、OpenAPI
+请求、WebSocket 和业务状态仍由本项目既有边界管理。业务页面按迁移记录逐页从 Tailwind
+过渡到 MUI `sx`，迁移完成后再移除 Tailwind 依赖。
 
 ## 目录结构
 
@@ -20,6 +25,7 @@ frontend/
     async/                   取消和最新请求代次工具
     browser/                 浏览器侧轻量持久化工具
     ui/                      跨领域复用的展示组件
+      minimal/               Minimal 7.7.0 模板原语及来源记录
   vite.config.ts             `base=/static/` 与 `/api`、`/health` 开发代理
 ```
 

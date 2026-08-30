@@ -3,15 +3,19 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import Paper from '@mui/material/Paper';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { DHBrandIcon } from '../../../../shared/ui/DHBrandLogo';
+import { MinimalAuthCenteredLayout, MinimalFormHead } from '../../../../shared/ui/minimal';
 import { useSession } from '../../../providers/SessionProvider';
 
 // SessionGate 在会话校验完成前显示加载状态，并承载首次初始化和管理员登录表单。
@@ -28,6 +32,8 @@ export const SessionGate: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // formError 是仅用于当前界面显示的通用失败信息，不保存接口响应载荷。
   const [formError, setFormError] = useState('');
+  // showPassword 控制登录密码是否暂时以明文展示，离开页面后随组件销毁而清理。
+  const [showPassword, setShowPassword] = useState(false);
 
   // handleLogin 在管理员明确提交后调用 Provider 登录，并在失败时展示安全错误文本。
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
@@ -75,11 +81,28 @@ export const SessionGate: React.FC = () => {
     }
   };
 
+  // brandHeader 是 Minimal centered 布局顶部复用的产品品牌插槽，加载和表单状态共用同一标识。
+  const brandHeader = (
+    <Stack direction="row" spacing={1.25} sx={{ minWidth: 0, alignItems: 'center' }}>
+      <Box sx={{ width: 38, height: 38, flexShrink: 0 }}>
+        <DHBrandIcon sizeClass="w-full h-full" />
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography noWrap sx={{ fontSize: 15, fontWeight: 750, lineHeight: 1.2 }}>
+          DH闲不下来
+        </Typography>
+        <Typography noWrap sx={{ mt: 0.3, fontSize: 10, letterSpacing: '0.14em', color: 'primary.main', textTransform: 'uppercase' }}>
+          agent panel
+        </Typography>
+      </Box>
+    </Stack>
+  );
+
   if (checkingAuth) {
     return (
-      <Box component="main" aria-label="正在校验会话" sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', bgcolor: 'background.default' }}>
-        <CircularProgress size={30} />
-      </Box>
+      <MinimalAuthCenteredLayout brand={brandHeader} contentSx={{ display: 'grid', minHeight: 180, placeItems: 'center' }}>
+        <CircularProgress size={30} aria-label="正在校验会话" />
+      </MinimalAuthCenteredLayout>
     );
   }
 
@@ -87,46 +110,36 @@ export const SessionGate: React.FC = () => {
   const heading = needsInit ? '首次设置管理员密码' : '欢迎回来';
   // description 是当前认证流程的辅助说明，不泄露任何会话或账户敏感数据。
   const description = needsInit ? '设置完成后会自动进入系统，管理员账号为 admin。' : '自动发货、账号运行与客服协同工作台';
-
   return (
-    <Box component="main" sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', bgcolor: 'background.default', p: { xs: 1.5, sm: 3 } }}>
-      <Box sx={{ width: '100%', maxWidth: 960, display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 0.9fr) minmax(360px, 1fr)' }, gap: { xs: 2, md: 5 }, alignItems: 'center' }}>
-        <Box sx={{ display: { xs: 'none', md: 'block' }, px: 3 }}>
-          <Box sx={{ width: 72, height: 72, mb: 2 }}><DHBrandIcon sizeClass="w-full h-full" /></Box>
-          <Typography variant="h1" sx={{ fontSize: '2.35rem', maxWidth: 380 }}>DH闲不下来</Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 1.25, maxWidth: 380 }}>一个工作台管理账号运行、自动化规则、订单和 Harness 智能草案。</Typography>
-        </Box>
-        <Paper variant="outlined" sx={{ width: '100%', maxWidth: 480, justifySelf: 'center', p: { xs: 2.5, sm: 4 }, bgcolor: 'background.paper' }}>
-          <Stack spacing={2.5}>
-            <Stack spacing={0.75}>
-              <Box sx={{ display: { xs: 'flex', md: 'none' }, width: 50, height: 50, mb: 0.75 }}><DHBrandIcon sizeClass="w-full h-full" /></Box>
-              <Typography variant="h2" sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>{heading}</Typography>
-              <Typography variant="body2" color="text.secondary">{description}</Typography>
+    <MinimalAuthCenteredLayout brand={brandHeader}>
+      <Stack spacing={2.5}>
+        <MinimalFormHead
+          icon={<DHBrandIcon sizeClass="w-14 h-14" />}
+          title={heading}
+          description={description}
+        />
+
+        {needsInit ? (
+          <form onSubmit={handleInitialize}>
+            <Stack spacing={2}>
+              <TextField autoFocus fullWidth label="设置管理员密码" placeholder="至少 8 个字符" type="password" autoComplete="new-password" value={initialPassword} onChange={/* initialPasswordChange 只更新当前初始化表单的短暂输入。 */ event => setInitialPassword(event.target.value)} />
+              <TextField fullWidth label="确认管理员密码" placeholder="再次输入密码" type="password" autoComplete="new-password" value={initialPasswordConfirm} onChange={/* initialPasswordConfirmChange 只更新确认输入，不写入持久化存储。 */ event => setInitialPasswordConfirm(event.target.value)} slotProps={{ input: { startAdornment: <ShieldOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }} />
+              <SubmitButton submitting={isSubmitting} text="设置密码并进入系统" />
             </Stack>
+          </form>
+        ) : (
+          <form onSubmit={handleLogin}>
+            <Stack spacing={2}>
+              <TextField autoFocus fullWidth label="管理员账号" placeholder="管理员账号" type="text" autoComplete="username" value={username} onChange={/* usernameChange 保存管理员主动输入的登录名称。 */ event => setUsername(event.target.value)} slotProps={{ input: { startAdornment: <PersonOutlineIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }} />
+              <TextField fullWidth label="管理员密码" placeholder="密码" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={/* passwordChange 只在当前表单生命周期中保存管理员密码。 */ event => setPassword(event.target.value)} slotProps={{ input: { startAdornment: <LockOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} />, endAdornment: <InputAdornment position="end"><IconButton type="button" edge="end" aria-label={showPassword ? '隐藏密码' : '显示密码'} onClick={/* passwordVisibilityAction 只切换当前登录表单的密码展示状态。 */ () => setShowPassword(!showPassword)}>{showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}</IconButton></InputAdornment> } }} />
+              <SubmitButton submitting={isSubmitting} text="立即登录" />
+            </Stack>
+          </form>
+        )}
 
-            {needsInit ? (
-              <form onSubmit={handleInitialize}>
-                <Stack spacing={2}>
-                  <TextField autoFocus fullWidth label="设置管理员密码" placeholder="至少 8 个字符" type="password" value={initialPassword} onChange={/* initialPasswordChange 只更新当前初始化表单的短暂输入。 */ event => setInitialPassword(event.target.value)} />
-                  <TextField fullWidth label="确认管理员密码" placeholder="再次输入密码" type="password" value={initialPasswordConfirm} onChange={/* initialPasswordConfirmChange 只更新确认输入，不写入持久化存储。 */ event => setInitialPasswordConfirm(event.target.value)} slotProps={{ input: { startAdornment: <ShieldOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }} />
-                  <SubmitButton submitting={isSubmitting} text="设置密码并进入系统" />
-                </Stack>
-              </form>
-            ) : (
-              <form onSubmit={handleLogin}>
-                <Stack spacing={2}>
-                  <TextField autoFocus fullWidth label="管理员账号" placeholder="管理员账号" type="text" value={username} onChange={/* usernameChange 保存管理员主动输入的登录名称。 */ event => setUsername(event.target.value)} slotProps={{ input: { startAdornment: <PersonOutlineIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }} />
-                  <TextField fullWidth label="管理员密码" placeholder="密码" type="password" value={password} onChange={/* passwordChange 只在当前表单生命周期中保存管理员密码。 */ event => setPassword(event.target.value)} slotProps={{ input: { startAdornment: <LockOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }} />
-                  <SubmitButton submitting={isSubmitting} text="立即登录" />
-                </Stack>
-              </form>
-            )}
-
-            {formError ? <Alert severity="error">{formError}</Alert> : null}
-          </Stack>
-        </Paper>
-      </Box>
-    </Box>
+        {formError ? <Alert severity="error">{formError}</Alert> : null}
+      </Stack>
+    </MinimalAuthCenteredLayout>
   );
 };
 

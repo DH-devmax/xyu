@@ -23,11 +23,11 @@
     },
     {
       "path": "frontend/package.json",
-      "sha256": "b85a1b73c062775566d6662e9a1fac368b797b2a22c66e83949a58e04f9dcd2d"
+      "sha256": "8566605a638f21283f703abe02698d03376339fb5dcf10a9b88e05b8646c89fa"
     },
     {
       "path": "frontend/package-lock.json",
-      "sha256": "8a26c735ff8a15485ebc8e951fae0e67f4dc3a2e0a6c430a5e9fe01c0c40bf29"
+      "sha256": "dff66f1edc96b39babc05ef731a6b439bea60a75de5f960ef5ceb170b178e69b"
     },
     {
       "path": "brain/vendor/deepseek-harness/package.json",
@@ -43,8 +43,8 @@
     }
   ],
   "summary": {
-    "component_count": 1417,
-    "license_count": 25,
+    "component_count": 1419,
+    "license_count": 26,
     "noassertion_count": 43
   },
   "licenses": [
@@ -426,7 +426,7 @@
     },
     {
       "license": "MIT",
-      "component_count": 1076,
+      "component_count": 1077,
       "components": [
         "application:deepseek-harness",
         "frontend:pkg:npm/%40alloc/quick-lru@5.2.0",
@@ -645,6 +645,7 @@
         "frontend:pkg:npm/micromatch@4.0.8",
         "frontend:pkg:npm/mime-db@1.52.0",
         "frontend:pkg:npm/mime-types@2.1.35",
+        "frontend:pkg:npm/minimal-shared@1.1.6",
         "frontend:pkg:npm/ms@2.1.3",
         "frontend:pkg:npm/mz@2.7.0",
         "frontend:pkg:npm/nanoid@3.3.18",
@@ -1590,6 +1591,13 @@
         "harness:pkg:npm/%40anthropic-ai/claude-agent-sdk@0.3.241",
         "harness:pkg:npm/khroma@2.1.0",
         "harness:pkg:npm/union@0.5.0"
+      ]
+    },
+    {
+      "license": "OFL-1.1",
+      "component_count": 1,
+      "components": [
+        "frontend:pkg:npm/%40fontsource-variable/public-sans@5.2.7"
       ]
     },
     {

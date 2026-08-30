@@ -11,6 +11,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import AppBar from '@mui/material/AppBar';
 import type { Item } from '../features/items/api';
 import Sidebar from '../../shared/ui/Sidebar';
+import { MinimalMainSection } from '../../shared/ui/minimal';
 import { useChatTitleNotification } from '../features/chat/titleNotification';
 import { getHealth } from '../features/system/api';
 import type { BuildInfo } from '../features/system/types';
@@ -201,7 +202,7 @@ const AuthenticatedShell: React.FC<AuthenticatedShellProps> = ({
         hasUnreadChatMessage={hasUnreadChatMessage}
       />
 
-      <Box component="main" className="h-screen min-w-0 flex-1 overflow-x-hidden overflow-y-auto" sx={{ flex: 1, minWidth: 0, ml: { xs: 0, md: collapsed ? '72px' : '248px' }, transition: 'margin-left 180ms ease' }}>
+      <MinimalMainSection className="h-screen min-w-0 flex-1 overflow-x-hidden overflow-y-auto" sx={{ flex: 1, minWidth: 0, height: '100vh', overflowX: 'hidden', overflowY: 'auto', ml: { xs: 0, md: collapsed ? '72px' : '248px' }, transition: 'margin-left 180ms ease' }}>
         <AppBar position="sticky" sx={{ display: { xs: 'block', md: 'none' }, bgcolor: 'background.paper' }}>
           <Toolbar sx={{ minHeight: 58, px: 1.5, gap: 1 }}>
             <IconButton aria-label="打开主导航" onClick={/* mobileOpenAction 打开窄屏临时导航。 */ () => setMobileOpen(true)} size="small" edge="start">
@@ -234,7 +235,7 @@ const AuthenticatedShell: React.FC<AuthenticatedShellProps> = ({
             onDeliveryTargetHandled={onDeliveryTargetHandled}
           />
         </Box>
-      </Box>
+      </MinimalMainSection>
     </Box>
   );
 };
