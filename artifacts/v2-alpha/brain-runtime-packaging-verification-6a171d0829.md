@@ -95,6 +95,17 @@ $ git apply --check --reverse artifacts/v2-alpha/brain-runtime-packaging-6a171d0
 <命令退出码 0>
 ```
 
-`--apply` 会创建普通 `git revert` 提交，保留历史并恢复到基线行为；实际 `--apply` 在临时 worktree 中执行后，tree 与 `be1c0c3dfc` 一致，退出码为 `0`。
+`--apply` 会创建普通 `git revert` 提交，保留历史并恢复到基线行为。临时 worktree 的实际输出为：
+
+```text
+rollback: 已创建 revert commit，目标 6a171d08294367a2ca7cf1fa8c75d3efd2c6d483
+reverted_commit=a4ee64f5d0bafd83db02f6bc8e9f1a4c7c81378c
+expected_base_tree=0b1b559da8ce30650c905923ddc1e82ef58ce40a
+actual_tree=676f90bf0c72bc3c0b81abe0358fa644b3e8361e
+implementation_paths_restored=0
+<命令退出码 0>
+```
+
+`actual_tree` 还包含本证据提交新增的三个 artifact；`implementation_paths_restored=0` 表示 29 个实现路径均恢复到 `be1c0c3dfc` 的内容。
 
 差异文件：[`artifacts/v2-alpha/brain-runtime-packaging-6a171d0829.patch`](brain-runtime-packaging-6a171d0829.patch)
