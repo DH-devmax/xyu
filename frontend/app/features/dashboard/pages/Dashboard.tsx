@@ -37,7 +37,7 @@ export const StatusBadge: React.FC<{ /** status 表示状态。 */ status: Order
     refunding: '退款中',
     unknown: '未知',
   };
-  // colors 将业务状态映射为 MUI 语义色，不改变服务端状态值。
+  // colors 将业务状态映射为 MUI 语义色，服务端状态值保持原样。
   const colors: Record<OrderStatus, 'primary' | 'info' | 'success' | 'warning' | 'error' | 'default'> = {
     processing: 'info',
     pending_ship: 'primary',

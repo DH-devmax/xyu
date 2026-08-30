@@ -19,7 +19,7 @@ export interface MinimalSectionCardProps extends Omit<CardProps, 'title'> {
 
 /**
  * MinimalSectionCard 复用 Minimal 页面常用的 outlined card 结构。
- * 卡片不持有数据状态，业务页面可以逐块替换原有容器而不改变请求逻辑。
+ * 卡片只负责结构排版，业务页面可以逐块替换原有容器并沿用请求逻辑。
  */
 export const MinimalSectionCard: React.FC<MinimalSectionCardProps> = ({
   title,
