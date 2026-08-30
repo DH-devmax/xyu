@@ -1,0 +1,2 @@
+# 邮件格式补丁须原样保留原始变更中的空白与制表符。
+artifacts/v2-alpha/*.patch -whitespace
