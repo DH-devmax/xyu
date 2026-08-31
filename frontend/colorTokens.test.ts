@@ -25,7 +25,7 @@ describe('Minimal design tokens', /* tokenSuite 汇总色彩令牌门禁。 */ (
     // theme 是 Minimal core 主题源码。
     const theme = read('src/theme/core/index.ts');
     expect(theme).toContain("default: { main: '#21a675'");
-    expect(theme).toContain("background: { default: '#f5f7f9'");
+    expect(theme).toContain("background: { default: '#ffffff'");
     expect(theme).toContain('shape: { borderRadius: 8 }');
   });
 });

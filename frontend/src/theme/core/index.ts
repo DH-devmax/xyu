@@ -60,7 +60,7 @@ export const createMinimalTheme = (mode: PaletteMode = 'light', options: Minimal
     warning: { main: '#a66700' },
     error: { main: '#bb3d3d' },
     info: { main: '#3c6fa8' },
-    background: { default: '#f5f7f9', paper: '#ffffff' },
+    background: { default: '#ffffff', paper: '#ffffff' },
     text: { primary: '#1d242c', secondary: '#627080' },
     divider: options.contrast === 'high' ? '#9ca9b5' : '#e1e6eb',
   },
@@ -68,8 +68,8 @@ export const createMinimalTheme = (mode: PaletteMode = 'light', options: Minimal
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        html: { minWidth: 320, backgroundColor: mode === 'dark' ? '#141a20' : '#f5f7f9' },
-        body: { margin: 0, minWidth: 320, backgroundColor: mode === 'dark' ? '#141a20' : '#f5f7f9' },
+        html: { minWidth: 320, backgroundColor: mode === 'dark' ? '#141a20' : '#ffffff' },
+        body: { margin: 0, minWidth: 320, backgroundColor: mode === 'dark' ? '#141a20' : '#ffffff' },
         '*, *::before, *::after': { boxSizing: 'border-box' },
       },
     },

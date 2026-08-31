@@ -126,8 +126,12 @@ export const DashboardNavigationContent: React.FC<DashboardNavigationProps> = ({
     <Stack sx={{ height: '100%', bgcolor: navColor === 'apparent' ? 'background.paper' : 'background.default', background: /* navGradient 根据主题模式和导航表面应用 Minimal 侧栏渐变。 */ theme => {
       // surface 是导航颜色设置选择的底层表面，确保独立导航仍保留主题对比度。
       const surface = navColor === 'apparent' ? theme.palette.background.paper : theme.palette.background.default;
-      return theme.palette.mode === 'dark' ? `linear-gradient(180deg, rgba(33, 166, 117, 0.14) 0%, rgba(29, 37, 45, 0.92) 38%, rgba(20, 26, 32, 0) 100%), ${surface}` : `linear-gradient(180deg, rgba(33, 166, 117, 0.10) 0%, rgba(255, 255, 255, 0.84) 38%, rgba(245, 247, 249, 0) 100%), ${surface}`;
-    } }}>
+      // grid 是侧栏与主画布共用的宽间隔细线层。
+      const grid = 'linear-gradient(to right, var(--dh-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--dh-grid-line) 1px, transparent 1px)';
+      // gradient 在白底上保留 Minimal 侧栏顶部的淡绿色层次。
+      const gradient = theme.palette.mode === 'dark' ? `linear-gradient(180deg, rgba(33, 166, 117, 0.14) 0%, rgba(29, 37, 45, 0.92) 38%, rgba(20, 26, 32, 0) 100%), ${surface}` : `linear-gradient(180deg, rgba(33, 166, 117, 0.10) 0%, rgba(255, 255, 255, 0.84) 38%, rgba(255, 255, 255, 0) 100%), ${surface}`;
+      return `${grid}, ${gradient}`;
+    }, backgroundSize: 'var(--dh-grid-size) var(--dh-grid-size), var(--dh-grid-size) var(--dh-grid-size), auto' }}>
       <Stack direction="row" spacing={1.25} sx={{ minHeight: 88, alignItems: 'center', px: mini ? 2 : 3, justifyContent: mini ? 'center' : 'flex-start' }}>
         {mini ? <DHBrandIcon size={40} decorative /> : <DHBrandLogo size={42} showLabel />}
       </Stack>

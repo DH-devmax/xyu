@@ -1,10 +1,27 @@
 /* Minimal 全局基础样式：业务组件使用 MUI sx，页面不依赖 Tailwind 运行时。 */
+:root {
+  /* pageGrid 使用宽间隔的淡黑细线，让页面保持纯白但仍有结构感。 */
+  --dh-page-background: #ffffff;
+  --dh-grid-line: rgba(29, 36, 44, 0.055);
+  --dh-grid-size: 72px;
+}
+
+[data-color-scheme='dark'] {
+  /* darkGrid 在深色偏好下保持低对比度，不改变用户已选择的主题模式。 */
+  --dh-page-background: #141a20;
+  --dh-grid-line: rgba(242, 245, 247, 0.07);
+}
+
 html,
 body,
 #root {
   min-width: 320px;
   min-height: 100%;
   width: 100%;
+  background-color: var(--dh-page-background);
+  background-image: linear-gradient(to right, var(--dh-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--dh-grid-line) 1px, transparent 1px);
+  background-size: var(--dh-grid-size) var(--dh-grid-size);
+  background-attachment: fixed;
 }
 
 body {

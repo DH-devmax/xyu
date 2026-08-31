@@ -15,7 +15,7 @@ export const NavHorizontal: React.FC<DashboardNavigationProps> = ({ isAdmin, has
   const location = useLocation();
   // items 保留当前用户有权限访问的业务入口。
   const items = dashboardNavItems.filter(/* 过滤管理员专属入口。 */ item => !item.adminOnly || isAdmin);
-  return <Box component="nav" aria-label="主导航" sx={{ display: { xs: 'none', lg: 'flex' }, minHeight: 72, px: 3, alignItems: 'center', gap: 3, borderBottom: 1, borderColor: 'divider', bgcolor: navColor === 'apparent' ? 'background.paper' : 'background.default' }}>
+  return <Box component="nav" aria-label="主导航" sx={{ display: { xs: 'none', lg: 'flex' }, minHeight: 72, px: 3, alignItems: 'center', gap: 3, borderBottom: 1, borderColor: 'divider', bgcolor: navColor === 'apparent' ? 'background.paper' : 'background.default', backgroundImage: 'linear-gradient(to right, var(--dh-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--dh-grid-line) 1px, transparent 1px)', backgroundSize: 'var(--dh-grid-size) var(--dh-grid-size)' }}>
     <DHBrandLogo size={40} decorative />
     <Stack direction="row" spacing={0.5} sx={{ minWidth: 0, overflowX: 'auto' }}>{items.map(/* 渲染横向业务入口。 */ item => {
       // selected 表示当前路由是否属于该入口。

@@ -61,7 +61,7 @@ const AuthenticatedDashboard: React.FC<AuthenticatedDashboardProps> = ({ isAdmin
   if (!isAdmin && restrictedPath) return <Navigate to="/app/dashboard" replace />;
   return (
     <DeliveryRuleProvider>
-      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'transparent' }}>
         {state.navLayout === 'horizontal' ? <NavHorizontal isAdmin={isAdmin} mini={false} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} navColor={state.navColor} onToggle={/* horizontalNavToggle 恢复纵向导航布局。 */ () => setField('navLayout', 'vertical')} onLogout={handleLogout} /> : <NavVertical isAdmin={isAdmin} mini={state.navLayout === 'mini'} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} navColor={state.navColor} onToggle={/* desktopNavToggle 切换 Minimal 纵向和迷你布局。 */ () => setField('navLayout', state.navLayout === 'mini' ? 'vertical' : 'mini')} onLogout={handleLogout} />}
         <NavMobile open={mobileOpen} onClose={/* mobileClose 关闭窄屏导航。 */ () => setMobileOpen(false)} isAdmin={isAdmin} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} navColor={state.navColor} onToggle={/* mobileNavToggle 切换导航布局偏好。 */ () => setField('navLayout', state.navLayout === 'mini' ? 'vertical' : 'mini')} onLogout={handleLogout} />
         <DashboardContent onOpenMobile={/* mobileOpenAction 打开窄屏导航。 */ () => setMobileOpen(true)} version={buildInfo.version} onLogout={handleLogout} hasUnreadChatMessage={hasUnreadChatMessage} />
