@@ -1,16 +1,20 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 import Toolbar from '@mui/material/Toolbar';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import AppBar from '@mui/material/AppBar';
 import type { Item } from '../features/items/api';
 import Sidebar from '../../shared/ui/Sidebar';
-import { MinimalMainSection, MinimalPageHeader } from '../../shared/ui/minimal';
+import { MinimalMainSection } from '../../shared/ui/minimal';
 import { useChatTitleNotification } from '../features/chat/titleNotification';
 import { getHealth } from '../features/system/api';
 import type { BuildInfo } from '../features/system/types';
@@ -149,6 +153,8 @@ const AuthenticatedShell: React.FC<AuthenticatedShellProps> = ({
   const [buildInfo, setBuildInfo] = useState<BuildInfo>({ version: 'dev', commit: 'unknown' });
   // mobileOpen 保存窄屏临时导航状态，桌面端不渲染该 Drawer。
   const [mobileOpen, setMobileOpen] = useState(false);
+  // shellSearch 保存壳层快速导航输入，不参与任何业务查询。
+  const [shellSearch, setShellSearch] = useState('');
   // isMobile 控制顶栏菜单按钮，仅用于响应式布局，不改变业务路由。
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('md'));
   // hasUnreadChatMessage 保存侧边栏在线聊天入口的服务端/实时聚合未读状态，不因导航动作改变。
@@ -186,6 +192,20 @@ const AuthenticatedShell: React.FC<AuthenticatedShellProps> = ({
     settings: '系统与 AI',
   };
 
+  // handleShellSearchKeyDown 支持从 Minimal 顶栏快速跳转到已注册的业务页面。
+  const handleShellSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key !== 'Enter') return;
+    // query 是用户输入的导航关键词，统一按小写匹配路由和中文标题。
+    const query = shellSearch.trim().toLowerCase();
+    if (!query) return;
+    // match 是命中的页面路由条目，找不到时保留当前页面。
+    const match = Object.entries(pageTitle).find(/* routeMatchFinder 匹配可导航页面的路由或标题。 */ ([route, title]) => route.includes(query) || title.toLowerCase().includes(query));
+    if (match) {
+      onNavigate(match[0]);
+      setShellSearch('');
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary' }}>
       <Sidebar
@@ -202,26 +222,32 @@ const AuthenticatedShell: React.FC<AuthenticatedShellProps> = ({
       />
 
       <MinimalMainSection className="h-screen min-w-0 flex-1 overflow-x-hidden overflow-y-auto" sx={{ flex: 1, minWidth: 0, height: '100vh', overflowX: 'hidden', overflowY: 'auto', ml: { xs: 0, md: collapsed ? '72px' : '248px' }, transition: 'margin-left 180ms ease' }}>
-        <AppBar position="sticky" sx={{ display: { xs: 'block', md: 'none' }, bgcolor: 'background.paper' }}>
-          <Toolbar sx={{ minHeight: 58, px: 1.5, gap: 1 }}>
-            <IconButton aria-label="打开主导航" onClick={/* mobileOpenAction 打开窄屏临时导航。 */ () => setMobileOpen(true)} size="small" edge="start">
+        <AppBar position="sticky" sx={{ top: 0, bgcolor: 'background.paper', zIndex: /* appBarZIndex 保持顶栏位于内容层之上。 */ theme => theme.zIndex.appBar }}>
+          <Toolbar sx={{ minHeight: { xs: 58, md: 68 }, px: { xs: 1.5, md: 3 }, gap: 1.5 }}>
+            <IconButton aria-label="打开主导航" onClick={/* mobileOpenAction 打开窄屏临时导航。 */ () => setMobileOpen(true)} size="small" edge="start" sx={{ display: { xs: 'inline-flex', md: 'none' } }}>
               <MenuIcon />
             </IconButton>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, flex: 1 }} noWrap>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, display: { xs: 'block', md: 'none' }, flex: 1 }} noWrap>
               {pageTitle[activeTab] || '仪表盘'}
             </Typography>
+            <TextField
+              size="small"
+              value={shellSearch}
+              onChange={/* shellSearchChange 更新壳层快速导航输入。 */ event => setShellSearch(event.target.value)}
+              onKeyDown={handleShellSearchKeyDown}
+              placeholder="搜索页面"
+              aria-label="搜索页面"
+              sx={{ display: { xs: 'none', md: 'block' }, width: 260, '& .MuiOutlinedInput-root': { bgcolor: 'action.hover' } }}
+              slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchOutlinedIcon fontSize="small" /></InputAdornment> } }}
+            />
+            <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }} />
+            <Chip label={buildInfo.version === 'dev' ? '开发构建' : buildInfo.version} size="small" color="success" variant="outlined" sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />
             <IconButton aria-label="通知" size="small">
               <NotificationsNoneOutlinedIcon fontSize="small" />
             </IconButton>
           </Toolbar>
         </AppBar>
         <Box sx={{ px: { xs: 1.5, sm: 3, lg: 4 }, py: { xs: 2, sm: 3, lg: 4 }, maxWidth: 1600, mx: 'auto' }}>
-          <MinimalPageHeader
-            sx={{ mb: { xs: 2, sm: 3 } }}
-            eyebrow="DH闲不下来"
-            title={pageTitle[activeTab] || '仪表盘'}
-            description="运营工作台"
-          />
           <AppContent
             activeTab={activeTab}
             isAdmin={isAdmin}

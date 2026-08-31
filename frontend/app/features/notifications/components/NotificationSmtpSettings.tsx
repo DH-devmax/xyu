@@ -1,6 +1,8 @@
 import { Eye,EyeOff,Loader2,Mail,Save } from 'lucide-react';
 import React from 'react';
+import Button from '@mui/material/Button';
 import type { SystemSettings } from '../api';
+import { MinimalSectionCard } from '../../../../shared/ui/minimal';
 
 // NotificationSmtpSettingsProps 描述系统 SMTP 配置面板所需的状态和事件。
 export interface NotificationSmtpSettingsProps {
@@ -16,10 +18,12 @@ export interface NotificationSmtpSettingsProps {
   setShowPassword: React.Dispatch<React.SetStateAction<boolean>>;
   // onSave 保存 SMTP 配置。
   onSave: () => void | Promise<void>;
+  // visible 表示当前是否由通知 Tabs 展示该面板。
+  visible?: boolean;
 }
 
 // NotificationSmtpSettings 渲染管理员可见的系统级 SMTP 设置。
-export const NotificationSmtpSettings: React.FC<NotificationSmtpSettingsProps> = ({ smtp, setSmtp, smtpSaving, showPassword, setShowPassword, onSave }) => {
+export const NotificationSmtpSettings: React.FC<NotificationSmtpSettingsProps> = ({ smtp, setSmtp, smtpSaving, showPassword, setShowPassword, onSave, visible = true }) => {
   // handleTextChange 更新 SMTP 文本字段。
   const handleTextChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     // key 是文本输入框数据属性中的 SMTP 字段名。
@@ -65,11 +69,14 @@ export const NotificationSmtpSettings: React.FC<NotificationSmtpSettingsProps> =
   );
 
   return (
-    <section className="ios-card rounded-xl p-6 bg-white space-y-5">
-      <div className="flex items-start justify-between">
-        <div><h3 className="text-lg font-extrabold text-gray-800">SMTP 邮件配置</h3><p className="text-sm text-gray-500 mt-1">系统级邮件发送服务，供邮件通知渠道复用</p></div>
-        <div className="p-2 rounded-xl bg-blue-50 text-blue-600"><Mail className="w-5 h-5" /></div>
-      </div>
+    <MinimalSectionCard
+      data-layout-contract="minimal-notification-smtp"
+      sx={{ display: visible ? undefined : 'none' }}
+      title="SMTP 邮件配置"
+      action={<Mail size={20} color="currentColor" />}
+      contentSx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
+    >
+      <p className="text-sm text-gray-500">系统级邮件发送服务，供邮件通知渠道复用</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2"><label className="block text-sm font-bold text-gray-800">SMTP 服务器</label><input data-field="smtp_server" type="text" value={typeof smtp.smtp_server === 'string' ? smtp.smtp_server : ''} onChange={handleTextChange} placeholder="smtp.qq.com" className="w-full ios-input px-4 py-3 rounded-xl text-sm" /></div>
         <div className="space-y-2"><label className="block text-sm font-bold text-gray-800">SMTP 端口</label><input type="number" value={typeof smtp.smtp_port === 'number' ? smtp.smtp_port : 587} onChange={handlePortChange} placeholder="587" className="w-full ios-input px-4 py-3 rounded-xl text-sm" /></div>
@@ -91,7 +98,7 @@ export const NotificationSmtpSettings: React.FC<NotificationSmtpSettingsProps> =
         <label className="flex items-center gap-3 rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-700"><input type="checkbox" checked={smtp.smtp_use_tls !== false} onChange={handleTlsChange} />STARTTLS（常用于 587 端口）</label>
         <label className="flex items-center gap-3 rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-700"><input type="checkbox" checked={smtp.smtp_use_ssl === true} onChange={handleSslChange} />SSL/TLS 直连（常用于 465 端口）</label>
       </div>
-      <button onClick={onSave} disabled={smtpSaving} className="ios-btn-primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50">{smtpSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}{smtpSaving ? '保存中...' : '保存 SMTP 配置'}</button>
-    </section>
+      <Button variant="contained" onClick={onSave} disabled={smtpSaving} startIcon={smtpSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}>{smtpSaving ? '保存中...' : '保存 SMTP 配置'}</Button>
+    </MinimalSectionCard>
   );
 };

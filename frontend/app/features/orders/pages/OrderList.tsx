@@ -1,7 +1,13 @@
 import { ChevronLeft,ChevronRight,Edit,ExternalLink,Eye,PackageCheck,Plus,RefreshCw,Save,Trash2,Truck,User as UserIcon,X } from 'lucide-react';
 import React from 'react';
 import { createPortal } from 'react-dom';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import { formatLocalDateTime } from '../../../../dateTime';
+import { MinimalPageFrame, MinimalResponsiveDrawer, MinimalStatusChip, MinimalTableShell } from '../../../../shared/ui/minimal';
 import type { OrderStatus } from '../api';
 import { OrderFilterBar } from '../components/OrderFilterBar';
 import { OrderImportModal } from '../components/OrderImportModal';
@@ -10,19 +16,8 @@ import { useOrderActions } from '../orderActions';
 
 // StatusBadge 渲染订单状态徽标。
 const StatusBadge: React.FC<{ /** status 表示状态。 */ status: OrderStatus }> = ({ status }) => {
-  // styles 样式表。
-  const styles = {
-    processing: 'bg-blue-100 text-blue-800',
-    pending_ship: 'bg-brand text-white',
-    shipped: 'bg-blue-100 text-blue-700',
-    completed: 'bg-green-100 text-green-700',
-    cancelled: 'bg-gray-100 text-gray-500',
-    refunding: 'bg-red-100 text-red-600',
-    unknown: 'bg-gray-100 text-gray-500',
-  };
-
-  // labels labels，负责当前功能中的对应处理。
-  const labels = {
+  // labels 将服务端状态转换为稳定的中文文案。
+  const labels: Record<OrderStatus, string> = {
     processing: '处理中',
     pending_ship: '待发货',
     shipped: '已发货',
@@ -32,12 +27,18 @@ const StatusBadge: React.FC<{ /** status 表示状态。 */ status: OrderStatus 
     unknown: '未知',
   };
 
-  return (
-    <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${styles[status] || styles.cancelled}`}>
-      {labels[status] || status}
-    </span>
-  );
+  // color 将订单状态适配到 Minimal 的语义色。
+  const color: 'default' | 'success' | 'info' | 'warning' | 'error' = status === 'completed' ? 'success' : status === 'pending_ship' || status === 'processing' || status === 'shipped' ? 'info' : status === 'refunding' ? 'error' : status === 'cancelled' ? 'default' : 'warning';
+  return <MinimalStatusChip color={color} label={labels[status] || status} />;
 };
+
+// DetailField 显示订单详情抽屉中的标签和值，并保持长文本可换行。
+const DetailField: React.FC<{ /** label 是字段名称。 */ label: string; /** value 是字段值。 */ value: string; /** mono 表示使用等宽字体。 */ mono?: boolean }> = ({ label, value, mono }) => (
+  <Box sx={{ minWidth: 0 }}>
+    <Typography variant="caption" color="text.secondary">{label}</Typography>
+    <Typography variant="body2" sx={{ mt: 0.25, fontWeight: 650, fontFamily: mono ? 'monospace' : undefined, overflowWrap: 'anywhere' }}>{value}</Typography>
+  </Box>
+);
 
 // OrderList 渲染订单列表组件。
 const OrderList: React.FC = () => {
@@ -92,31 +93,20 @@ const OrderList: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
-        <div>
-          <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">订单中心</h2>
-          <p className="text-gray-500 mt-2 font-medium">查看所有闲鱼交易记录与状态。</p>
-        </div>
-        <div className="flex items-center gap-3">
-            <button onClick={loadOrders} className="p-3 rounded-2xl bg-white border border-gray-100 text-gray-600 hover:bg-gray-50 hover:text-black transition-colors shadow-sm">
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-			  onClick={importState.openImportModal}
-              className="px-5 py-3 rounded-2xl font-bold bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm flex items-center gap-2 shadow-lg"
-            >
-              <Plus className="w-4 h-4" />
-              插入订单
-            </button>
-            <button onClick={handleSync} className="ios-btn-primary px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-200 text-sm flex items-center gap-2">
-                <Truck className="w-5 h-5" />
-                一键同步订单
-            </button>
-        </div>
-      </div>
-
-      <div className="ios-card rounded-xl overflow-hidden shadow-lg border-0 bg-white">
+    <MinimalPageFrame
+      title="订单中心"
+      description="查看所有闲鱼交易记录与状态。"
+      actions={(
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <IconButton aria-label="刷新订单" title="刷新订单" onClick={loadOrders} disabled={loading} size="small">
+            <RefreshCw size={18} className={loading ? 'animate-spin' : undefined} />
+          </IconButton>
+          <Button variant="outlined" size="small" startIcon={<Plus size={16} />} onClick={importState.openImportModal}>插入订单</Button>
+          <Button variant="contained" size="small" startIcon={<Truck size={16} />} onClick={handleSync}>一键同步订单</Button>
+        </Stack>
+      )}
+    >
+      <MinimalTableShell data-page-surface="minimal-order-table">
         <OrderFilterBar
           filter={filter}
           onFilterChange={handleFilterChange}
@@ -251,152 +241,73 @@ const OrderList: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="p-4 border-t border-gray-50 flex items-center justify-between bg-white">
+        <Stack direction="row" sx={{ p: 1.5, borderTop: 1, borderColor: 'divider', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'background.paper' }}>
             <div className="text-sm text-gray-500 font-medium pl-2">
                 第 {page} 页 / 共 {totalPages} 页
             </div>
-            <div className="flex gap-2">
-                <button
+            <Stack direction="row" spacing={0.5}>
+                <IconButton
                     disabled={page <= 1}
                     onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => setPage(/* 当前回调处理用户交互或异步状态变化。 */ p => p - 1)}
                     aria-label="上一页"
-                    className="p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 transition-colors"
+                    size="small"
                 >
-                    <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
+                    <ChevronLeft size={18} />
+                </IconButton>
+                <IconButton
                     disabled={page >= totalPages}
                     onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => setPage(/* 当前回调处理用户交互或异步状态变化。 */ p => p + 1)}
                     aria-label="下一页"
-                    className="p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 transition-colors"
+                    size="small"
                 >
-                    <ChevronRight className="w-5 h-5" />
-                </button>
-            </div>
-        </div>
-      </div>
+                    <ChevronRight size={18} />
+                </IconButton>
+            </Stack>
+        </Stack>
+      </MinimalTableShell>
 
-      {/* 订单详情弹窗 - 使用 Portal */}
-      {showDetailModal && selectedOrder && createPortal(
-        <div className="modal-overlay-centered">
-          <div className="modal-container">
-            <div className="modal-header">
-              <div className="flex items-center justify-between w-full">
-                <h3 className="text-2xl font-extrabold text-gray-900">订单详情</h3>
-                <button
-                  onClick={closeDetailModal}
-                  className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </div>
-
-            <div className="modal-body space-y-6">
-              {/* Order Info */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-bold text-gray-800">订单信息</h4>
-                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl">
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">订单号</div>
-                    <div className="font-mono text-sm font-bold text-gray-900">{selectedOrder.order_id}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">所属账号</div>
-                    <div className="truncate whitespace-nowrap text-sm font-bold text-blue-700" title={accountNickname(selectedOrder.cookie_id)}>{accountNickname(selectedOrder.cookie_id)}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">状态</div>
-                    <StatusBadge status={selectedOrder.status} />
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">实付金额</div>
-                    <div className="text-lg font-extrabold text-gray-900">{selectedOrder.amount ? `¥${selectedOrder.amount}` : '待获取'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">数量</div>
-                    <div className="font-bold text-gray-900">{selectedOrder.quantity}</div>
-                  </div>
-                  <div className="col-span-2">
-                    <div className="text-xs text-gray-500 mb-1">创建时间</div>
-                    <div className="text-sm font-medium text-gray-700">{formatLocalDateTime(selectedOrder.created_at)}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Item Info */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-bold text-gray-800">商品信息</h4>
-                <div className="p-4 bg-gray-50 rounded-xl flex items-center gap-4">
-                  {selectedOrder.item_image && (
-                    <img src={selectedOrder.item_image} alt="" className="w-20 h-20 rounded-xl object-cover border border-gray-200" />
-                  )}
-                  <div className="flex-1">
-                    <div className="font-bold text-gray-900 mb-1">
-                      {getItemNameById(selectedOrder.cookie_id, selectedOrder.item_id, selectedOrder.item_title)}
-                    </div>
-                    <div className="text-sm text-gray-500">商品ID: {selectedOrder.item_id}</div>
-                    {selectedOrder.item_price && (
-                      <div className="text-sm text-gray-500 mt-1">标价: ¥{selectedOrder.item_price}</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Buyer Info */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-bold text-gray-800">买家信息</h4>
-                <div className="p-4 bg-gray-50 rounded-xl space-y-3">
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">买家ID</div>
-                    <div className="font-bold text-gray-900">{selectedOrder.buyer_id}</div>
-                  </div>
-                  {selectedOrder.receiver_name && (
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">收货人</div>
-                      <div className="font-medium text-gray-700">{selectedOrder.receiver_name}</div>
-                    </div>
-                  )}
-                  {selectedOrder.receiver_phone && (
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">联系电话</div>
-                      <div className="font-mono text-sm text-gray-700">{selectedOrder.receiver_phone}</div>
-                    </div>
-                  )}
-                  {selectedOrder.receiver_address && (
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">收货地址</div>
-                      <div className="text-sm text-gray-700">{selectedOrder.receiver_address}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={closeDetailModal}
-                  className="flex-1 px-6 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold transition-colors"
-                >
-                  关闭
-                </button>
-                {selectedOrder.status === 'pending_ship' && (
-                  <button
-                    onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => {
-                      closeDetailModal();
-                      handleShip(selectedOrder.order_id);
-                    }}
-                    className="flex-1 px-6 py-3 rounded-xl ios-btn-primary font-bold shadow-lg shadow-blue-200"
-                  >
-                    立即发货
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
+      {showDetailModal && selectedOrder && (
+        <MinimalResponsiveDrawer open title="订单详情" onClose={closeDetailModal}>
+          <Stack spacing={2.5}>
+            <Stack spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="h3" sx={{ fontSize: '1rem' }}>订单信息</Typography>
+                <StatusBadge status={selectedOrder.status} />
+              </Stack>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.25, p: 1.5, bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                <DetailField label="订单号" value={selectedOrder.order_id} mono />
+                <DetailField label="所属账号" value={accountNickname(selectedOrder.cookie_id)} />
+                <DetailField label="实付金额" value={selectedOrder.amount ? `¥${selectedOrder.amount}` : '待获取'} />
+                <DetailField label="数量" value={String(selectedOrder.quantity)} />
+                <Box sx={{ gridColumn: '1 / -1' }}><DetailField label="创建时间" value={formatLocalDateTime(selectedOrder.created_at)} /></Box>
+              </Box>
+            </Stack>
+            <Stack spacing={1}>
+              <Typography variant="h3" sx={{ fontSize: '1rem' }}>商品信息</Typography>
+              <Stack direction="row" spacing={1.5} sx={{ p: 1.5, bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                {selectedOrder.item_image ? <Box component="img" src={selectedOrder.item_image} alt="" sx={{ width: 64, height: 64, borderRadius: 1, objectFit: 'cover' }} /> : <Box sx={{ width: 64, height: 64, display: 'grid', placeItems: 'center', bgcolor: 'action.hover', borderRadius: 1 }}><PackageCheck size={22} /></Box>}
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{getItemNameById(selectedOrder.cookie_id, selectedOrder.item_id, selectedOrder.item_title)}</Typography>
+                  <Typography variant="caption" color="text.secondary">商品ID: {selectedOrder.item_id}</Typography>
+                  {selectedOrder.item_price && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>标价: ¥{selectedOrder.item_price}</Typography>}
+                </Box>
+              </Stack>
+            </Stack>
+            <Stack spacing={1}>
+              <Typography variant="h3" sx={{ fontSize: '1rem' }}>买家信息</Typography>
+              <Stack spacing={1} sx={{ p: 1.5, bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                <DetailField label="买家ID" value={selectedOrder.buyer_id} />
+                {selectedOrder.receiver_name && <DetailField label="收货人" value={selectedOrder.receiver_name} />}
+                {selectedOrder.receiver_phone && <DetailField label="联系电话" value={selectedOrder.receiver_phone} mono />}
+                {selectedOrder.receiver_address && <DetailField label="收货地址" value={selectedOrder.receiver_address} />}
+              </Stack>
+            </Stack>
+            <Stack direction="row" spacing={1}>
+              <Button fullWidth variant="outlined" onClick={closeDetailModal}>关闭</Button>
+              {selectedOrder.status === 'pending_ship' && <Button fullWidth variant="contained" onClick={/* detailShipAction 关闭详情并进入发货流程。 */ () => { closeDetailModal(); handleShip(selectedOrder.order_id); }}>立即发货</Button>}
+            </Stack>
+          </Stack>
+        </MinimalResponsiveDrawer>
       )}
 
       <OrderImportModal {...importState} />
@@ -617,7 +528,7 @@ const OrderList: React.FC = () => {
         </div>,
         document.body
       )}
-    </div>
+    </MinimalPageFrame>
   );
 };
 

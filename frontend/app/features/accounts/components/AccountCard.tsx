@@ -1,5 +1,14 @@
-import { AlertCircle,Bot,CalendarClock,Check,Clock,Edit2,Loader2,MessageCircle,Power,QrCode,RefreshCw,Sparkles,Trash2,User } from 'lucide-react';
+import { AlertCircle, Bot, CalendarClock, Check, Edit2, Loader2, MessageCircle, Power, QrCode, RefreshCw, Sparkles, Trash2, User } from 'lucide-react';
 import React from 'react';
+import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 import type { AccountDetail } from '../api';
 import { accountRuntimePresentation } from '../runtime';
 
@@ -27,7 +36,17 @@ export interface AccountCardProps {
   onDelete: (account: AccountDetail) => void;
 }
 
-// AccountCard 渲染单个账号的状态摘要与操作入口。
+// runtimeChipColor 将账号运行状态适配到 Minimal 的有限语义色集合。
+const runtimeChipColor = (account: AccountDetail): 'default' | 'success' | 'info' | 'warning' | 'error' => {
+  if (!account.enabled || account.runtime_state === 'disabled') return 'default';
+  if (account.runtime_state === 'online') return 'success';
+  if (account.runtime_state === 'starting' || account.runtime_state === 'connecting') return 'info';
+  if (account.runtime_state === 'reconnecting' || account.runtime_state === 'verification_required') return 'warning';
+  if (account.runtime_state === 'auth_expired' || account.runtime_state === 'runtime_conflict' || account.runtime_state === 'error' || account.runtime_state === 'stopped') return 'error';
+  return 'default';
+};
+
+// AccountCard 渲染 Minimal User Card 风格的账号状态摘要与操作入口。
 export const AccountCard = React.memo(/* AccountCard 负责渲染单个账号卡片及其操作。 */ function AccountCard({
   account,
   refreshing,
@@ -40,99 +59,72 @@ export const AccountCard = React.memo(/* AccountCard 负责渲染单个账号卡
   onToggle,
   onDelete,
 }: AccountCardProps) {
-  // runtime 保存账号运行状态的展示样式。
+  // runtime 保存账号运行状态的展示信息。
   const runtime = accountRuntimePresentation(account);
   // requiresLogin 表示当前账号是否需要重新授权。
   const requiresLogin = account.runtime_state === 'auth_expired' || account.runtime_state === 'verification_required';
+  // displayName 是账号卡片中优先展示的稳定名称。
+  const displayName = account.nickname || account.remark || `账号 ${account.id.substring(0, 6)}...`;
+  // chipColor 保存计算后的状态语义色，确保头像状态点和 Chip 使用同一状态。
+  const chipColor = runtimeChipColor(account);
+  // statusDotColor 将 MUI 语义色映射为状态点背景色。
+  const statusDotColor = chipColor === 'success' ? 'success.main' : chipColor === 'info' ? 'info.main' : chipColor === 'warning' ? 'warning.main' : chipColor === 'error' ? 'error.main' : 'grey.400';
 
   return (
-    <div className="ios-card rounded-xl p-6 group transition-all duration-300 hover:border-brand">
-      <div className="flex min-w-0 items-start gap-5 sm:gap-8">
-        <div className="relative">
-          {account.avatar_url ? (
-            <img
-              src={account.avatar_url}
-              alt={account.nickname || '账号头像'}
-              className="w-20 h-20 rounded-full object-cover shadow-md ring-4 ring-white bg-gray-100"
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-gray-100 text-gray-400 shadow-md ring-4 ring-white flex items-center justify-center">
-              <User className="w-9 h-9" />
-            </div>
-          )}
-          <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-4 border-white flex items-center justify-center ${runtime.dot}`}>
-            {account.runtime_state === 'online' && <Check className="w-3 h-3 text-white" />}
-          </div>
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2.5 mb-1">
-            <h3 className="text-xl font-extrabold text-gray-900 break-words">{account.nickname || account.remark || `账号 ${account.id.substring(0, 6)}...`}</h3>
-            <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold ${runtime.badge}`}>{runtime.label}</span>
-            {account.ai_enabled && (
-              <span className="px-2.5 py-0.5 rounded-lg bg-purple-100 text-purple-700 text-xs font-bold flex items-center gap-1">
-                <Bot className="w-3 h-3" /> AI
-              </span>
-            )}
-            {account.auto_rate_enabled && (
-              <span className="flex items-center gap-1 rounded-lg bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                <MessageCircle className="h-3 w-3" /> 自动评价
-              </span>
-            )}
-            {account.auto_polish_enabled && (
-              <span className="flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">
-                <Sparkles className="h-3 w-3" /> 每日擦亮
-              </span>
-            )}
-            {account.auto_confirm && <span className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700"><Check className="h-3 w-3" /> 自动确认发货</span>}
-            {account.profile_error && (
-              <span className="px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold flex items-center gap-1" title={account.profile_error}>
-                <AlertCircle className="w-3 h-3" /> 资料未同步
-              </span>
-            )}
-          </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
-            <div className="text-sm font-medium text-gray-500">
-              <p>{account.remark || '暂无备注'}</p>
-              <p className="font-mono text-xs text-gray-400">ID: {account.id}</p>
-            </div>
-            {account.runtime_message && account.runtime_state !== 'online' && account.runtime_state !== 'disabled' && (
-              <div className={`mb-3 flex flex-wrap items-center gap-2 text-sm font-medium ${requiresLogin ? 'text-red-700' : 'text-amber-700'}`}>
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{account.runtime_message}</span>
-                {requiresLogin && (
-                  <button type="button" onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => onReauthorize(account)} className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 hover:bg-red-100">
-                    <QrCode className="w-3.5 h-3.5" /> 重新授权
-                  </button>
-                )}
-              </div>
-            )}
-            {account.paused && <span className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700"><Clock className="h-3 w-3" /> 暂停处理中</span>}
-            <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-              <button onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => onRefreshProfile(account)} disabled={refreshing} className="p-3 rounded-xl transition-colors text-gray-600 hover:bg-gray-100 disabled:opacity-50" title="刷新昵称和头像">
-                <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-              </button>
-              <button onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => onReauthorize(account)} className={`p-3 rounded-xl transition-colors ${requiresLogin ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-blue-600 hover:bg-blue-50'}`} title="重新扫码授权当前账号">
-                <QrCode className="w-5 h-5" />
-              </button>
-              <button onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => onEdit(account)} className="p-3 rounded-xl hover:bg-gray-100 transition-colors text-gray-600" title="编辑账号">
-                <Edit2 className="w-5 h-5" />
-              </button>
-              <button onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => onAI(account)} className="p-3 rounded-xl hover:bg-purple-100 transition-colors text-purple-600" title="AI设置">
-                <Bot className="w-5 h-5" />
-              </button>
-              <button onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => onTasks(account)} className="p-3 rounded-xl hover:bg-amber-100 transition-colors text-amber-600" title="自动评价与每日擦亮">
-                <CalendarClock className="w-5 h-5" />
-              </button>
-              <button onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => onToggle(account.id, account.enabled)} className={`p-3 rounded-xl transition-colors ${account.enabled ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`} title={account.enabled ? '停用账号' : '启用账号'}>
-                <Power className="w-5 h-5" />
-              </button>
-              <button onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => onDelete(account)} disabled={deleting} className="p-3 rounded-xl hover:bg-red-100 transition-colors text-red-500 disabled:cursor-not-allowed disabled:opacity-40" title={deleting ? '删除中…' : `删除账号 ${account.nickname || account.remark || account.id}`}>
-                {deleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Card
+      data-layout-contract="minimal-user-card"
+      sx={{ height: '100%', p: { xs: 2, sm: 2.5 }, transition: 'border-color 160ms ease, box-shadow 160ms ease', '&:hover': { borderColor: 'primary.main', boxShadow: 3 } }}
+    >
+      <Stack spacing={2} sx={{ height: '100%' }}>
+        <Stack direction="row" spacing={1.75} sx={{ alignItems: 'flex-start', minWidth: 0 }}>
+          <Box sx={{ position: 'relative', flexShrink: 0 }}>
+            <Avatar src={account.avatar_url || undefined} alt={displayName} sx={{ width: 64, height: 64, bgcolor: 'grey.100', color: 'text.disabled', border: 3, borderColor: 'background.paper', boxShadow: 2 }}>
+              {!account.avatar_url && <User size={26} />}
+            </Avatar>
+            <Box sx={{ position: 'absolute', right: 0, bottom: 0, width: 18, height: 18, display: 'grid', placeItems: 'center', border: 2, borderColor: 'background.paper', borderRadius: '50%', bgcolor: statusDotColor }}>
+              {account.runtime_state === 'online' ? <Check size={11} color="white" /> : null}
+            </Box>
+          </Box>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 0.5 }}>
+              <Typography variant="h3" sx={{ fontSize: '1rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</Typography>
+              <Chip label={runtime.label} color={chipColor} size="small" variant="outlined" />
+            </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.remark || '暂无备注'}</Typography>
+            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.25, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>ID: {account.id}</Typography>
+          </Box>
+        </Stack>
+
+        <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', rowGap: 0.75 }}>
+          {account.ai_enabled && <Chip icon={<Bot size={13} />} label="AI" size="small" color="secondary" variant="outlined" />}
+          {account.auto_rate_enabled && <Chip icon={<MessageCircle size={13} />} label="自动评价" size="small" color="success" variant="outlined" />}
+          {account.auto_polish_enabled && <Chip icon={<Sparkles size={13} />} label="每日擦亮" size="small" color="warning" variant="outlined" />}
+          {account.auto_confirm && <Chip icon={<Check size={13} />} label="自动确认发货" size="small" color="info" variant="outlined" />}
+          {account.profile_error && <Chip icon={<AlertCircle size={13} />} label="资料未同步" size="small" color="warning" variant="outlined" title={account.profile_error} />}
+        </Stack>
+
+        {account.runtime_message && account.runtime_state !== 'online' && account.runtime_state !== 'disabled' ? (
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { xs: 'stretch', sm: 'center' }, p: 1.25, borderRadius: 1, bgcolor: requiresLogin ? 'error.50' : 'warning.50', color: requiresLogin ? 'error.main' : 'warning.dark' }}>
+            <Stack direction="row" spacing={0.75} sx={{ minWidth: 0, alignItems: 'flex-start', flex: 1 }}>
+              <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+              <Typography variant="body2" sx={{ minWidth: 0, wordBreak: 'break-word' }}>{account.runtime_message}</Typography>
+            </Stack>
+            {requiresLogin && <Button size="small" color="error" variant="outlined" startIcon={<QrCode size={14} />} onClick={/* reauthorizeAction 从状态提示启动重新授权。 */ () => onReauthorize(account)}>重新授权</Button>}
+          </Stack>
+        ) : null}
+
+        {account.paused && <Chip icon={<CalendarClock size={14} />} label="暂停处理中" size="small" color="info" variant="outlined" sx={{ alignSelf: 'flex-start' }} />}
+
+        <Stack direction="row" spacing={0.25} sx={{ mt: 'auto', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <Tooltip title="刷新昵称和头像"><span><IconButton aria-label="刷新昵称和头像" title="刷新昵称和头像" size="small" onClick={/* refreshAction 刷新账号资料。 */ () => onRefreshProfile(account)} disabled={refreshing}>{refreshing ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}</IconButton></span></Tooltip>
+          <Tooltip title="重新扫码授权当前账号"><IconButton aria-label="重新扫码授权当前账号" title="重新扫码授权当前账号" size="small" color={requiresLogin ? 'error' : 'primary'} onClick={/* qrAction 启动账号二维码授权。 */ () => onReauthorize(account)}><QrCode size={18} /></IconButton></Tooltip>
+          <Tooltip title="编辑账号"><IconButton aria-label="编辑账号" title="编辑账号" size="small" onClick={/* editAction 打开账号编辑弹窗。 */ () => onEdit(account)}><Edit2 size={18} /></IconButton></Tooltip>
+          <Tooltip title="AI设置"><IconButton aria-label="AI设置" title="AI设置" size="small" color="secondary" onClick={/* aiAction 打开账号 AI 设置。 */ () => onAI(account)}><Bot size={18} /></IconButton></Tooltip>
+          <Tooltip title="自动评价与每日擦亮"><IconButton aria-label="自动评价与每日擦亮" title="自动评价与每日擦亮" size="small" color="warning" onClick={/* tasksAction 打开账号自动化任务。 */ () => onTasks(account)}><CalendarClock size={18} /></IconButton></Tooltip>
+          <Tooltip title={account.enabled ? '停用账号' : '启用账号'}><IconButton aria-label={account.enabled ? '停用账号' : '启用账号'} title={account.enabled ? '停用账号' : '启用账号'} size="small" color={account.enabled ? 'success' : 'default'} onClick={/* toggleAction 切换账号启用状态。 */ () => onToggle(account.id, account.enabled)}><Power size={18} /></IconButton></Tooltip>
+          <Tooltip title={deleting ? '删除中…' : `删除账号 ${displayName}`}><span><IconButton aria-label={deleting ? '删除中…' : `删除账号 ${displayName}`} title={deleting ? '删除中…' : `删除账号 ${displayName}`} size="small" color="error" onClick={/* deleteAction 打开账号删除确认。 */ () => onDelete(account)} disabled={deleting}>{deleting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}</IconButton></span></Tooltip>
+        </Stack>
+      </Stack>
+    </Card>
   );
 });

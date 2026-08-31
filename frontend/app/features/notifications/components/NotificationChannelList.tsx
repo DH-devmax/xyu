@@ -1,7 +1,14 @@
 import { Bell,Edit2,Loader2,Send,Trash2 } from 'lucide-react';
 import React from 'react';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 import type { NotificationChannel } from '../api';
 import { notificationChannelTypes,notificationEventSummary } from '../state';
+import { MinimalEmptyState, MinimalSectionCard, MinimalStatusChip } from '../../../../shared/ui/minimal';
 
 // NotificationChannelListProps 描述通知渠道列表的操作边界。
 export interface NotificationChannelListProps {
@@ -57,41 +64,45 @@ export const NotificationChannelList: React.FC<NotificationChannelListProps> = (
     // Icon 是当前渠道类型对应的图标组件。
     const Icon = meta.icon;
     return (
-      <div key={channel.id} className="ios-card rounded-xl p-5 bg-white flex items-center gap-4">
-        <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0"><Icon className="w-5 h-5 text-gray-600" /></div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-gray-900 truncate">{channel.name}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">{meta.label}</span>
-            {!channel.enabled && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 font-medium">已停用</span>}
-          </div>
-          <div className="text-xs text-gray-500 mt-1 truncate">
-            {meta.fields.map(
-              // field 是当前渠道摘要需要读取的配置字段。
-              field => channel.config?.[field.key],
-            ).filter(Boolean).map(
-              // value 是渠道配置中非空的摘要值。
-              (value, index) => <span key={index} className="mr-3">{String(value).length > 40 ? `${String(value).slice(0, 40)}…` : String(value)}</span>,
-            )}
-          </div>
-          <div className="text-xs text-gray-400 mt-1 truncate">订阅：{notificationEventSummary(channel.event_types)}</div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button data-channel-id={channel.id} onClick={handleToggleClick} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${channel.enabled ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-            {channel.enabled ? '启用中' : '已停用'}
-          </button>
-          <button data-channel-id={channel.id} onClick={handleTestClick} disabled={testingId === channel.id} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-brand hover:bg-blue-100 transition-colors flex items-center gap-1 disabled:opacity-50">
-            {testingId === channel.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}测试
-          </button>
-          <button data-channel-id={channel.id} onClick={handleEditClick} className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors" title="编辑"><Edit2 className="w-4 h-4" /></button>
-          <button data-channel-id={channel.id} onClick={handleDeleteClick} className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors" title="删除"><Trash2 className="w-4 h-4" /></button>
-        </div>
-      </div>
+      <MinimalSectionCard key={channel.id} data-layout-contract="minimal-notification-channel" contentSx={{ p: { xs: 2, sm: 2.5 }, '&:last-child': { pb: { xs: 2, sm: 2.5 } } }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { xs: 'stretch', sm: 'center' } }}>
+          <Box sx={{ width: 44, height: 44, flexShrink: 0, display: 'grid', placeItems: 'center', borderRadius: 1, bgcolor: 'action.hover', color: 'text.secondary' }}>
+            <Icon size={20} />
+          </Box>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 0.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 750, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{channel.name}</Typography>
+              <MinimalStatusChip label={meta.label} color="default" />
+              {!channel.enabled && <MinimalStatusChip label="已停用" color="warning" />}
+            </Stack>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {meta.fields.map(
+                // field 是当前渠道摘要需要读取的配置字段。
+                field => channel.config?.[field.key],
+              ).filter(Boolean).map(
+                // value 是渠道配置中非空的摘要值。
+                (value, index) => <span key={index} style={{ marginRight: 12 }}>{String(value).length > 40 ? `${String(value).slice(0, 40)}…` : String(value)}</span>,
+              )}
+            </Typography>
+            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.35, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>订阅：{notificationEventSummary(channel.event_types)}</Typography>
+          </Box>
+          <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0, alignItems: 'center', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
+            <Button data-channel-id={channel.id} onClick={handleToggleClick} size="small" color={channel.enabled ? 'success' : 'inherit'} variant="outlined">
+              {channel.enabled ? '启用中' : '已停用'}
+            </Button>
+            <Button data-channel-id={channel.id} onClick={handleTestClick} disabled={testingId === channel.id} size="small" variant="outlined" startIcon={testingId === channel.id ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}>
+              测试
+            </Button>
+            <Tooltip title="编辑"><IconButton data-channel-id={channel.id} onClick={handleEditClick} aria-label="编辑" size="small"><Edit2 size={16} /></IconButton></Tooltip>
+            <Tooltip title="删除"><IconButton data-channel-id={channel.id} onClick={handleDeleteClick} aria-label="删除" size="small" color="error"><Trash2 size={16} /></IconButton></Tooltip>
+          </Stack>
+        </Stack>
+      </MinimalSectionCard>
     );
   };
 
   if (channels.length === 0) {
-    return <div className="ios-card rounded-xl p-12 bg-white text-center"><Bell className="w-12 h-12 text-gray-300 mx-auto mb-4" /><p className="text-gray-500 font-medium">还没有配置任何通知渠道</p><p className="text-gray-400 text-sm mt-1">点击右上角「新建渠道」开始配置</p></div>;
+    return <MinimalEmptyState icon={<Bell size={40} />} title="还没有配置任何通知渠道" description="点击右上角「新建渠道」开始配置" />;
   }
-  return <div className="space-y-3">{channels.map(renderChannel)}</div>;
+  return <Stack data-layout-contract="minimal-notification-channels" spacing={1.5}>{channels.map(renderChannel)}</Stack>;
 };

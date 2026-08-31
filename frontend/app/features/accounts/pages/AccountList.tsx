@@ -1,6 +1,12 @@
-import { Loader2,QrCode,User } from 'lucide-react';
+import { QrCode } from 'lucide-react';
 import React,{ useState } from 'react';
 import { createPortal } from 'react-dom';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
 import { AccountDetail } from '../api';
 import {
 deleteAccount,
@@ -17,6 +23,7 @@ import { useAccountsData } from '../hooks';
 import { useAccountQRCodeLogin } from '../qrLogin';
 import { useAccountSubmodules,type AccountModalType } from '../submoduleHooks';
 import type { AccountEditForm } from '../types';
+import { MinimalCardGrid, MinimalEmptyState, MinimalPageFrame } from '../../../../shared/ui/minimal';
 
 // AccountList 渲染账号列表组件。
 const AccountList: React.FC = () => {
@@ -160,7 +167,7 @@ const AccountList: React.FC = () => {
       setRefreshingProfileId('');
     }
   };
-  if (loading) return <div className="p-20 flex justify-center"><Loader2 className="w-8 h-8 text-brand animate-spin"/></div>;
+  if (loading) return <Stack role="status" aria-label="正在加载账号" sx={{ minHeight: 320, alignItems: 'center', justifyContent: 'center' }}><CircularProgress size={30} /></Stack>;
 
   // filteredAccounts 过滤后的账号列表，负责当前功能中的对应处理。
   const filteredAccounts = accounts.filter(/* 当前回调处理集合中的单个元素。 */ account => {
@@ -177,36 +184,34 @@ const AccountList: React.FC = () => {
   });
 
   return (
-    <div className="space-y-8 animate-fade-in relative">
-      <div className="flex flex-col xl:flex-row xl:justify-between xl:items-end gap-4">
-        <div>
-          <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">账号管理</h2>
-          <p className="text-gray-500 mt-2 font-medium">管理您的闲鱼授权账号及设置。建议给账号填写备注，便于多账号区分。</p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
+    <MinimalPageFrame
+      title="账号管理"
+      description="管理授权账号、运行状态和自动化能力。"
+      actions={(
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <TextField
             value={accountSearch}
-            onChange={/* 当前回调处理用户交互或异步状态变化。 */ event => setAccountSearch(event.target.value)}
+            onChange={/* accountSearchChange 更新账号列表关键词。 */ event => setAccountSearch(event.target.value)}
             placeholder="搜索昵称 / 备注 / 账号ID"
-            className="ios-input px-4 py-3 rounded-2xl text-sm w-full sm:w-72"
+            aria-label="搜索昵称 / 备注 / 账号ID"
+            size="small"
+            sx={{ width: { xs: '100%', sm: 260 } }}
           />
-          <button
-            onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => startQRLogin()}
-            className="ios-btn-primary flex items-center gap-2 px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-200 transition-transform hover:scale-105 active:scale-95"
-          >
-            <QrCode className="w-5 h-5" />
+          <Button variant="contained" startIcon={<QrCode size={17} />} onClick={/* qrLoginAction 启动扫码添加账号。 */ () => startQRLogin()}>
             扫码添加新账号
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Stack>
+      )}
+    >
+      <Stack spacing={2.5}>
+        <Alert severity="info" sx={{ alignItems: 'center' }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 0.25, sm: 2 }}>
+            <Box component="span" sx={{ fontWeight: 700 }}>当前显示 {filteredAccounts.length} / {accounts.length} 个账号</Box>
+            <Box component="span">若资料只显示 ID，可使用卡片上的刷新或重新授权。</Box>
+          </Stack>
+        </Alert>
 
-      <div className="rounded-2xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm text-blue-900 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        <div className="font-bold">当前显示 {filteredAccounts.length} / {accounts.length} 个账号</div>
-        <div className="text-blue-700">如果某个账号只显示 ID，点该账号右侧“刷新资料”；若刷新失败，先点二维码重新授权。</div>
-      </div>
-
-      {/* Account Grid */}
-      <div className="grid grid-cols-1 gap-6">
+        <MinimalCardGrid minItemWidth={360}>
         {filteredAccounts.map(/* 当前回调处理集合中的单个元素。 */ account => (
           <AccountCard
             key={account.id}
@@ -224,21 +229,17 @@ const AccountList: React.FC = () => {
         ))}
 
         {accounts.length === 0 && (
-            <div className="ios-card p-12 text-center">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <User className="w-10 h-10 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">暂无账号</h3>
-                <p className="text-gray-500 mt-1">请点击右上角扫码添加您的闲鱼账号</p>
-            </div>
+          <Box sx={{ gridColumn: '1 / -1' }}>
+            <MinimalEmptyState title="暂无账号" description="使用右上角扫码入口添加第一个闲鱼账号。" />
+          </Box>
         )}
         {accounts.length > 0 && filteredAccounts.length === 0 && (
-            <div className="ios-card p-12 text-center">
-                <h3 className="text-lg font-bold text-gray-900">没有匹配的账号</h3>
-                <p className="text-gray-500 mt-1">换一个关键词搜索昵称、备注或账号ID。</p>
-            </div>
+          <Box sx={{ gridColumn: '1 / -1' }}>
+            <MinimalEmptyState title="没有匹配的账号" description="换一个关键词搜索昵称、备注或账号 ID。" />
+          </Box>
         )}
-      </div>
+        </MinimalCardGrid>
+      </Stack>
 
       {taskAccount && createPortal(
         <AccountAutomationModal
@@ -319,7 +320,7 @@ const AccountList: React.FC = () => {
           onSave={handleSaveAISettings}
         />
       )}
-    </div>
+    </MinimalPageFrame>
   );
 };
 

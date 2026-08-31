@@ -14,6 +14,7 @@ import { consumeSelectedFile } from '../fileInput';
 import { useItemPublishBatch } from '../hooks';
 import { useItemActions } from '../itemActions';
 import type { ItemListProps } from '../types';
+import { MinimalCardGrid, MinimalEmptyState, MinimalFilterToolbar, MinimalPageFrame } from '../../../../shared/ui/minimal';
 
 // formatItemPrice 将商品价格转换为本地化展示文本。
 const formatItemPrice = (price?: string) => {
@@ -201,12 +202,8 @@ const ItemList: React.FC<ItemListProps> = ({ onConfigureDelivery }) => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">商品管理</h2>
-          <p className="text-gray-500 mt-2 text-sm">监控并管理所有账号下的闲鱼商品。</p>
-        </div>
+    <MinimalPageFrame title="商品管理" description="监控并管理所有账号下的闲鱼商品。">
+      <MinimalFilterToolbar>
         <div className="flex flex-wrap items-end gap-3">
             <div className="flex min-w-[200px] flex-col gap-1.5">
               <label htmlFor="item-account-filter" className="px-1 text-[11px] font-extrabold tracking-wide text-gray-500">
@@ -286,16 +283,16 @@ const ItemList: React.FC<ItemListProps> = ({ onConfigureDelivery }) => {
               </button>
             )}
         </div>
-      </div>
+      </MinimalFilterToolbar>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <MinimalCardGrid minItemWidth={205}>
           {visibleItems.map(/* 当前回调处理集合中的单个元素。 */ item => {
             // linkedRules 关联规则列表。
             const linkedRules = rulesForItem(item);
             // hasRule 是否存在规则。
             const hasRule = linkedRules.length > 0;
             return (
-              <div key={`${item.cookie_id}-${item.item_id}`} className="ios-card p-3 rounded-2xl hover:shadow-lg transition-all group relative flex flex-col">
+              <div key={`${item.cookie_id}-${item.item_id}`} data-layout-contract="minimal-product-card" className="ios-card p-3 rounded-lg hover:shadow-lg transition-all group relative flex flex-col">
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <button
                         onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => handleEdit(item)}
@@ -349,12 +346,13 @@ const ItemList: React.FC<ItemListProps> = ({ onConfigureDelivery }) => {
             );
           })}
           {visibleItems.length === 0 && (
-             <div className="col-span-full py-20 text-center text-gray-400">
-                 <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                 {accountFilter ? '该账号暂无商品数据' : '暂无商品数据，请选择账号进行同步'}
-             </div>
+            <MinimalEmptyState
+              icon={<ShoppingBag size={30} />}
+              title={accountFilter ? '该账号暂无商品数据' : '暂无商品数据'}
+              description={accountFilter ? '切换账号或清除筛选后重试。' : '选择账号并同步商品后，商品会显示在这里。'}
+            />
           )}
-      </div>
+      </MinimalCardGrid>
 
       {showEditModal && selectedItem && createPortal(
         <div className="modal-overlay-centered">
@@ -934,7 +932,7 @@ const ItemList: React.FC<ItemListProps> = ({ onConfigureDelivery }) => {
           </div>
         </div>
       , document.body)}
-    </div>
+    </MinimalPageFrame>
   );
 };
 

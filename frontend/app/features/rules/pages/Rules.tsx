@@ -21,12 +21,20 @@ Zap,
 } from 'lucide-react';
 import React,{ useEffect,useMemo,useState } from 'react';
 import { createPortal } from 'react-dom';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import { AutomationIssuePanel } from '../components/AutomationIssuePanel';
 import { useRulesData } from '../hooks';
 import { filterAutomationIssues } from '../issueState';
 import { useRuleActions } from '../ruleActions';
 import type { AutomationTriggerType,RulesProps,RulesTab } from '../types';
 import { accentClasses,accountLabel,actionSummary,adjustPriceTarget,buildReviewConfig,cardActionsForTrigger,statusPill,triggerMeta,triggerOrder } from '../utils';
+import { MinimalPageFrame, MinimalSectionCard, MinimalSegmentedDialog } from '../../../../shared/ui/minimal';
+
+// AutomationDialogSegment 定义自动化规则编辑器的 Minimal 分段导航值。
+type AutomationDialogSegment = 'trigger' | 'delivery' | 'advanced';
 
 // Rules 是规则 feature 在旧页面目录下保留的兼容入口组件。
 const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHandled }) => {
@@ -46,6 +54,8 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
   const [automationPage, setAutomationPage] = useState(1);
   // [automationPageSize, 解构得到当前 Hook 返回的状态和操作函数。
   const [automationPageSize, setAutomationPageSize] = useState(10);
+  // [automationDialogSegment, 解构得到当前 Hook 返回的状态和操作函数。
+  const [automationDialogSegment, setAutomationDialogSegment] = useState<AutomationDialogSegment>('trigger');
 
   // rulesData 规则列表数据，负责当前功能中的对应处理。
   const rulesData = useRulesData({
@@ -128,6 +138,10 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
 	void refresh().catch(/* 当前回调处理异步操作结果。 */ error => console.error('刷新规则页面失败', error));
   }, [refresh]);
 
+  useEffect(/* 当前回调同步 React 副作用和资源生命周期。 */ () => {
+    if (showAutomationModal) setAutomationDialogSegment('trigger');
+  }, [showAutomationModal]);
+
   // visibleAutomationRules 可见数据自动化规则列表，负责当前功能中的对应处理。
   const visibleAutomationRules = useMemo(
     /* 当前回调处理集合中的单个元素。 */ () => automationRules.filter(/* 当前回调处理集合中的单个元素。 */ rule => !selectedAccountId || rule.cookie_id === selectedAccountId),
@@ -185,13 +199,12 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
       : '编辑默认回复';
 
   return (
-    <div className="min-w-0 space-y-8 animate-fade-in">
-      <div className="flex flex-col xl:flex-row justify-between xl:items-end gap-4">
-        <div>
-          <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">自动化规则</h2>
-          <p className="text-gray-500 mt-2 font-medium">系统通知卡片只进入自动化判断；买家消息进入关键词、默认或 AI 回复。</p>
-        </div>
-        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+    <MinimalPageFrame
+      title="自动化规则"
+      description="系统通知卡片只进入自动化判断；买家消息进入关键词、默认或 AI 回复。"
+      className="min-w-0 space-y-8"
+      actions={(
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <select
             value={selectedAccountId}
             onChange={/* 当前回调处理用户交互或异步状态变化。 */ event => {
@@ -205,48 +218,32 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
               <option key={account.id} value={account.id}>{accountLabel(account)}</option>
             ))}
           </select>
-          <button
-            onClick={refresh}
-            className="px-4 py-3 rounded-2xl font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center gap-2 whitespace-nowrap transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            刷新
-          </button>
-          <button
+          <Button variant="outlined" startIcon={<RefreshCw size={16} className={loading ? 'animate-spin' : undefined} />} onClick={refresh}>刷新</Button>
+          <Button
+            variant="contained"
+            startIcon={<Plus size={16} />}
             onClick={activeTab === 'automation' ? /* 当前回调处理用户交互或异步状态变化。 */ () => openNewAutomationRule('order_paid') : activeTab === 'reply' ? handleAddReplyRule : /* 当前回调处理用户交互或异步状态变化。 */ () => void openDefaultReplyModal()}
             disabled={!selectedAccountId}
-            className="ios-btn-primary px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
           >
-            <Plus className="w-4 h-4" />
             {primaryActionLabel}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Stack>
+      )}
+    >
 
-      <div className="flex flex-wrap gap-2 p-2 bg-gray-100/50 rounded-2xl">
-        {[
-          { id: 'automation' as const, label: '交易自动化', icon: Zap },
-          { id: 'reply' as const, label: '关键词回复', icon: MessageCircle },
-          { id: 'default' as const, label: '账号默认回复', icon: Bot },
-        ].map(/* 当前回调处理用户交互或异步状态变化。 */ tab => {
-          // Icon 渲染Icon React 组件。
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => setActiveTab(tab.id)}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                activeTab === tab.id
-                  ? 'bg-brand text-white shadow-md'
-                  : 'bg-white text-gray-600 hover:text-black hover:bg-gray-50'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <Tabs
+        data-layout-contract="minimal-rule-tabs"
+        value={activeTab}
+        onChange={/* ruleTabChange 切换规则页面模式并保留当前筛选上下文。 */ (_event, nextTab: RulesTab) => setActiveTab(nextTab)}
+        variant="scrollable"
+        allowScrollButtonsMobile
+        aria-label="规则类型"
+        sx={{ minHeight: 48, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
+      >
+        <Tab value="automation" icon={<Zap size={17} />} iconPosition="start" label="交易自动化" />
+        <Tab value="reply" icon={<MessageCircle size={17} />} iconPosition="start" label="关键词回复" />
+        <Tab value="default" icon={<Bot size={17} />} iconPosition="start" label="账号默认回复" />
+      </Tabs>
 
 	  {activeTab === 'automation' && (visibleAutomationIssues.runs.length > 0 || visibleAutomationIssues.pending_tasks.length > 0) && (
 	    <AutomationIssuePanel
@@ -260,8 +257,7 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
       {activeTab === 'automation' && (
         <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(270px,0.72fr)_minmax(0,1.28fr)]">
           <aside className="min-w-0 space-y-4">
-            <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-              <h3 className="font-black text-gray-900 mb-1">新建规则</h3>
+            <MinimalSectionCard data-layout-contract="minimal-rule-summary-card" title="新建规则" contentSx={{ p: { xs: 2, sm: 2.5 }, '&:last-child': { pb: { xs: 2, sm: 2.5 } } }}>
               <p className="text-sm text-gray-500 mb-4">先选自动化类型，再配置对应动作。</p>
               <div className="space-y-3">
                 {triggerOrder.map(/* 当前回调处理集合中的单个元素。 */ trigger => {
@@ -289,13 +285,14 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
                   );
                 })}
               </div>
-            </div>
+            </MinimalSectionCard>
 
-            <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-              <div className="mb-4 flex items-center justify-between gap-3">
-				<h3 className="font-black text-gray-900">筛选结果构成</h3>
-				<span className="text-xs font-bold text-gray-400">共 {automationTotal} 条</span>
-			  </div>
+            <MinimalSectionCard
+              data-layout-contract="minimal-rule-summary-card"
+              title="筛选结果构成"
+              action={<span className="text-xs font-bold text-gray-400">共 {automationTotal} 条</span>}
+              contentSx={{ p: { xs: 2, sm: 2.5 }, '&:last-child': { pb: { xs: 2, sm: 2.5 } } }}
+            >
               <div className="space-y-3">
                 {triggerOrder.map(/* 当前回调处理集合中的单个元素。 */ trigger => {
                   // meta 元数据。
@@ -313,7 +310,7 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
                   );
                 })}
               </div>
-            </div>
+            </MinimalSectionCard>
           </aside>
 
 		  <section className="min-w-0 space-y-4">
@@ -610,22 +607,27 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
       )}
 
       {showAutomationModal && editingAutomationRule && createPortal(
-        <div className="modal-overlay">
-          <div className="modal-container" style={{ maxWidth: '72rem', maxHeight: '92vh' }}>
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-black text-gray-900">{editingAutomationRule.id ? '编辑自动化规则' : '新建自动化规则'}</h3>
-                <p className="text-sm text-gray-500 mt-1">{currentMeta.description}</p>
-              </div>
-              <button
-                onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => setShowAutomationModal(false)}
-                className="w-10 h-10 rounded-2xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
-                title="关闭"
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-
+        <MinimalSegmentedDialog
+          open
+          maxWidth="xl"
+          title={editingAutomationRule.id ? '编辑自动化规则' : '新建自动化规则'}
+          description={currentMeta.description}
+          segments={[
+            { value: 'trigger', label: '触发类型' },
+            { value: 'delivery', label: '发货与价格' },
+            { value: 'advanced', label: '高级设置' },
+          ]}
+          value={automationDialogSegment}
+          onSegmentChange={/* automationSegmentChange 切换自动化编辑器分段。 */ nextValue => setAutomationDialogSegment(nextValue as AutomationDialogSegment)}
+          onClose={/* 当前回调处理用户交互或异步状态变化。 */ () => setShowAutomationModal(false)}
+          sx={{ '& .MuiDialog-paper': { maxHeight: '92vh' } }}
+          actions={(
+            <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1} sx={{ width: '100%', justifyContent: 'flex-end' }}>
+              <Button variant="outlined" onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => setShowAutomationModal(false)}>取消</Button>
+              <Button variant="contained" startIcon={<Save size={16} />} onClick={handleSaveAutomationRule}>保存自动化规则</Button>
+            </Stack>
+          )}
+        >
             <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] min-h-0">
               <aside className="bg-slate-900 text-white p-5 overflow-y-auto">
                 <div className="text-xs font-bold text-slate-400 mb-3">选择自动化类型</div>
@@ -987,17 +989,7 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-100 bg-white flex gap-3">
-              <button onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => setShowAutomationModal(false)} className="flex-1 px-6 py-3 rounded-2xl font-bold bg-gray-100 text-gray-700 hover:bg-gray-200">
-                取消
-              </button>
-              <button onClick={handleSaveAutomationRule} className="flex-1 ios-btn-primary px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2">
-                <Save className="w-4 h-4" />
-                保存自动化规则
-              </button>
-            </div>
-          </div>
-        </div>,
+        </MinimalSegmentedDialog>,
         document.body
       )}
 
@@ -1210,7 +1202,7 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
         </div>,
         document.body
       )}
-    </div>
+    </MinimalPageFrame>
   );
 };
 

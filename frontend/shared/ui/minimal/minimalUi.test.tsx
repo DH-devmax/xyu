@@ -1,9 +1,14 @@
 import ReactDOMServer from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
-import { MinimalAuthCenteredLayout, MinimalFormHead, MinimalMainSection, MinimalPageHeader, MinimalSectionCard } from './index';
+import { MinimalAuthCenteredLayout, MinimalCardGrid, MinimalEmptyState, MinimalFilterToolbar, MinimalFormHead, MinimalMainSection, MinimalPageFrame, MinimalPageHeader, MinimalSectionCard, MinimalSegmentedDialog, MinimalStatusChip, MinimalTableShell } from './index';
 
 // render 将模板原语转换为静态 HTML，验证布局契约不依赖浏览器尺寸或网络状态。
 const render = (element: React.ReactElement): string => ReactDOMServer.renderToStaticMarkup(element);
+
+// noopSegmentChange 提供分段 Dialog 静态渲染所需的占位切换回调。
+const noopSegmentChange = (_value: string): void => undefined;
+// noopDialogClose 提供分段 Dialog 静态渲染所需的占位关闭回调。
+const noopDialogClose = (): void => undefined;
 
 describe('Minimal UI 模板原语', /* 当前回调验证模板适配层的固定结构和可访问标题。 */ () => {
   test('认证布局保留 centered content、品牌插槽和背景资源契约', /* 当前回调验证认证页确实使用 Minimal centered 结构。 */ () => {
@@ -66,5 +71,39 @@ describe('Minimal UI 模板原语', /* 当前回调验证模板适配层的固�
     expect(markup).toContain('data-layout-contract="minimal-section-card"');
     expect(markup).toContain('商品销量排行');
     expect(markup).toContain('商品数据');
+  });
+
+  test('业务页面共享原语提供网格、筛选、状态和空数据契约', /* 当前回调验证业务批次使用的 Minimal 适配器结构。 */ () => {
+    // markup 是复合列表页面适配原语的静态结果。
+    const markup = render(
+      <MinimalPageFrame title="商品管理" description="商品列表">
+        <MinimalFilterToolbar><span>筛选</span></MinimalFilterToolbar>
+        <MinimalCardGrid><span>商品卡片</span></MinimalCardGrid>
+        <MinimalStatusChip label="运行中" color="success" />
+        <MinimalEmptyState title="暂无商品" description="请先添加商品" />
+      </MinimalPageFrame>,
+    );
+
+    expect(markup).toContain('data-layout-contract="minimal-page-frame"');
+    expect(markup).toContain('data-layout-contract="minimal-filter-toolbar"');
+    expect(markup).toContain('data-layout-contract="minimal-card-grid"');
+    expect(markup).toContain('data-layout-contract="minimal-status-chip"');
+    expect(markup).toContain('data-layout-contract="minimal-empty-state"');
+    expect(markup).toContain('商品卡片');
+    expect(markup).toContain('暂无商品');
+  });
+
+  test('密集列表和分段编辑原语暴露稳定契约', /* 当前回调验证卡密表格与规则编辑流程使用的共享壳。 */ () => {
+    // markup 是带表格和分段选项的 Minimal 编辑结构静态结果。
+    const markup = render(
+      <MinimalTableShell><table><tbody><tr><td>订单</td></tr></tbody></table></MinimalTableShell>,
+    );
+    expect(markup).toContain('data-layout-contract="minimal-table-shell"');
+    expect(markup).toContain('订单');
+    expect(render(
+      <MinimalSegmentedDialog open title="规则编辑" segments={[{ value: 'basic', label: '基础' }]} value="basic" onSegmentChange={noopSegmentChange} onClose={noopDialogClose}>
+        <span>表单</span>
+      </MinimalSegmentedDialog>,
+    )).toContain('data-layout-contract="minimal-segmented-dialog"');
   });
 });

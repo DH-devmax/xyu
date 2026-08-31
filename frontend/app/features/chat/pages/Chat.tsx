@@ -3,6 +3,7 @@ AlertCircle,Check,CheckCheck,ImagePlus,Loader2,MessageCircleMore,PanelRightClose
 RefreshCw,Search,Send,Smile,UserRound,Wifi,WifiOff,X,
 } from 'lucide-react';
 import React from 'react';
+import Box from '@mui/material/Box';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import { AudioMessage } from '../components/AudioMessage';
@@ -36,10 +37,15 @@ const Chat: React.FC = () => {
   // quickReplyPanelOpen 保存右侧快捷回复抽屉的展开状态；页面卸载后恢复默认收起。
   const [quickReplyPanelOpen, setQuickReplyPanelOpen] = React.useState(false);
 
-  if (loading) return <div className="flex h-[calc(100vh-4rem)] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-sky-500" /></div>;
+  if (loading) return <Box data-layout-contract="minimal-chat-loading" sx={{ minHeight: 520, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader2 className="h-8 w-8 animate-spin text-sky-500" /></Box>;
 
   return (
-    <section className="flex h-[calc(100vh-4rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-chat">
+    <Box
+      component="section"
+      data-layout-contract="minimal-chat-layout"
+      className="flex h-[calc(100vh-4rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-chat"
+      sx={{ borderRadius: 2, borderColor: 'divider', bgcolor: 'background.paper', boxShadow: 2 }}
+    >
       <header className="border-b border-slate-200 bg-slate-50/70 px-5 pt-4">
         <div className="mb-3 flex items-center justify-between gap-4">
           <div>
@@ -80,7 +86,7 @@ const Chat: React.FC = () => {
           <p className="mt-1 text-sm text-slate-500">先在账号管理中启用账号，聊天会话会自动出现。</p>
         </div>
       ) : (
-        <div className="grid min-h-0 flex-1 overflow-hidden grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid min-h-0 flex-1 overflow-hidden grid-cols-[minmax(0,1fr)] md:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="flex min-h-0 flex-col border-r border-slate-200 bg-slate-50/40">
             <div className="space-y-3 border-b border-slate-200 p-3">
               <div className="relative">
@@ -266,7 +272,7 @@ const Chat: React.FC = () => {
       </div>}
 
       <Lightbox open={lightboxIndex >= 0} index={Math.max(lightboxIndex, 0)} close={/* 当前回调关闭图片灯箱。 */ () => setLightboxIndex(-1)} slides={imageSlides} />
-    </section>
+    </Box>
   );
 };
 

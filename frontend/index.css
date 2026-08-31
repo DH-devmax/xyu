@@ -182,8 +182,13 @@ html, body, #root {
   width: 100%;
 }
 
+@keyframes minimal-page-enter {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+  font-family: "Public Sans Variable", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
   background-color: rgb(var(--color-canvas));
   color: rgb(var(--color-ink));

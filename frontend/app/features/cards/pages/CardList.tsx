@@ -1,12 +1,17 @@
 import { Copy,CreditCard,Edit,FileText,Globe,Image as ImageIcon,Package,Plus,Save,Search,SlidersHorizontal,Trash2,Upload,X } from 'lucide-react';
 import React from 'react';
 import { createPortal } from 'react-dom';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
 import { Card, testCardAPI } from '../api';
 import { useCardActions } from '../cardActions';
 import { APIRequestBuilder } from '../components/APIRequestBuilder';
 import { BatchCardImportModal } from '../components/BatchCardImportModal';
 import { CardIcon } from '../components/CardIcon';
 import { useCardBatchActions,useCardsData } from '../hooks';
+import { MinimalEmptyState, MinimalFilterToolbar, MinimalPageFrame, MinimalStatusChip, MinimalTableShell } from '../../../../shared/ui/minimal';
 
 // CardList 渲染卡密列表组件。
 const CardList: React.FC = () => {
@@ -43,32 +48,18 @@ const CardList: React.FC = () => {
   const batchState = useCardBatchActions({ dataCards, loadCards });
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
-        <div>
-          <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">卡密库存</h2>
-          <p className="text-gray-500 mt-2 font-medium">管理自动发货的卡密、链接或图片资源。</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={batchState.openBatchModal}
-            className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-2xl font-bold text-gray-700 flex items-center gap-2 transition-colors"
-          >
-            <Upload className="w-5 h-5" />
-            批量导入
-          </button>
-          <button
-            onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => setShowAddModal(true)}
-            className="ios-btn-primary flex items-center gap-2 px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-200 transition-transform hover:scale-105 active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-          添加新卡密
-        </button>
-        </div>
-      </div>
-
-      <div className="ios-card rounded-xl overflow-hidden shadow-lg border-0 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-50 bg-surface-muted p-4 sm:flex-row sm:items-center sm:justify-between">
+    <MinimalPageFrame
+      title="卡密库存"
+      description="管理自动发货的卡密、链接或图片资源。"
+      actions={(
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <Button variant="outlined" startIcon={<Upload size={17} />} onClick={batchState.openBatchModal}>批量导入</Button>
+          <Button variant="contained" startIcon={<Plus size={17} />} onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => setShowAddModal(true)}>添加新卡密</Button>
+        </Stack>
+      )}
+    >
+      <MinimalTableShell data-page-surface="minimal-card-inventory">
+        <MinimalFilterToolbar>
           <div className="flex flex-1 flex-col gap-3 sm:flex-row">
             <div className="relative sm:w-48">
               <SlidersHorizontal className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -100,7 +91,7 @@ const CardList: React.FC = () => {
           <div className="whitespace-nowrap px-1 text-xs font-bold text-gray-400">
             显示 {filteredCards.length} / {cards.length} 组
           </div>
-        </div>
+        </MinimalFilterToolbar>
         <div className="overflow-x-auto">
           <table className="w-full table-fixed text-left border-collapse">
             <thead>
@@ -151,16 +142,10 @@ const CardList: React.FC = () => {
                       </button>
                     </td>
                     <td className="px-2 py-5">
-                      <span className={`inline-flex rounded-md px-2 py-1 text-[11px] font-bold ${
-                        card.type === 'text' ? 'bg-blue-50 text-blue-600' :
-                        card.type === 'data' ? 'bg-purple-50 text-purple-600' :
-                        card.type === 'api' ? 'bg-blue-50 text-blue-600' :
-                        'bg-pink-50 text-pink-600'
-                      }`}>
-                        {card.type === 'text' ? '文本' :
-                         card.type === 'data' ? '批量' :
-                         card.type === 'api' ? 'API' : '图片'}
-                      </span>
+                      <MinimalStatusChip
+                        color={card.type === 'data' ? 'secondary' : card.type === 'image' ? 'warning' : 'info'}
+                        label={card.type === 'text' ? '文本' : card.type === 'data' ? '批量' : card.type === 'api' ? 'API' : '图片'}
+                      />
                     </td>
                     <td className="px-5 py-5">
                       <span className="line-clamp-3 break-all font-mono text-sm leading-5 text-gray-600" title={stockInfo}>
@@ -176,6 +161,8 @@ const CardList: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-2 py-5">
+                      <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+                      <MinimalStatusChip color={card.enabled ? 'success' : 'default'} label={card.enabled ? '启用' : '停用'} />
                       <button
                         onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => toggleCardStatus(card)}
                         aria-label={`切换卡密 ${card.name} 状态`}
@@ -187,23 +174,27 @@ const CardList: React.FC = () => {
                           card.enabled ? 'left-5' : 'left-1'
                         }`}></div>
                       </button>
+                      </Stack>
                     </td>
                     <td className="px-3 py-5">
                       <div className="flex items-center justify-end gap-0.5">
-                        <button
+                        <Tooltip title="编辑"><IconButton
                           onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => handleEdit(card)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-black"
                           title="编辑"
+                          aria-label={`编辑卡密 ${card.name}`}
+                          size="small"
                         >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
+                          <Edit size={16} />
+                        </IconButton></Tooltip>
+                        <Tooltip title="删除"><IconButton
                           onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => handleDelete(card.id)}
                           aria-label={`删除卡密 ${card.name}`}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                          title="删除"
+                          size="small"
+                          color="error"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                          <Trash2 size={16} />
+                        </IconButton></Tooltip>
                       </div>
                     </td>
                   </tr>
@@ -214,12 +205,13 @@ const CardList: React.FC = () => {
         </div>
 
         {filteredCards.length === 0 && (
-          <div className="py-20 text-center text-gray-400">
-            <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p>{cards.length === 0 ? '暂无卡密配置，请点击右上角添加。' : '没有符合当前筛选条件的卡密组。'}</p>
-          </div>
+          <MinimalEmptyState
+            icon={<Package size={42} />}
+            title={cards.length === 0 ? '暂无卡密配置' : '没有符合当前筛选条件的卡密组'}
+            description={cards.length === 0 ? '使用右上角入口添加卡密。' : '调整筛选条件后重试。'}
+          />
         )}
-      </div>
+      </MinimalTableShell>
 
       {/* 编辑卡密弹窗 - 使用 Portal */}
       {showEditModal && selectedCard && createPortal(
@@ -605,7 +597,7 @@ const CardList: React.FC = () => {
       />
 
 
-    </div>
+    </MinimalPageFrame>
   );
 };
 

@@ -6,14 +6,22 @@ Eye,EyeOff,
 LockKeyhole,
 RefreshCw,
 Save,
-Settings as SettingsIcon,
 ShieldCheck,
 Sparkles,
 UserRound
 } from 'lucide-react';
 import React from 'react';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Stack from '@mui/material/Stack';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Typography from '@mui/material/Typography';
 import { DEFAULT_AI_API_URL,LOG_LEVELS } from '../constants';
 import { useSettings } from '../hooks';
+import { MinimalPageFrame, MinimalSectionCard } from '../../../../shared/ui/minimal';
 
 // Settings 展示系统配置、AI 模型和登录凭据编辑页面。
 const Settings: React.FC = () => {
@@ -25,17 +33,25 @@ const Settings: React.FC = () => {
     setSettings, setModelDropdownOpen, setShowApiKey, setShowCaptchaSecret, setShowCurrentPassword,
     setShowNewPassword, setCredentials,
   } = useSettings();
+  // activeSection 保存设置页面当前的 Minimal 分区导航状态。
+  const [activeSection, setActiveSection] = React.useState<'system' | 'ai' | 'security'>('system');
+
+  // handleSectionChange 切换 Tabs 并将焦点内容滚动到对应设置区块。
+  const handleSectionChange = (_event: React.SyntheticEvent, nextValue: string) => {
+    // section 是 Tabs 传入的稳定设置分区标识。
+    const section = nextValue as 'system' | 'ai' | 'security';
+    setActiveSection(section);
+    document.getElementById(`settings-section-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   if (!settings) {
     return (
-      <div className="p-8 text-center text-gray-400 space-y-3">
-        {loadError || (loading ? '加载配置中...' : '暂无配置')}
+      <Stack spacing={2} sx={{ minHeight: 320, color: 'text.secondary', alignItems: 'center', justifyContent: 'center' }}>
+        {loading ? <CircularProgress size={28} /> : <Typography color="text.secondary">{loadError || '暂无配置'}</Typography>}
         {!loading && loadError && (
-          <div>
-            <button type="button" className="ios-btn-primary px-4 py-2 rounded-xl" onClick={loadSettings}>重新加载</button>
-          </div>
+          <Button type="button" variant="contained" onClick={loadSettings}>重新加载</Button>
         )}
-      </div>
+      </Stack>
     );
   }
 
@@ -45,39 +61,38 @@ const Settings: React.FC = () => {
   const visibleAIModels = aiModels;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-24">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
-              <SettingsIcon className="w-6 h-6 text-gray-600" />
-          </div>
-          <div>
-              <h2 className="text-3xl font-extrabold text-gray-900">系统设置</h2>
-              <p className="text-gray-500 mt-1 text-sm font-medium">配置全局自动化规则与系统参数</p>
-          </div>
-        </div>
-        <button
-          onClick={loadSettings}
-          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-gray-700 flex items-center gap-2 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-          刷新
-        </button>
-      </div>
+    <MinimalPageFrame
+      title="系统设置"
+      description="配置全局自动化规则与系统参数"
+      actions={<Button variant="outlined" startIcon={<RefreshCw size={16} />} onClick={loadSettings}>刷新</Button>}
+      sx={{ maxWidth: 1200, mx: 'auto', pb: 12 }}
+    >
+
+      <Tabs
+        data-layout-contract="minimal-settings-tabs"
+        value={activeSection}
+        onChange={handleSectionChange}
+        variant="scrollable"
+        allowScrollButtonsMobile
+        aria-label="系统设置分区"
+        sx={{ mb: { xs: 2, md: 3 }, borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Tab value="system" label="基础系统" />
+        <Tab value="ai" label="AI 兼容" />
+        <Tab value="security" label="安全与凭据" />
+      </Tabs>
 
       {saveError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <span>{saveError}</span>
-          <button type="button" className="font-bold underline" onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => void handleSave}>重试保存</button>
-        </div>
+        <Alert severity="error" action={<Button color="inherit" size="small" onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => void handleSave}>重试保存</Button>}>
+          {saveError}
+        </Alert>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <Box data-layout-contract="minimal-settings-sections" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' }, gap: { xs: 3, md: 4 } }}>
         {/* Left Column */}
         <div className="space-y-8">
           {/* Basic Settings */}
-          <section className="space-y-4">
+          <section id="settings-section-system" className="space-y-4">
             <h3 className="text-lg font-extrabold text-gray-800 flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-gray-100 text-gray-600">
                     <Database className="w-4 h-4" />
@@ -85,7 +100,7 @@ const Settings: React.FC = () => {
                 基础设置
             </h3>
 
-            <div className="ios-card rounded-xl p-6 bg-white space-y-4">
+            <MinimalSectionCard data-layout-contract="minimal-settings-basic" contentSx={{ p: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } } }}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <label className="block text-sm font-bold text-gray-800">日志输出等级</label>
@@ -134,11 +149,11 @@ const Settings: React.FC = () => {
                   <span className="mt-1 block text-xs leading-5 text-amber-800">开启后会同时约束 API 发货、AI、HTTP 通知、远程图片和远程滑块服务；保存后立即生效，可能使内网服务不可用。</span>
                 </span>
               </label>
-            </div>
+            </MinimalSectionCard>
           </section>
 
           {/* Legacy AI Configuration */}
-          <section className="space-y-4">
+          <section id="settings-section-ai" className="space-y-4">
             <h3 className="text-lg font-extrabold text-gray-800 flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-brand text-white">
                     <Sparkles className="w-4 h-4" />
@@ -148,7 +163,7 @@ const Settings: React.FC = () => {
 
             <p className="text-xs text-gray-500">v2 的客服请求统一由 Brain Center 中的 Harness runtime 处理；这里仅保留旧字段，供升级迁移和回滚核对。</p>
 
-            <div className="ios-card rounded-xl p-6 bg-white space-y-6">
+            <MinimalSectionCard data-layout-contract="minimal-settings-ai-legacy" contentSx={{ p: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } } }}>
               <div className="space-y-3">
                 <label className="block text-sm font-bold text-gray-800">旧版 API 地址</label>
                 <input
@@ -257,13 +272,13 @@ const Settings: React.FC = () => {
                   <li>选择 Harness provider 并保存脱敏设置</li>
                 </ul>
               </div>
-            </div>
+            </MinimalSectionCard>
           </section>
         </div>
 
         {/* Right Column */}
         <div className="space-y-8">
-          <section className="space-y-4">
+          <section id="settings-section-security" className="space-y-4">
             <h3 className="text-lg font-extrabold text-gray-800 flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-amber-500 text-white">
                 <ShieldCheck className="w-4 h-4" />
@@ -271,7 +286,7 @@ const Settings: React.FC = () => {
               远程过滑块配置
             </h3>
 
-            <div className="ios-card rounded-xl p-6 bg-white space-y-5">
+            <MinimalSectionCard data-layout-contract="minimal-settings-captcha" contentSx={{ p: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } } }}>
               <div className="space-y-2">
                 <label className="block text-sm font-bold text-gray-800">服务地址</label>
                 <input
@@ -321,7 +336,7 @@ const Settings: React.FC = () => {
               <p className="text-xs text-gray-500">
                 配置地址和秘钥后优先调用远程服务；只有网络不可用或超时才回退本机引擎，远程明确返回失败时不会重复触发本机验证。
               </p>
-            </div>
+            </MinimalSectionCard>
           </section>
 
           <section className="space-y-4">
@@ -332,7 +347,8 @@ const Settings: React.FC = () => {
               登录凭据
             </h3>
 
-            <form onSubmit={handleCredentialsSave} className="ios-card rounded-xl p-6 bg-white space-y-5">
+            <MinimalSectionCard data-layout-contract="minimal-settings-credentials" contentSx={{ p: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } } }}>
+            <form onSubmit={handleCredentialsSave} className="space-y-5">
               <div className="space-y-2">
                 <label className="block text-sm font-bold text-gray-800">登录用户名</label>
                 <div className="relative">
@@ -410,24 +426,20 @@ const Settings: React.FC = () => {
                 {credentialsSaving ? '正在更新...' : '更新登录凭据'}
               </button>
             </form>
+            </MinimalSectionCard>
           </section>
 
           {/* SMTP 配置已移至「通知设置」页面 */}
         </div>
-      </div>
+      </Box>
 
       {/* Save Button */}
-      <div className="fixed bottom-10 right-10 z-30">
-        <button
-            onClick={handleSave}
-            disabled={saving}
-            className="ios-btn-primary px-10 py-5 rounded-xl text-lg shadow-2xl shadow-blue-200 flex items-center gap-3 transform hover:scale-105 active:scale-95 transition-all disabled:opacity-70"
-        >
-            <Save className="w-6 h-6" />
-            {saving ? '保存中...' : '保存所有配置'}
-        </button>
-      </div>
-    </div>
+      <Box sx={{ position: 'fixed', right: { xs: 16, sm: 40 }, bottom: { xs: 16, sm: 40 }, zIndex: 30 }}>
+        <Button variant="contained" size="large" onClick={handleSave} disabled={saving} startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <Save size={20} />}>
+          {saving ? '保存中...' : '保存所有配置'}
+        </Button>
+      </Box>
+    </MinimalPageFrame>
   );
 };
 

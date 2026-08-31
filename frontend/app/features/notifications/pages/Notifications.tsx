@@ -1,9 +1,16 @@
-import { Bell,Check,Loader2,Plus,RefreshCw,X } from 'lucide-react';
+import { Bell,Check,Plus,RefreshCw,X } from 'lucide-react';
 import React from 'react';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Stack from '@mui/material/Stack';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import { NotificationChannelList } from '../components/NotificationChannelList';
 import { NotificationChannelModal } from '../components/NotificationChannelModal';
 import { NotificationSmtpSettings } from '../components/NotificationSmtpSettings';
 import { useNotifications } from '../hooks';
+import { MinimalPageFrame, MinimalSectionCard } from '../../../../shared/ui/minimal';
 
 // NotificationsProps 描述通知页面接收的权限上下文。
 interface NotificationsProps {
@@ -15,29 +22,64 @@ interface NotificationsProps {
 const Notifications: React.FC<NotificationsProps> = ({ isAdmin = false }) => {
   // notificationState 统一提供通知页面的数据、表单和异步动作。
   const notificationState = useNotifications(isAdmin);
+  // activePanel 控制 Minimal Tabs 当前展示的通知配置分区。
+  const [activePanel, setActivePanel] = React.useState<'channels' | 'smtp'>('channels');
+
+  // handlePanelChange 保持普通用户只能停留在渠道配置分区。
+  const handlePanelChange = (_event: React.SyntheticEvent, nextValue: string) => {
+    if (nextValue === 'smtp' && !isAdmin) {
+      setActivePanel('channels');
+      return;
+    }
+    setActivePanel(nextValue as 'channels' | 'smtp');
+  };
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
-        <div><h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">通知设置</h2><p className="text-gray-500 mt-2 font-medium">配置通知渠道，账号异常时主动推送告警</p></div>
-        <div className="flex items-center gap-3">
-          <button onClick={notificationState.loadChannels} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-gray-700 flex items-center gap-2 transition-colors"><RefreshCw className="w-4 h-4" />刷新</button>
-          <button onClick={notificationState.openCreate} className="ios-btn-primary px-5 py-2.5 rounded-xl font-bold flex items-center gap-2"><Plus className="w-4 h-4" />新建渠道</button>
-        </div>
-      </div>
+    <MinimalPageFrame
+      title="通知设置"
+      description="配置通知渠道，账号异常时主动推送告警"
+      actions={(
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" startIcon={<RefreshCw size={16} />} onClick={notificationState.loadChannels}>刷新</Button>
+          <Button variant="contained" startIcon={<Plus size={16} />} onClick={notificationState.openCreate}>新建渠道</Button>
+        </Stack>
+      )}
+    >
+      <Stack spacing={{ xs: 2, md: 3 }}>
+        <MinimalSectionCard data-layout-contract="minimal-notification-summary" contentSx={{ p: { xs: 2, sm: 2.5 } }}>
+          <Alert severity="info" icon={<Bell size={20} />}>
+            配置通知渠道并在「账号管理 → 编辑」里绑定后，以下事件会主动推送到该账号绑定的渠道：
+            <Stack component="ul" spacing={0.25} sx={{ mt: 1, mb: 0, pl: 2.25 }}>
+              <li><strong>账号 session 失效</strong>：系统正在尝试自动恢复（警告）</li>
+              <li><strong>自动恢复失败</strong>：账号已停止，需人工处理（严重）</li>
+              <li><strong>触发风控验证</strong>：可能需要扫码完成验证（警告）</li>
+            </Stack>
+          </Alert>
+        </MinimalSectionCard>
 
-      <div className="ios-card rounded-xl p-5 bg-blue-50/50 border border-blue-100">
-        <div className="flex items-start gap-3"><Bell className="w-5 h-5 text-brand mt-0.5 flex-shrink-0" /><div className="text-sm text-gray-700 leading-6">配置通知渠道并在「账号管理 → 编辑」里绑定后，以下事件会主动推送到该账号绑定的渠道：<ul className="mt-2 space-y-1 text-gray-600"><li>• <strong>账号 session 失效</strong>：系统正在尝试自动恢复（警告）</li><li>• <strong>自动恢复失败</strong>：账号已停止，需人工处理（严重）</li><li>• <strong>触发风控验证</strong>：可能需要扫码完成验证（警告）</li></ul></div></div>
-      </div>
+        <Tabs
+          data-layout-contract="minimal-notification-tabs"
+          value={activePanel}
+          onChange={handlePanelChange}
+          variant="scrollable"
+          allowScrollButtonsMobile
+          aria-label="通知配置分区"
+        >
+          <Tab value="channels" label="通知渠道" />
+          {isAdmin && <Tab value="smtp" label="SMTP" />}
+        </Tabs>
 
-      {notificationState.loading ? <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 text-brand animate-spin" /></div> : <NotificationChannelList channels={notificationState.channels} testingId={notificationState.testingId} onEdit={notificationState.openEdit} onDelete={notificationState.handleDelete} onToggleEnabled={notificationState.handleToggleEnabled} onTest={notificationState.handleTest} />}
+        {activePanel === 'channels' && (
+          notificationState.loading ? <Stack sx={{ minHeight: 220, alignItems: 'center', justifyContent: 'center' }}><CircularProgress size={28} /></Stack> : <NotificationChannelList channels={notificationState.channels} testingId={notificationState.testingId} onEdit={notificationState.openEdit} onDelete={notificationState.handleDelete} onToggleEnabled={notificationState.handleToggleEnabled} onTest={notificationState.handleTest} />
+        )}
 
-      {isAdmin && <NotificationSmtpSettings smtp={notificationState.smtp} setSmtp={notificationState.setSmtp} smtpSaving={notificationState.smtpSaving} showPassword={notificationState.showSmtpPassword} setShowPassword={notificationState.setShowSmtpPassword} onSave={notificationState.handleSaveSmtp} />}
+        {isAdmin && <NotificationSmtpSettings smtp={notificationState.smtp} setSmtp={notificationState.setSmtp} smtpSaving={notificationState.smtpSaving} showPassword={notificationState.showSmtpPassword} setShowPassword={notificationState.setShowSmtpPassword} onSave={notificationState.handleSaveSmtp} visible={activePanel === 'smtp'} />}
 
-      <NotificationChannelModal showModal={notificationState.showModal} editing={notificationState.editing} form={notificationState.form} setForm={notificationState.setForm} smtp={notificationState.smtp} showChannelSmtpPassword={notificationState.showChannelSmtpPassword} setShowChannelSmtpPassword={notificationState.setShowChannelSmtpPassword} saving={notificationState.saving} onClose={notificationState.closeModal} onSave={notificationState.handleSave} />
+        <NotificationChannelModal showModal={notificationState.showModal} editing={notificationState.editing} form={notificationState.form} setForm={notificationState.setForm} smtp={notificationState.smtp} showChannelSmtpPassword={notificationState.showChannelSmtpPassword} setShowChannelSmtpPassword={notificationState.setShowChannelSmtpPassword} saving={notificationState.saving} onClose={notificationState.closeModal} onSave={notificationState.handleSave} />
 
-      {notificationState.toast && <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[10000] px-5 py-3 rounded-xl shadow-lg font-bold text-sm flex items-center gap-2 animate-fade-in text-white ${notificationState.toast.type === 'success' ? 'bg-success-500' : 'bg-danger-500'}`}>{notificationState.toast.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}{notificationState.toast.text}</div>}
-    </div>
+        {notificationState.toast && <Alert severity={notificationState.toast.type === 'success' ? 'success' : 'error'} icon={notificationState.toast.type === 'success' ? <Check size={18} /> : <X size={18} />} sx={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 10000, minWidth: { xs: 'calc(100% - 32px)', sm: 360 }, boxShadow: 4 }}>{notificationState.toast.text}</Alert>}
+      </Stack>
+    </MinimalPageFrame>
   );
 };
 

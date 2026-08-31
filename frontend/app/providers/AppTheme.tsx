@@ -38,7 +38,7 @@ const appThemeOptions: ThemeOptions = {
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        body: { margin: 0, minWidth: 320, backgroundColor: '#f3f5f7' },
+        body: { margin: 0, minWidth: 320, backgroundColor: '#f3f5f7', fontFamily: '"Public Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif' },
         '*': { boxSizing: 'border-box' },
       },
     },

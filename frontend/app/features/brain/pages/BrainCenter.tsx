@@ -47,6 +47,7 @@ import {
   type BrainStatus,
   type BrainTool,
 } from '../api';
+import { MinimalPageFrame } from '../../../../shared/ui/minimal';
 
 // defaultSettings 为服务尚未完成迁移时的可编辑初始值。
 const defaultSettings: BrainSettingsUpdate = {
@@ -260,7 +261,11 @@ const BrainCenter: React.FC = () => {
   }
 
   return (
-    <Stack spacing={{ xs: 2, md: 3 }}>
+    <MinimalPageFrame
+      title="Brain Center"
+      description="Harness runtime 控制台：查看运行状态、Provider、工具白名单和隔离测试。"
+    >
+      <Stack spacing={{ xs: 2, md: 3 }}>
       {loadError && <Alert severity="error" onClose={/* clearLoadError 清除当前错误提示。 */ () => setLoadError('')}>{loadError}</Alert>}
       {actionMessage && <Alert severity={actionMessage.includes('失败') ? 'error' : 'success'} onClose={/* clearActionMessage 清除当前操作提示。 */ () => setActionMessage('')}>{actionMessage}</Alert>}
 
@@ -417,7 +422,8 @@ const BrainCenter: React.FC = () => {
           </Stack>
         </Paper>
       )}
-    </Stack>
+      </Stack>
+    </MinimalPageFrame>
   );
 };
 
