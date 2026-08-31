@@ -54,7 +54,7 @@ export const dashboardNavGroups: readonly DashboardNavGroup[] = [
           item('items', '商品列表', 'ic-product.svg'),
           item('orders', '订单管理', 'ic-order.svg'),
           item('cards', '卡密库存', 'ic-invoice.svg'),
-          item('rules', '自动化规则', 'ic-params.svg'),
+          item('rules', '自动化规则', 'ic-menu-item.svg'),
         ],
       },
       {
@@ -63,7 +63,7 @@ export const dashboardNavGroups: readonly DashboardNavGroup[] = [
         items: [
           item('notifications', '通知设置', 'ic-mail.svg'),
           item('settings', '系统与 AI', 'ic-params.svg', true),
-          item('brain', 'Brain Center', 'ic-kanban.svg', true),
+          item('brain', '智能中枢', 'ic-analytics.svg', true),
         ],
       },
     ],

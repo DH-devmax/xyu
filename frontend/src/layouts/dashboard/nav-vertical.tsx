@@ -16,7 +16,6 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import LogoutIcon from '@mui/icons-material/Logout';
 import { NavLink, useLocation } from 'react-router-dom';
 import { SvgColor } from '@/components/minimal';
 import { DHBrandIcon, DHBrandLogo } from '@/components/minimal/DHBrandLogo';
@@ -56,7 +55,7 @@ const filterGroup = (group: DashboardNavGroup, isAdmin: boolean): DashboardNavGr
 });
 
 /** DashboardNavigationContent 渲染 Minimal 分组、Solar 图标和会话操作。 */
-export const DashboardNavigationContent: React.FC<DashboardNavigationProps> = ({ isAdmin, mini, hasUnreadChatMessage, version, onToggle, onLogout, onNavigate, navColor = 'integrate' }) => {
+export const DashboardNavigationContent: React.FC<DashboardNavigationProps> = ({ isAdmin, mini, hasUnreadChatMessage, version, onToggle, onNavigate, navColor = 'integrate' }) => {
   // location 提供当前路径，用于计算选中导航项。
   const location = useLocation();
   // groups 保存经过权限筛选的 Minimal 分组。
@@ -124,7 +123,11 @@ export const DashboardNavigationContent: React.FC<DashboardNavigationProps> = ({
     </Box>
   );
   return (
-    <Stack sx={{ height: '100%', bgcolor: navColor === 'apparent' ? 'background.paper' : 'background.default' }}>
+    <Stack sx={{ height: '100%', bgcolor: navColor === 'apparent' ? 'background.paper' : 'background.default', background: /* navGradient 根据主题模式和导航表面应用 Minimal 侧栏渐变。 */ theme => {
+      // surface 是导航颜色设置选择的底层表面，确保独立导航仍保留主题对比度。
+      const surface = navColor === 'apparent' ? theme.palette.background.paper : theme.palette.background.default;
+      return theme.palette.mode === 'dark' ? `linear-gradient(180deg, rgba(33, 166, 117, 0.14) 0%, rgba(29, 37, 45, 0.92) 38%, rgba(20, 26, 32, 0) 100%), ${surface}` : `linear-gradient(180deg, rgba(33, 166, 117, 0.10) 0%, rgba(255, 255, 255, 0.84) 38%, rgba(245, 247, 249, 0) 100%), ${surface}`;
+    } }}>
       <Stack direction="row" spacing={1.25} sx={{ minHeight: 88, alignItems: 'center', px: mini ? 2 : 3, justifyContent: mini ? 'center' : 'flex-start' }}>
         {mini ? <DHBrandIcon size={40} decorative /> : <DHBrandLogo size={42} showLabel />}
       </Stack>
@@ -134,7 +137,6 @@ export const DashboardNavigationContent: React.FC<DashboardNavigationProps> = ({
       <Stack spacing={0.75} sx={{ p: mini ? 1.25 : 2 }}>
         {!mini && <Chip size="small" label={version === 'dev' ? '开发构建' : version} variant="outlined" sx={{ alignSelf: 'flex-start', borderRadius: 1 }} />}
         <Tooltip title={mini ? '展开导航' : ''} placement="right"><IconButton aria-label={mini ? '展开导航' : '收起导航'} onClick={onToggle} sx={{ minHeight: 40, width: '100%', justifyContent: mini ? 'center' : 'flex-start', gap: 1 }}>{mini ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}{!mini && <Typography variant="body2">收起导航</Typography>}</IconButton></Tooltip>
-        <Tooltip title={mini ? '退出登录' : ''} placement="right"><IconButton aria-label="退出登录" onClick={onLogout} sx={{ minHeight: 40, width: '100%', justifyContent: mini ? 'center' : 'flex-start', gap: 1, '&:hover': { color: 'error.main' } }}><LogoutIcon fontSize="small" />{!mini && <Typography variant="body2">退出登录</Typography>}</IconButton></Tooltip>
       </Stack>
     </Stack>
   );

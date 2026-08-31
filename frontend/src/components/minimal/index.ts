@@ -30,3 +30,5 @@ export { MinimalDialogSurface } from './DialogSurface';
 export type { MinimalDialogSurfaceProps } from './DialogSurface';
 export { SvgColor } from './SvgColor';
 export type { SvgColorProps } from './SvgColor';
+export { LoadingScreen } from './LoadingScreen';
+export type { LoadingScreenProps } from './LoadingScreen';

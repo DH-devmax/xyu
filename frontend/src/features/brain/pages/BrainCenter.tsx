@@ -262,7 +262,7 @@ const BrainCenter: React.FC = () => {
 
   return (
     <MinimalPageFrame
-      title="Brain Center"
+      title="智能中枢"
       description="Harness runtime 控制台：查看运行状态、Provider、工具白名单和隔离测试。"
     >
       <Stack spacing={{ xs: 2, md: 3 }}>

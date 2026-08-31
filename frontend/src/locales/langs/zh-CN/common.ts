@@ -11,7 +11,7 @@ export const zhCN = {
     rules: '自动化规则',
     notifications: '通知设置',
     settings: '系统与 AI',
-    brain: 'Brain Center',
+    brain: '智能中枢',
   },
 } as const;
 

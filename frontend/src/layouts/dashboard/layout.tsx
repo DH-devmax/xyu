@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Stack from '@mui/material/Stack';
 import { Navigate, useLocation } from 'react-router-dom';
 import { SessionGate } from '@/features/session/pages/SessionGate';
 import { useSession } from '@/app/providers/SessionProvider';
@@ -14,6 +12,7 @@ import { NavVertical } from './nav-vertical';
 import { NavHorizontal } from './nav-horizontal';
 import { DashboardContent } from './content';
 import { useChatTitleNotification } from '@/features/chat/titleNotification';
+import { LoadingScreen } from '@/components/minimal';
 
 // DashboardLayout 负责认证后的 Minimal 多栏应用壳和业务 Outlet 生命周期。
 export const DashboardLayout: React.FC = () => {
@@ -65,13 +64,13 @@ const AuthenticatedDashboard: React.FC<AuthenticatedDashboardProps> = ({ isAdmin
       <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
         {state.navLayout === 'horizontal' ? <NavHorizontal isAdmin={isAdmin} mini={false} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} navColor={state.navColor} onToggle={/* horizontalNavToggle 恢复纵向导航布局。 */ () => setField('navLayout', 'vertical')} onLogout={handleLogout} /> : <NavVertical isAdmin={isAdmin} mini={state.navLayout === 'mini'} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} navColor={state.navColor} onToggle={/* desktopNavToggle 切换 Minimal 纵向和迷你布局。 */ () => setField('navLayout', state.navLayout === 'mini' ? 'vertical' : 'mini')} onLogout={handleLogout} />}
         <NavMobile open={mobileOpen} onClose={/* mobileClose 关闭窄屏导航。 */ () => setMobileOpen(false)} isAdmin={isAdmin} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} navColor={state.navColor} onToggle={/* mobileNavToggle 切换导航布局偏好。 */ () => setField('navLayout', state.navLayout === 'mini' ? 'vertical' : 'mini')} onLogout={handleLogout} />
-        <DashboardContent onOpenMobile={/* mobileOpenAction 打开窄屏导航。 */ () => setMobileOpen(true)} version={buildInfo.version} />
+        <DashboardContent onOpenMobile={/* mobileOpenAction 打开窄屏导航。 */ () => setMobileOpen(true)} version={buildInfo.version} onLogout={handleLogout} hasUnreadChatMessage={hasUnreadChatMessage} />
       </Box>
     </DeliveryRuleProvider>
   );
 };
 
 // DashboardLoading 是路由恢复期间的静态占位，避免空白视图改变布局。
-export const DashboardLoading: React.FC = () => <Stack role="status" aria-label="正在加载" sx={{ minHeight: 320, alignItems: 'center', justifyContent: 'center' }}><CircularProgress size={30} /></Stack>;
+export const DashboardLoading: React.FC = () => <LoadingScreen minHeight={320} label="正在加载" />;
 
 export default DashboardLayout;

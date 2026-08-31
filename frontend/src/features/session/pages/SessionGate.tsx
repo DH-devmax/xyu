@@ -15,7 +15,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { DHBrandIcon } from '@/components/minimal/DHBrandLogo';
-import { MinimalFormHead } from '@/components/minimal';
+import { LoadingScreen, MinimalFormHead } from '@/components/minimal';
 import { AuthCenteredLayout as MinimalAuthCenteredLayout } from '@/layouts/auth-centered';
 import { useSession } from '@/app/providers/SessionProvider';
 
@@ -92,9 +92,6 @@ export const SessionGate: React.FC = () => {
         <Typography noWrap sx={{ fontSize: 15, fontWeight: 750, lineHeight: 1.2 }}>
           DH闲不下来
         </Typography>
-        <Typography noWrap sx={{ mt: 0.3, fontSize: 10, letterSpacing: '0.14em', color: 'primary.main', textTransform: 'uppercase' }}>
-          agent panel
-        </Typography>
       </Box>
     </Stack>
   );
@@ -102,7 +99,7 @@ export const SessionGate: React.FC = () => {
   if (checkingAuth) {
     return (
       <MinimalAuthCenteredLayout brand={brandHeader} contentSx={{ display: 'grid', minHeight: 180, placeItems: 'center' }}>
-        <CircularProgress size={30} aria-label="正在校验会话" />
+        <LoadingScreen minHeight={180} label="正在校验会话" />
       </MinimalAuthCenteredLayout>
     );
   }
