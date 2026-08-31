@@ -29,6 +29,14 @@
       "tag": "dsh-v0.1.2-alpha.1",
       "commit": "cd5ef8148158c3a752a658978873241fdf8e2bbc",
       "path": "brain/vendor/deepseek-harness"
+    },
+    "minimal_frontend": {
+      "name": "Minimal Vite TS",
+      "version": "7.7.0",
+      "archive": "minimal-vite-ts-main.zip",
+      "archive_sha256": "b058dbc7fa8d231d06663e46d3e1d8fbfd8d38e7bd22db8abe12afa6ab498dde",
+      "license_policy": "one-license-per-product",
+      "source_url": "https://docs.minimals.cc/package/"
     }
   },
   "contracts": {

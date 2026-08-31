@@ -23,7 +23,7 @@
     "noUnusedParameters": true,
     "paths": {
       "@/*": [
-        "./*"
+        "./src/*"
       ]
     },
     "allowImportingTsExtensions": true,

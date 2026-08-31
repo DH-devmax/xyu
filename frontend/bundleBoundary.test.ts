@@ -8,17 +8,17 @@ const staticRoot = resolve(__dirname, '../internal/webui/static');
 const indexHtml = readFileSync(resolve(staticRoot, 'index.html'), 'utf8');
 // PAGE_CHUNK_BUDGETS 定义每个业务页面动态分片允许的原始字节上限。
 const PAGE_CHUNK_BUDGETS: Record<string, number> = {
-  Dashboard: 30 * 1024,
-  AccountList: 70 * 1024,
-  OrderList: 40 * 1024,
-  // MUI 壳引入后的卡密编辑器保留 48 KiB 独立预算，仍不影响首屏入口。
-  CardList: 48 * 1024,
-  ItemList: 65 * 1024,
-  Settings: 30 * 1024,
-  Rules: 65 * 1024,
-  Notifications: 45 * 1024,
-  Chat: 50 * 1024,
-  BrainCenter: 24 * 1024,
+  OverviewSection: 36 * 1024,
+  AccountsSection: 54 * 1024,
+  OrdersSection: 56 * 1024,
+  // Minimal 页面将显式 MUI sx 与复杂编辑器保留在各自的路由分片中，不影响首屏入口。
+  CardsSection: 108 * 1024,
+  ItemsSection: 136 * 1024,
+  SettingsSection: 48 * 1024,
+  RulesSection: 128 * 1024,
+  NotificationsSection: 32 * 1024,
+  ChatSection: 80 * 1024,
+  BrainSection: 16 * 1024,
 };
 
 describe('frontend production bundle boundary', /* 当前回调验证生产入口包体和页面分片。 */ () => {
@@ -35,9 +35,9 @@ describe('frontend production bundle boundary', /* 当前回调验证生产入�
     expect(preloadedAssets.some(/* 当前回调判断图表依赖是否被首屏预加载。 */ asset => asset.startsWith('charts-vendor-'))).toBe(false);
   });
 
-  test('九个业务页面都生成独立页面 chunk', /* 当前回调验证各页面可按路由延迟下载。 */ () => {
+  test('十个业务页面都生成独立页面 chunk', /* 当前回调验证各页面可按路由延迟下载。 */ () => {
     // pageChunkNames 保存 Vite 输出的业务页面 chunk 文件名。
-    const pageChunkNames = readdirSync(resolve(staticRoot, 'assets')).filter(/* 当前回调筛选业务页面分片文件。 */ fileName => /^(Dashboard|AccountList|OrderList|CardList|ItemList|Settings|Rules|Notifications|Chat|BrainCenter)-.+\.js$/.test(fileName));
+    const pageChunkNames = readdirSync(resolve(staticRoot, 'assets')).filter(/* 当前回调筛选业务页面分片文件。 */ fileName => /^(OverviewSection|AccountsSection|OrdersSection|CardsSection|ItemsSection|SettingsSection|RulesSection|NotificationsSection|ChatSection|BrainSection)-.+\.js$/.test(fileName));
     expect(pageChunkNames).toHaveLength(10);
   });
 

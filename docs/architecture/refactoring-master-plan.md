@@ -10,7 +10,7 @@
 
 唯一 HTTP 契约链路：`OpenAPI 3.1 -> 生成 TypeScript paths/types -> 类型化 HTTP client -> feature adapter -> UI model`。
 
-`api/openapi.yaml` 是 `/api/v1/**` 与 `/health` 的唯一 HTTP 契约源；旧兼容路径不重复登记，继续由兼容矩阵和等价路由测试保护。生成的 `frontend/shared/api-contract/generated/schema.ts` 只读并提交。真实 handler 使用 `kin-openapi` 按同一规范校验。
+`api/openapi.yaml` 是 `/api/v1/**` 与 `/health` 的唯一 HTTP 契约源；旧兼容路径不重复登记，继续由兼容矩阵和等价路由测试保护。生成的 `frontend/src/shared/api-contract/generated/schema.ts` 只读并提交。真实 handler 使用 `kin-openapi` 按同一规范校验。
 
 契约校验采用非对称规则：OpenAPI 中前端必需字段缺失或类型错误失败；声明的可选字段类型错误失败、缺失允许；后端额外非敏感字段允许，且不会出现在生成的前端类型中。敏感字段泄漏仍由安全门禁和响应测试独立阻断。UI 派生模型、表单状态和兼容归一模型不是 HTTP DTO。对象默认允许额外属性；动态设置、账号通知绑定等动态对象显式声明 `additionalProperties` 值类型。每个 operation 必须有稳定 `operationId`、成功响应、统一错误响应、鉴权元数据和请求参数，不得用无约束 `{}`、`object` 或 `any` 代替已知业务字段。
 

@@ -112,10 +112,10 @@ func checkOpenAPIContractClosure(root string) []violation {
 	// frontendRoot 是前端源码根目录，用于定位只读生成类型和 feature adapter。
 	frontendRoot := filepath.Join(root, "frontend")
 	// legacyTransportPath 是阶段六必须永久删除的手写 DTO 汇总文件。
-	legacyTransportPath := filepath.Join(frontendRoot, "shared", "api-contract", "transport.ts")
+	legacyTransportPath := filepath.Join(frontendRoot, "src", "shared", "api-contract", "transport.ts")
 	// statErr 表示旧手写 DTO 汇总文件是否仍然存在。
 	if _, statErr := os.Stat(legacyTransportPath); statErr == nil {
-		violations = append(violations, violation{file: "frontend/shared/api-contract/transport.ts", line: 1, message: "阶段六禁止重新引入手写 transport DTO 汇总；必须使用生成类型或所属 feature UI 模型"})
+		violations = append(violations, violation{file: "frontend/src/shared/api-contract/transport.ts", line: 1, message: "阶段六禁止重新引入手写 transport DTO 汇总；必须使用生成类型或所属 feature UI 模型"})
 	}
 	// importPattern 提取静态 import 和 export-from 的模块路径，避免通过 re-export 隐藏旁路。
 	importPattern := regexp.MustCompile(`(?m)(?:from\s+)["']([^"']+)["']`)
@@ -154,7 +154,7 @@ func checkOpenAPIContractClosure(root string) []violation {
 				violations = append(violations, violation{file: "frontend/" + relativePath, line: sourceLineAt(source, strings.Index(sourceText, match[0])), message: "阶段六禁止引用手写 transport DTO；请改用生成契约或 feature UI 模型"})
 			}
 			// shared/api-contract 是生成类型的唯一宿主；feature 只能经自己的 api adapter 使用类型。
-			if strings.Contains(specifier, "generated/schema") && !strings.HasPrefix(relativePath, "shared/api-contract/") {
+			if strings.Contains(specifier, "generated/schema") && !strings.HasPrefix(relativePath, "src/shared/api-contract/") {
 				violations = append(violations, violation{file: "frontend/" + relativePath, line: sourceLineAt(source, strings.Index(sourceText, match[0])), message: "生成 OpenAPI 类型不得越过 shared 契约层直接进入 feature、组件或 Hook"})
 			}
 		}
@@ -295,7 +295,7 @@ func checkReactArchitecture(root string) []violation {
 	// frontendRoot 是 React/Vite 源码根目录。
 	frontendRoot := filepath.Join(root, "frontend")
 	// forbiddenFiles 是阶段四必须物理删除或迁入 feature 的集中入口。
-	forbiddenFiles := []string{"services/amapLocation.ts", "shared/api-contract/index.ts"}
+	forbiddenFiles := []string{"services/amapLocation.ts", "src/shared/api-contract/index.ts"}
 	// forbiddenFile 是当前待确认已删除的前端集中入口。
 	for _, forbiddenFile := range forbiddenFiles {
 		// statErr 表示当前集中入口是否已经完成物理迁移或删除。
@@ -347,10 +347,10 @@ func checkReactArchitecture(root string) []violation {
 				}
 			}
 		}
-		if relativePath != "shared/http/client.ts" && relativePath != "shared/api-contract/client.ts" && (strings.Contains(sourceText, "fetch(") || regexp.MustCompile(`\baxios\b`).MatchString(sourceText)) {
+		if relativePath != "src/shared/http/client.ts" && relativePath != "src/shared/api-contract/client.ts" && (strings.Contains(sourceText, "fetch(") || regexp.MustCompile(`\baxios\b`).MatchString(sourceText)) {
 			violations = append(violations, violation{file: "frontend/" + relativePath, line: 1, message: "前端生产代码不得绕过共享 HTTP 契约客户端直接请求网络"})
 		}
-		if relativePath != "app/shell/AuthenticatedShell.tsx" && strings.Contains(sourceText, "import(") {
+		if relativePath != "src/routes/sections/app-routes.tsx" && strings.Contains(sourceText, "import(") {
 			violations = append(violations, violation{file: "frontend/" + relativePath, line: 1, message: "动态 import 只能用于路由级页面加载，禁止隐藏 feature 依赖"})
 		}
 		// matches 是当前源码中全部模块路径声明。
@@ -400,12 +400,12 @@ func checkReactArchitecture(root string) []violation {
 // isFeatureTransportBypass 判断 feature 内的生产文件是否绕过 api adapter 直接读取 HTTP DTO。
 func isFeatureTransportBypass(relativePath string) bool {
 	// featureRoot 表示只有 feature 根 api.ts 可以承担传输契约读取和 UI model 转换职责。
-	featureRoot := regexp.MustCompile(`^app/features/[^/]+/api\.ts$`)
+	featureRoot := regexp.MustCompile(`^src/features/[^/]+/api\.ts$`)
 	if featureRoot.MatchString(relativePath) {
 		return false
 	}
 	// itemLocationAdapter 是 items feature 的外部地图协议 adapter；它不属于 UI、Hook 或页面层。
-	return relativePath != "app/features/items/amapLocation.ts"
+	return relativePath != "src/features/items/amapLocation.ts"
 }
 
 // checkCrossFeatureImport 拒绝 feature 直接导入另一个 feature 的内部实现。
@@ -425,11 +425,11 @@ func checkCrossFeatureImport(sourcePath, specifier string) []violation {
 	return nil
 }
 
-// featureName 返回 app/features 路径下的直属 feature 名称。
+// featureName 返回 src/features 路径下的直属 feature 名称。
 func featureName(path string) string {
 	// parts 是使用斜杠切分后的源码路径片段。
 	parts := strings.Split(filepath.ToSlash(path), "/")
-	if len(parts) >= 3 && parts[0] == "app" && parts[1] == "features" {
+	if len(parts) >= 3 && parts[0] == "src" && parts[1] == "features" {
 		return parts[2]
 	}
 	return ""

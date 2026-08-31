@@ -40,13 +40,13 @@ export default defineConfig({
         'App.tsx',
         'index.tsx',
         'chatEmojis.tsx',
-        'app/features/dashboard/DashboardTrendChart.tsx',
+        'src/features/dashboard/DashboardTrendChart.tsx',
       ],
     },
   },
   resolve: {
     alias: {
-      '@': path.resolve(import.meta.dirname, '.'),
+      '@': path.resolve(import.meta.dirname, 'src'),
     },
   },
   build: {
@@ -63,7 +63,7 @@ export default defineConfig({
           // modulePath 是统一分隔符后的模块绝对路径，用于稳定匹配依赖目录。
           const modulePath = id.split(path.sep).join('/');
           // 聊天元数据包含快捷回复和备注弹窗等低频交互，独立分片可避免挤占会话阅读首屏。
-          if (modulePath.includes('/app/features/chat/components/ChatMetadataFeature.') || modulePath.includes('/app/features/chat/metadata.')) {
+          if (modulePath.includes('/src/features/chat/components/ChatMetadataFeature.') || modulePath.includes('/src/features/chat/metadata.')) {
             return 'chat-metadata';
           }
           if (!modulePath.includes('/node_modules/')) {

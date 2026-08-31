@@ -222,7 +222,7 @@ until their recorded phase is completed; agents MUST NOT add new violations.
 - Route-prefix changes require `frontend/vite.config.ts`, frontend API callers, contract tests and embedded assets
   to be updated together.
 - `api/openapi.yaml` is the only contract source for `/api/v1/**` and `/health`; every new versioned operation must
-  update the specification, regenerate `frontend/shared/api-contract/generated/schema.ts`, and add a real handler
+  update the specification, regenerate `frontend/src/shared/api-contract/generated/schema.ts`, and add a real handler
   contract test before a feature can call it. Generated types are read-only, and feature UI models must remain behind
   their own API adapters.
 

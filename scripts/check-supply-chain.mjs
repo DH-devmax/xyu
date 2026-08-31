@@ -70,7 +70,8 @@ async function main() {
   assert(goCount === go.dependencies.length, 'Go module 计数与 go.mod 不一致');
   assert(frontendCount === frontend.dependencies.length, '前端组件计数与 package-lock 不一致');
   assert(harnessCount >= 800, 'Harness 锁定闭包数量异常');
-  assert(components.length === 3 + goCount + frontendCount + harnessCount, 'SBOM 组件总数不一致');
+  // 产品根之外还登记 Minimal 视觉源，四个应用组件都必须计入总数。
+  assert(components.length === 4 + goCount + frontendCount + harnessCount, 'SBOM 组件总数不一致');
 
   const licensedRefs = [];
   for (const group of licenses.licenses ?? []) {

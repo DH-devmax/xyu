@@ -229,18 +229,18 @@ await assertText('cmd/server/main.go', [
   '"verify-data"',
   'data-verification: ok',
 ]);
-await assertText('frontend/shared/browser/sidebarState.ts', [
+await assertText('frontend/src/shared/browser/sidebarState.ts', [
   'dh-xianyu-agentpanel.sidebar.v2',
   'ydisks.sidebar.v1',
 ]);
-await assertText('frontend/app/features/chat/accountSelectionStorage.ts', [
+await assertText('frontend/src/features/chat/accountSelectionStorage.ts', [
   'dh-xianyu-agentpanel.chat.account.v2',
   'ydisks.chat.account.v1',
 ]);
-await assertText('frontend/app/features/chat/components/AudioMessage.tsx', [
+await assertText('frontend/src/features/chat/components/AudioMessage.tsx', [
   'dh-xianyu-agentpanel:chat-audio-play',
 ]);
-await assertText('frontend/app/features/items/amapLocation.ts', [
+await assertText('frontend/src/features/items/amapLocation.ts', [
   'dh-xianyu-agentpanel-amap-js-api',
   '__dhXianyuAgentPanelAmapLoaded',
 ]);
