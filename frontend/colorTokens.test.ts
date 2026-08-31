@@ -24,7 +24,7 @@ describe('Minimal design tokens', /* tokenSuite 汇总色彩令牌门禁。 */ (
   test('defines the palette centrally in Minimal theme', /* themeTokenTest 校验主题集中定义调色板。 */ () => {
     // theme 是 Minimal core 主题源码。
     const theme = read('src/theme/core/index.ts');
-    expect(theme).toContain("primary: { main: '#1268a8'");
+    expect(theme).toContain("default: { main: '#21a675'");
     expect(theme).toContain("background: { default: '#f5f7f9'");
     expect(theme).toContain('shape: { borderRadius: 8 }');
   });

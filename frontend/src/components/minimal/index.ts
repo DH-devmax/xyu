@@ -28,3 +28,5 @@ export { MinimalSegmentedDialog } from './SegmentedDialog';
 export type { MinimalSegmentOption, MinimalSegmentedDialogProps } from './SegmentedDialog';
 export { MinimalDialogSurface } from './DialogSurface';
 export type { MinimalDialogSurfaceProps } from './DialogSurface';
+export { SvgColor } from './SvgColor';
+export type { SvgColorProps } from './SvgColor';

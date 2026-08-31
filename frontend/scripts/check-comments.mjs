@@ -77,7 +77,8 @@ function collectSourceFiles(rootDirectory) {
       // absolutePath 是当前条目的绝对路径。
       const absolutePath = path.join(directory, entry.name);
       if (entry.isDirectory()) {
-        if (["node_modules", "dist", "coverage", "generated"].includes(entry.name)) {
+        // ignoredDirectories 排除第三方、构建和生成目录，避免把外部源码当作产品声明。
+        if (["node_modules", "dist", "coverage", "generated", "vendor"].includes(entry.name)) {
           continue;
         }
         visit(absolutePath);
