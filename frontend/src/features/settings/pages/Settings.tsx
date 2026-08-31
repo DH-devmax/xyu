@@ -66,7 +66,7 @@ const Settings: React.FC = () => {
       title="系统设置"
       description="配置全局自动化规则与系统参数"
       actions={<Button variant="outlined" startIcon={<RefreshCw size={16} />} onClick={loadSettings}>刷新</Button>}
-      sx={{ maxWidth: 1200, mx: 'auto', pb: 12 }}
+      sx={{ pb: 12 }}
     >
 
       <Tabs

@@ -339,7 +339,7 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
                       key={trigger}
                       type="button"
                       onClick={/* 当前回调处理用户交互或异步状态变化。 */ () => openNewAutomationRule(trigger)}
-                      sx={[{ width: '100%', textAlign: 'left', border: 1, borderRadius: 2, p: 2, transition: /* ruleTransition 根据 MUI 主题生成规则按钮过渡。 */ theme => theme.transitions.create(['border-color', 'background-color']) }, ruleAccentSx(meta.accent)]}
+                      sx={[{ width: '100%', textAlign: 'left', border: 1, borderRadius: 1, p: 2, transition: /* ruleTransition 根据 MUI 主题生成规则按钮过渡。 */ theme => theme.transitions.create(['border-color', 'background-color']) }, ruleAccentSx(meta.accent)]}
                     >
                       <MuiBox component='div' sx={{ 'display': 'flex', 'alignItems': 'flex-start', 'gap': '.75rem' }}>
                         <MuiBox component='div' sx={{
@@ -750,7 +750,7 @@ const Rules: React.FC<RulesProps> = ({ initialDeliveryTarget, onDeliveryTargetHa
   'gap': '1rem',
 }}>
                       <MuiBox component='div' sx={{ 'display': 'flex', 'alignItems': 'flex-start', 'gap': '1rem', 'minWidth': '0' }}>
-                        <MuiBox component='div' sx={[{ width: 48, height: 48, border: 1, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }, ruleAccentSx(meta.accent, true)]}>
+                        <MuiBox component='div' sx={[{ width: 48, height: 48, border: 1, borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }, ruleAccentSx(meta.accent, true)]}>
                           <MuiBox component={Icon} sx={{ 'width': '1.25rem', 'height': '1.25rem' }} />
                         </MuiBox>
                         <MuiBox component='div' sx={{ 'minWidth': '0' }}>

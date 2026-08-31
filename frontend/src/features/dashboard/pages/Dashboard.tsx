@@ -14,7 +14,7 @@ import Typography from '@mui/material/Typography';
 import { Cell,Legend,Pie,PieChart,ResponsiveContainer,Tooltip } from 'recharts';
 import { getDateRange,TimeRange } from '@/shared/dateRange';
 import { formatLocalDateTime } from '@/shared/dateTime';
-import { MinimalPageHeader,MinimalSectionCard } from '@/components/minimal';
+import { MinimalSectionCard } from '@/components/minimal';
 import { OrderStatus } from '../api';
 import { DashboardTrendChart } from '../DashboardTrendChart';
 import { useDashboard } from '../hooks';
@@ -105,7 +105,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, tone, tre
     >
       <Stack sx={{ height: '100%', justifyContent: 'space-between', gap: 2 }}>
         <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-          <Box sx={{ display: 'inline-flex', p: 1.25, borderRadius: 2, bgcolor: toneStyle.backgroundColor, color: toneStyle.color }}>
+          <Box sx={{ display: 'inline-flex', p: 1.25, borderRadius: 1, bgcolor: toneStyle.backgroundColor, color: toneStyle.color }}>
             <Icon size={22} aria-hidden="true" />
           </Box>
           {trend ? <Chip color="primary" icon={<TrendingUp size={14} />} label={trend} size="small" variant="filled" /> : null}
@@ -221,18 +221,15 @@ const Dashboard: React.FC = () => {
           {loadError}
         </Alert>
       )}
-      <MinimalPageHeader
-        eyebrow="DH闲不下来"
-        title="运营概览"
-        description="欢迎回来，以下是闲鱼店铺的实时经营数据。"
-        actions={<Chip color="success" label="系统正常运行" size="small" variant="outlined" />}
-      />
+      <Stack direction="row" sx={{ minHeight: 40, alignItems: 'center', justifyContent: 'flex-end' }}>
+        <Chip color="success" label="系统正常运行" size="small" variant="outlined" />
+      </Stack>
 
       {/* Time Range Selector */}
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         spacing={1}
-        sx={{ p: 1, alignItems: { xs: 'stretch', md: 'center' }, flexWrap: 'wrap', bgcolor: 'action.hover', borderRadius: 2 }}
+        sx={{ p: 1, alignItems: { xs: 'stretch', md: 'center' }, flexWrap: 'wrap', bgcolor: 'action.hover', borderRadius: 1 }}
       >
         <ToggleButtonGroup
           aria-label="统计时间范围"

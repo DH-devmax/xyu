@@ -22,8 +22,9 @@ describe('Dashboard presentation safeguards', /* 当前回调处理用户交互�
     expect(dashboardSource).toContain("'minWidth': '760px'");
   });
 
-  test('invokes Minimal page and section adapters without replacing business data hooks', /* 当前回调验证仪表盘已经进入模板适配切片。 */ () => {
-    expect(dashboardSource).toContain('<MinimalPageHeader');
+  test('keeps the shell title while using Minimal section adapters and business data hooks', /* 当前回调验证一级标题由应用壳提供，仪表盘仍使用模板适配切片。 */ () => {
+    expect(dashboardSource).not.toContain('<MinimalPageHeader');
+    expect(dashboardSource).toContain('系统正常运行');
     expect(dashboardSource).toContain('<MinimalSectionCard');
     expect(dashboardSource).toContain('useDashboard({ range: timeRange');
     expect(dashboardSource).toContain('<DashboardTrendChart');

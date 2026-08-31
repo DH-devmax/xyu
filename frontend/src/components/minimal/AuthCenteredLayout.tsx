@@ -98,7 +98,7 @@ export const MinimalAuthCenteredLayout: React.FC<MinimalAuthCenteredLayoutProps>
             my: 'auto',
             px: { xs: 3, sm: 5 },
             py: { xs: 4, sm: 5 },
-            borderRadius: 2,
+            borderRadius: 1,
             bgcolor: 'background.paper',
             boxShadow: 8,
           },

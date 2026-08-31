@@ -68,7 +68,7 @@ const Chat: React.FC = () => {
         flexDirection: 'column',
         overflow: 'hidden',
         border: 1,
-        borderRadius: 2,
+        borderRadius: 1,
         borderColor: 'divider',
         bgcolor: 'background.paper',
         boxShadow: 2,

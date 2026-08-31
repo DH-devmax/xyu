@@ -170,14 +170,14 @@ interface OptionCardProps { /** label 是选项标题。 */ label: string; /** s
 /** OptionCard 渲染截图中的四格开关卡片。 */
 const OptionCard: React.FC<OptionCardProps> = ({ label, selected, icon, onClick, tooltip }) => {
   // card 是包含图标、开关和标题的 Minimal 选项表面。
-  const card = <ButtonBase onClick={onClick} sx={{ minHeight: 126, p: 2, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'space-between', textAlign: 'left', border: 1, borderColor: selected ? 'primary.main' : 'divider', bgcolor: selected ? 'action.selected' : 'background.paper', borderRadius: 2, color: selected ? 'primary.main' : 'text.primary', '&:hover': { bgcolor: 'action.hover' } }}><Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}><Box sx={{ display: 'flex', color: selected ? 'primary.main' : 'text.secondary' }}>{icon}</Box><Switch checked={selected} tabIndex={-1} slotProps={{ input: { 'aria-label': label } }} /></Stack><Typography sx={{ fontWeight: 700 }}>{label}</Typography></ButtonBase>;
+  const card = <ButtonBase onClick={onClick} sx={{ minHeight: 126, p: 2, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'space-between', textAlign: 'left', border: 1, borderColor: selected ? 'primary.main' : 'divider', bgcolor: selected ? 'action.selected' : 'background.paper', borderRadius: 1, color: selected ? 'primary.main' : 'text.primary', '&:hover': { bgcolor: 'action.hover' } }}><Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}><Box sx={{ display: 'flex', color: selected ? 'primary.main' : 'text.secondary' }}>{icon}</Box><Switch checked={selected} tabIndex={-1} slotProps={{ input: { 'aria-label': label } }} /></Stack><Typography sx={{ fontWeight: 700 }}>{label}</Typography></ButtonBase>;
   return tooltip ? <Tooltip title={tooltip}>{card}</Tooltip> : card;
 };
 
 /** SelectCard 渲染 Minimal 设置中的图标/文本选择项。 */
 interface SelectCardProps { /** label 是选择项标题。 */ label: string; /** selected 表示选择项状态。 */ selected: boolean; /** color 是预设色点颜色。 */ color?: string; /** icon 是布局图标。 */ icon?: React.ReactNode; /** onClick 应用选择项。 */ onClick: () => void; }
 // SelectCard 渲染 Minimal 设置中的图标/文本选择项。
-const SelectCard: React.FC<SelectCardProps> = ({ label, selected, color, icon, onClick }) => <ButtonBase onClick={onClick} sx={{ minHeight: 58, px: 1.5, py: 1, display: 'flex', gap: 1, justifyContent: 'center', border: 1, borderColor: selected ? 'primary.main' : 'divider', borderRadius: 1.5, bgcolor: selected ? 'action.selected' : 'transparent', color: selected ? 'primary.main' : 'text.secondary' }}><Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: color ?? 'currentColor', display: icon ? 'flex' : undefined, alignItems: 'center', justifyContent: 'center' }}>{icon}</Box><Typography variant="body2" sx={{ fontWeight: selected ? 700 : 550 }}>{label}</Typography></ButtonBase>;
+const SelectCard: React.FC<SelectCardProps> = ({ label, selected, color, icon, onClick }) => <ButtonBase onClick={onClick} sx={{ minHeight: 58, px: 1.5, py: 1, display: 'flex', gap: 1, justifyContent: 'center', border: 1, borderColor: selected ? 'primary.main' : 'divider', borderRadius: 1, bgcolor: selected ? 'action.selected' : 'transparent', color: selected ? 'primary.main' : 'text.secondary' }}><Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: color ?? 'currentColor', display: icon ? 'flex' : undefined, alignItems: 'center', justifyContent: 'center' }}>{icon}</Box><Typography variant="body2" sx={{ fontWeight: selected ? 700 : 550 }}>{label}</Typography></ButtonBase>;
 
 /** SettingsDrawer 提供截图一致的完整 Minimal 主题设置，不触碰服务端配置。 */
 export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ open, onClose }) => {
@@ -222,6 +222,6 @@ interface SettingBlockProps {
 }
 
 /** SettingBlock 提供 Minimal 设置分组的卡片边界和标题样式。 */
-const SettingBlock: React.FC<React.PropsWithChildren<SettingBlockProps>> = ({ title, icon, children }) => <Stack spacing={1.5} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper' }}><Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}><Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box><Typography variant="h3">{title}</Typography></Stack>{children}</Stack>;
+const SettingBlock: React.FC<React.PropsWithChildren<SettingBlockProps>> = ({ title, icon, children }) => <Stack spacing={1.5} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}><Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}><Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box><Typography variant="h3">{title}</Typography></Stack>{children}</Stack>;
 
 export default MinimalSettingsProvider;

@@ -120,9 +120,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile
   return (
     <Box component="main" sx={{ display: 'flex', minWidth: 0, minHeight: '100vh', flex: 1, flexDirection: 'column', bgcolor: 'transparent' }}>
       <AppBar position="sticky" color="transparent" elevation={0} sx={{ bgcolor: 'transparent', backgroundImage: 'none', borderBottom: 1, borderColor: 'divider', backdropFilter: 'blur(14px)' }}>
-        <Toolbar sx={{ minHeight: { xs: 64, lg: 80 }, gap: { xs: 0.75, sm: 1.5 }, px: { xs: 1.5, sm: 3, lg: 4 } }}>
+        <Toolbar sx={{ minHeight: { xs: 64, lg: 80 }, gap: { xs: 0.75, sm: 1.5 }, px: 'var(--dh-content-gutter)' }}>
           <IconButton aria-label="打开主导航" onClick={onOpenMobile} sx={{ display: { xs: 'inline-flex', lg: 'none' } }}><MenuIcon /></IconButton>
-          <ButtonBase aria-label="切换工作区" onClick={/* workspaceMenuToggle 打开工作区菜单。 */ event => setWorkspaceAnchor(event.currentTarget)} sx={{ minWidth: 0, borderRadius: 1.5, px: { xs: 0.5, sm: 1 }, py: 0.75, gap: { xs: 0.75, sm: 1.25 }, justifyContent: 'flex-start', '&:hover': { bgcolor: 'action.hover' } }}>
+          <ButtonBase aria-label="切换工作区" onClick={/* workspaceMenuToggle 打开工作区菜单。 */ event => setWorkspaceAnchor(event.currentTarget)} sx={{ minWidth: 0, borderRadius: 1, px: { xs: 0.5, sm: 1 }, py: 0.75, gap: { xs: 0.75, sm: 1.25 }, justifyContent: 'flex-start', '&:hover': { bgcolor: 'action.hover' } }}>
             <DHBrandIcon size={38} decorative />
             <Box sx={{ minWidth: 0, display: { xs: 'none', sm: 'block' }, textAlign: 'left' }}>
               <Typography noWrap sx={{ fontSize: 15, fontWeight: 750, lineHeight: 1.2 }}>工作区 1</Typography>
@@ -131,7 +131,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile
             <ExpandMoreIcon fontSize="small" color="action" />
           </ButtonBase>
           <Box sx={{ flex: 1 }} />
-          <TextField inputRef={searchRef} value={search} onChange={/* searchChange 更新快捷搜索输入。 */ event => setSearch(event.target.value)} onKeyDown={handleSearch} placeholder="搜索页面" aria-label="搜索页面" size="small" sx={{ display: { xs: 'none', md: 'block' }, width: { md: 220, lg: 280 }, '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }} slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchOutlinedIcon fontSize="small" /></InputAdornment>, endAdornment: <InputAdornment position="end"><Typography variant="caption" color="text.disabled" sx={{ border: 1, borderColor: 'divider', borderRadius: 0.75, px: 0.6, py: 0.15 }}>⌘K</Typography></InputAdornment> } }} />
+          <TextField inputRef={searchRef} value={search} onChange={/* searchChange 更新快捷搜索输入。 */ event => setSearch(event.target.value)} onKeyDown={handleSearch} placeholder="搜索页面" aria-label="搜索页面" size="small" sx={{ display: { xs: 'none', md: 'block' }, width: { md: 220, lg: 280 }, '& .MuiOutlinedInput-root': { borderRadius: 1, bgcolor: 'action.hover' } }} slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchOutlinedIcon fontSize="small" /></InputAdornment>, endAdornment: <InputAdornment position="end"><Typography variant="caption" color="text.disabled" sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 0.6, py: 0.15 }}>⌘K</Typography></InputAdornment> } }} />
           <Tooltip title="通知"><IconButton aria-label="通知" onClick={/* notificationNavigation 打开通知设置页面。 */ () => navigate(appPaths.notifications)}><Badge color="error" variant="dot" invisible={!hasUnreadChatMessage}><NotificationsNoneOutlinedIcon /></Badge></IconButton></Tooltip>
           <Tooltip title="界面设置"><IconButton aria-label="界面设置" onClick={openSettings}><SettingsOutlinedIcon /></IconButton></Tooltip>
           <Tooltip title="个人资料">
@@ -152,8 +152,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile
         <Divider />
         <MenuItem onClick={handleLogoutClick} sx={{ color: 'error.main' }}><ListItemIcon sx={{ color: 'inherit' }}><LogoutIcon fontSize="small" /></ListItemIcon><ListItemText primary="退出登录" /></MenuItem>
       </Menu>
-      <Box sx={{ width: '100%', maxWidth: 1600, mx: 'auto', flex: 1, px: { xs: 1.5, sm: 3, lg: 4 }, py: { xs: 2.5, sm: 3.5, lg: 4 } }}>
-        <Typography variant="h3" sx={{ display: { xs: 'block', lg: 'none' }, mb: 2 }} noWrap>{title}</Typography>
+      <Box sx={{ width: '100%', maxWidth: 1600, mx: 'auto', flex: 1, px: 'var(--dh-content-gutter)', py: { xs: 2.5, sm: 3.5, lg: 4 } }}>
+        <Typography variant="h3" sx={{ display: 'block', mb: 2 }} noWrap>{title}</Typography>
         <React.Suspense fallback={<LoadingScreen minHeight={320} label="正在加载页面" />}><Outlet /></React.Suspense>
       </Box>
     </Box>
