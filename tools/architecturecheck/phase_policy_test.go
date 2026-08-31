@@ -119,23 +119,23 @@ func TestReactArchitectureGate(t *testing.T) {
 		t.Fatal(writeErr)
 	}
 	// mkdirErr 表示创建集中契约目录失败的文件系统原因。
-	if mkdirErr := os.MkdirAll(filepath.Join(frontendRoot, "shared", "api-contract"), 0o755); mkdirErr != nil {
+	if mkdirErr := os.MkdirAll(filepath.Join(frontendRoot, "src", "shared", "api-contract"), 0o755); mkdirErr != nil {
 		t.Fatal(mkdirErr)
 	}
 	// writeErr 表示写入大型契约 barrel 违规样例失败的文件系统原因。
-	if writeErr := os.WriteFile(filepath.Join(frontendRoot, "shared", "api-contract", "index.ts"), []byte("export {};\n"), 0o600); writeErr != nil {
+	if writeErr := os.WriteFile(filepath.Join(frontendRoot, "src", "shared", "api-contract", "index.ts"), []byte("export {};\n"), 0o600); writeErr != nil {
 		t.Fatal(writeErr)
 	}
 	// mkdirErr 表示创建临时 items feature 目录失败的文件系统原因。
-	if mkdirErr := os.MkdirAll(filepath.Join(frontendRoot, "app", "features", "items"), 0o755); mkdirErr != nil {
+	if mkdirErr := os.MkdirAll(filepath.Join(frontendRoot, "src", "features", "items"), 0o755); mkdirErr != nil {
 		t.Fatal(mkdirErr)
 	}
 	// writeErr 表示写入契约和网络旁路违规样例失败的文件系统原因。
-	if writeErr := os.WriteFile(filepath.Join(frontendRoot, "app", "features", "items", "bad.ts"), []byte("import { x } from '../../../shared/api-contract';\nvoid fetch('/x');\n"), 0o600); writeErr != nil {
+	if writeErr := os.WriteFile(filepath.Join(frontendRoot, "src", "features", "items", "bad.ts"), []byte("import { x } from '../../../shared/api-contract';\nvoid fetch('/x');\n"), 0o600); writeErr != nil {
 		t.Fatal(writeErr)
 	}
 	// writeErr 表示写入绕过 feature API adapter 的契约依赖样例失败的文件系统原因。
-	if writeErr := os.WriteFile(filepath.Join(frontendRoot, "app", "features", "items", "ui.ts"), []byte("import type { Item } from '../../../shared/api-contract/items';\nexport type Row = Item;\n"), 0o600); writeErr != nil {
+	if writeErr := os.WriteFile(filepath.Join(frontendRoot, "src", "features", "items", "ui.ts"), []byte("import type { Item } from '../../../shared/api-contract/items';\nexport type Row = Item;\n"), 0o600); writeErr != nil {
 		t.Fatal(writeErr)
 	}
 	// writeErr 表示写入缺少严格选项的 TypeScript 配置失败的文件系统原因。
@@ -145,6 +145,44 @@ func TestReactArchitectureGate(t *testing.T) {
 	// violations 是 React 阶段门禁发现的集中入口、网络旁路和类型配置违规。
 	violations := checkReactArchitecture(root)
 	if len(violations) < 5 {
+		t.Fatalf("violations=%+v", violations)
+	}
+}
+
+// TestReactArchitectureGateRecognizesSrcAliases 验证门禁按模块标识符识别 src 别名导入。
+func TestReactArchitectureGateRecognizesSrcAliases(t *testing.T) {
+	// root 是仅包含别名导入违规样例的临时仓库。
+	root := t.TempDir()
+	// featurePath 是绕过 feature API adapter 的 UI 源文件。
+	featurePath := filepath.Join(root, "frontend", "src", "features", "items", "ui.ts")
+	// mkdirErr 表示创建临时 feature 目录失败的原因。
+	if mkdirErr := os.MkdirAll(filepath.Dir(featurePath), 0o755); mkdirErr != nil {
+		t.Fatal(mkdirErr)
+	}
+	// source 同时覆盖 OpenAPI DTO 旁路和旧 HTTP 方法导入。
+	source := "import type { Item } from '@/shared/api-contract/items';\nimport { get } from '@/shared/http/client';\nexport type Row = Item;\nvoid get;\n"
+	// writeErr 表示写入别名导入样例失败的原因。
+	if writeErr := os.WriteFile(featurePath, []byte(source), 0o600); writeErr != nil {
+		t.Fatal(writeErr)
+	}
+	// tsconfigPath 是启用所有强制类型选项的最小配置。
+	tsconfigPath := filepath.Join(root, "frontend", "tsconfig.json")
+	// writeErr 表示写入最小 TypeScript 配置失败的原因。
+	if writeErr := os.WriteFile(tsconfigPath, []byte(`{"compilerOptions":{"noUnusedLocals":true,"noUnusedParameters":true}}`), 0o600); writeErr != nil {
+		t.Fatal(writeErr)
+	}
+	// violations 是别名导入必须触发的两类边界违规。
+	violations := checkReactArchitecture(root)
+	// foundTransport 表示是否识别到 UI 直读传输 DTO。
+	foundTransport := false
+	// foundLegacyHTTP 表示是否识别到旧 HTTP 方法导入。
+	foundLegacyHTTP := false
+	// finding 是当前待归类的架构违规。
+	for _, finding := range violations {
+		foundTransport = foundTransport || strings.Contains(finding.message, "transport DTO")
+		foundLegacyHTTP = foundLegacyHTTP || strings.Contains(finding.message, "旧 HTTP")
+	}
+	if len(violations) != 2 || !foundTransport || !foundLegacyHTTP {
 		t.Fatalf("violations=%+v", violations)
 	}
 }
@@ -219,7 +257,7 @@ func TestOpenAPIContractClosureGate(t *testing.T) {
 	// root 是承载阶段六违规样例的独立临时仓库。
 	root := t.TempDir()
 	// transportPath 是模拟被错误恢复的旧手写 DTO 汇总文件。
-	transportPath := filepath.Join(root, "frontend", "shared", "api-contract", "transport.ts")
+	transportPath := filepath.Join(root, "frontend", "src", "shared", "api-contract", "transport.ts")
 	// mkdirErr 表示创建旧 DTO 样例目录失败的原因。
 	if mkdirErr := os.MkdirAll(filepath.Dir(transportPath), 0o755); mkdirErr != nil {
 		t.Fatal(mkdirErr)
@@ -229,7 +267,7 @@ func TestOpenAPIContractClosureGate(t *testing.T) {
 		t.Fatal(writeErr)
 	}
 	// featurePath 是绕过 adapter 直接导入生成 schema 的 feature UI 样例。
-	featurePath := filepath.Join(root, "frontend", "app", "features", "items", "page.tsx")
+	featurePath := filepath.Join(root, "frontend", "src", "features", "items", "page.tsx")
 	// mkdirErr 表示创建 feature 样例目录失败的原因。
 	if mkdirErr := os.MkdirAll(filepath.Dir(featurePath), 0o755); mkdirErr != nil {
 		t.Fatal(mkdirErr)

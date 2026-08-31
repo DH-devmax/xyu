@@ -20,5 +20,12 @@ license and generated third-party notices are retained under
 
 ## Minimal Vite TS 7.7.0
 
-Minimal Vite TS 7.7.0 was used only as a local visual and dependency reference.
-No Minimal source code, assets or templates are distributed in this repository.
+Minimal Vite TS 7.7.0 is the licensed visual source for the adapted frontend
+primitives in `frontend/src/components/minimal`, `frontend/src/layouts` and
+`frontend/src/theme`. The reference archive is `minimal-vite-ts-main.zip`,
+version 7.7.0, SHA-256
+`b058dbc7fa8d231d06663e46d3e1d8fbfd8d38e7bd22db8abe12afa6ab498dde`.
+The product uses one Minimal license for this product; demo routes, demo data,
+authentication providers and unrelated assets are excluded from the build.
+See the official package terms at <https://docs.minimals.cc/package/> and the
+Vite integration notes at <https://docs.minimals.cc/setup/vitejs/>.

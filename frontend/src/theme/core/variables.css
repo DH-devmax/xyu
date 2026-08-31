@@ -1,0 +1,198 @@
+/* Minimal 7.7.0 主题变量只提供色阶、阴影和运动基础，不包含 utility class。 */
+:root {
+  --minimal-color-transparent: transparent;
+  --minimal-color-black: 0 0 0;
+  --minimal-color-white: 255 255 255;
+  --minimal-color-brand: 18 104 168;
+  --minimal-color-brand-highlight: 11 78 127;
+  --minimal-color-brand-50: 239 248 255;
+  --minimal-color-brand-100: 223 241 255;
+  --minimal-color-brand-200: 191 229 255;
+  --minimal-color-brand-300: 143 210 255;
+  --minimal-color-brand-400: 83 184 251;
+  --minimal-color-brand-500: 18 104 168;
+  --minimal-color-brand-600: 18 104 168;
+  --minimal-color-brand-700: 11 78 127;
+  --minimal-color-brand-800: 0 91 181;
+  --minimal-color-brand-900: 0 75 147;
+  --minimal-color-brand-950: 0 53 107;
+  --minimal-color-ink: 29 36 44;
+  --minimal-color-surface: 255 255 255;
+  --minimal-color-surface-subtle: 247 248 250;
+  --minimal-color-surface-muted: 250 250 250;
+  --minimal-color-neutral-50: 249 250 251;
+  --minimal-color-neutral-100: 243 244 246;
+  --minimal-color-neutral-200: 229 231 235;
+  --minimal-color-neutral-300: 209 213 219;
+  --minimal-color-neutral-400: 156 163 175;
+  --minimal-color-neutral-500: 107 114 128;
+  --minimal-color-neutral-600: 75 85 99;
+  --minimal-color-neutral-700: 55 65 81;
+  --minimal-color-neutral-800: 31 41 55;
+  --minimal-color-neutral-900: 17 24 39;
+  --minimal-color-slate-50: 248 250 252;
+  --minimal-color-slate-100: 241 245 249;
+  --minimal-color-slate-200: 226 232 240;
+  --minimal-color-slate-300: 203 213 225;
+  --minimal-color-slate-400: 148 163 184;
+  --minimal-color-slate-500: 100 116 139;
+  --minimal-color-slate-600: 71 85 105;
+  --minimal-color-slate-700: 51 65 85;
+  --minimal-color-slate-800: 30 41 59;
+  --minimal-color-slate-900: 15 23 42;
+  --minimal-color-slate-950: 2 6 23;
+  --minimal-color-success-50: 236 253 245;
+  --minimal-color-success-100: 209 250 229;
+  --minimal-color-success-200: 167 243 208;
+  --minimal-color-success-300: 110 231 183;
+  --minimal-color-success-500: 31 122 85;
+  --minimal-color-success-600: 5 150 105;
+  --minimal-color-success-700: 4 120 87;
+  --minimal-color-success-800: 6 95 70;
+  --minimal-color-warning-50: 255 251 235;
+  --minimal-color-warning-100: 254 243 199;
+  --minimal-color-warning-200: 253 230 138;
+  --minimal-color-warning-500: 166 103 0;
+  --minimal-color-warning-600: 217 119 6;
+  --minimal-color-warning-700: 180 83 9;
+  --minimal-color-warning-800: 146 64 14;
+  --minimal-color-warning-900: 120 53 15;
+  --minimal-color-danger-50: 254 242 242;
+  --minimal-color-danger-100: 254 226 226;
+  --minimal-color-danger-200: 254 202 202;
+  --minimal-color-danger-300: 252 165 165;
+  --minimal-color-danger-500: 187 61 61;
+  --minimal-color-danger-600: 220 38 38;
+  --minimal-color-danger-700: 185 28 28;
+  --minimal-color-danger-800: 153 27 27;
+  --minimal-color-accent-50: 250 245 255;
+  --minimal-color-accent-100: 243 232 255;
+  --minimal-color-accent-600: 147 51 234;
+  --minimal-color-accent-700: 126 34 206;
+  --minimal-shadow-none: 0 0 0 transparent;
+  --minimal-shadow-sm: 0 1px 2px rgb(0 0 0 / 5%);
+  --minimal-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 10%);
+  --minimal-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -4px rgb(0 0 0 / 10%);
+  --minimal-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 10%), 0 8px 10px -6px rgb(0 0 0 / 10%);
+  --minimal-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 25%);
+  --minimal-shadow-card: 0 8px 24px rgb(0 0 0 / 4%);
+  --minimal-shadow-chat-input: 0 -8px 24px rgb(15 23 42 / 4%);
+  --minimal-shadow-chat-active: inset 3px 0 0 rgb(var(--minimal-color-brand));
+  --minimal-shadow-brand-soft: 0 2px 8px rgb(var(--minimal-color-brand) / 20%);
+  --minimal-shadow-brand-strong: 0 8px 20px rgb(var(--minimal-color-brand) / 30%);
+}
+
+/* 深色模式保持同一语义顺序：浅编号仍表示页面表面，深编号表示高对比文字。 */
+[data-color-scheme='dark'] {
+  --minimal-color-white: 29 37 45;
+  --minimal-color-brand: 117 185 237;
+  --minimal-color-brand-highlight: 90 159 206;
+  --minimal-color-brand-50: 16 34 53;
+  --minimal-color-brand-100: 20 47 72;
+  --minimal-color-brand-200: 29 67 99;
+  --minimal-color-brand-300: 48 96 132;
+  --minimal-color-brand-400: 90 159 206;
+  --minimal-color-brand-500: 117 185 237;
+  --minimal-color-brand-600: 117 185 237;
+  --minimal-color-brand-700: 147 205 247;
+  --minimal-color-brand-800: 183 222 250;
+  --minimal-color-brand-900: 218 238 252;
+  --minimal-color-brand-950: 239 248 255;
+  --minimal-color-ink: 242 245 247;
+  --minimal-color-surface: 29 37 45;
+  --minimal-color-surface-subtle: 20 26 32;
+  --minimal-color-surface-muted: 24 31 38;
+  --minimal-color-neutral-50: 29 37 45;
+  --minimal-color-neutral-100: 37 47 57;
+  --minimal-color-neutral-200: 53 65 76;
+  --minimal-color-neutral-300: 84 98 112;
+  --minimal-color-neutral-400: 148 163 184;
+  --minimal-color-neutral-500: 169 181 192;
+  --minimal-color-neutral-600: 195 205 214;
+  --minimal-color-neutral-700: 219 226 232;
+  --minimal-color-neutral-800: 238 243 246;
+  --minimal-color-neutral-900: 248 250 252;
+  --minimal-color-slate-50: 24 31 38;
+  --minimal-color-slate-100: 31 40 49;
+  --minimal-color-slate-200: 47 59 70;
+  --minimal-color-slate-300: 72 87 101;
+  --minimal-color-slate-400: 135 151 166;
+  --minimal-color-slate-500: 163 177 190;
+  --minimal-color-slate-600: 192 203 213;
+  --minimal-color-slate-700: 216 224 231;
+  --minimal-color-slate-800: 237 242 246;
+  --minimal-color-slate-900: 248 250 252;
+  --minimal-color-slate-950: 255 255 255;
+  --minimal-color-success-50: 18 47 37;
+  --minimal-color-success-100: 22 65 49;
+  --minimal-color-success-200: 31 91 68;
+  --minimal-color-success-300: 49 126 91;
+  --minimal-color-success-500: 100 199 154;
+  --minimal-color-success-600: 121 216 172;
+  --minimal-color-success-700: 153 229 193;
+  --minimal-color-success-800: 198 244 220;
+  --minimal-color-warning-50: 55 40 17;
+  --minimal-color-warning-100: 73 50 18;
+  --minimal-color-warning-200: 101 68 22;
+  --minimal-color-warning-500: 227 173 84;
+  --minimal-color-warning-600: 238 190 111;
+  --minimal-color-warning-700: 245 208 145;
+  --minimal-color-warning-800: 250 226 185;
+  --minimal-color-warning-900: 254 243 219;
+  --minimal-color-danger-50: 58 28 28;
+  --minimal-color-danger-100: 79 34 34;
+  --minimal-color-danger-200: 108 43 43;
+  --minimal-color-danger-300: 146 55 55;
+  --minimal-color-danger-500: 239 119 119;
+  --minimal-color-danger-600: 245 144 144;
+  --minimal-color-danger-700: 249 172 172;
+  --minimal-color-danger-800: 252 204 204;
+  --minimal-color-accent-50: 43 30 53;
+  --minimal-color-accent-100: 60 39 74;
+  --minimal-color-accent-600: 200 150 246;
+  --minimal-color-accent-700: 220 183 250;
+}
+
+*,
+*::before,
+*::after {
+  --minimal-translate-x: 0;
+  --minimal-translate-y: 0;
+  --minimal-rotate: 0;
+  --minimal-skew-x: 0;
+  --minimal-skew-y: 0;
+  --minimal-scale-x: 1;
+  --minimal-scale-y: 1;
+  --minimal-ordinal: normal;
+  --minimal-slashed-zero: normal;
+  --minimal-numeric-figure: normal;
+  --minimal-numeric-spacing: normal;
+  --minimal-numeric-fraction: normal;
+  --minimal-ring-inset: initial;
+  --minimal-ring-offset-width: 0px;
+  --minimal-ring-offset-color: rgb(var(--minimal-color-surface));
+  --minimal-ring-color: rgb(var(--minimal-color-brand) / 35%);
+  --minimal-ring-offset-shadow: 0 0 transparent;
+  --minimal-ring-shadow: 0 0 transparent;
+  --minimal-shadow: 0 0 transparent;
+  --minimal-shadow-colored: 0 0 transparent;
+  --minimal-backdrop-blur: initial;
+  --minimal-backdrop-brightness: initial;
+  --minimal-backdrop-contrast: initial;
+  --minimal-backdrop-grayscale: initial;
+  --minimal-backdrop-hue-rotate: initial;
+  --minimal-backdrop-invert: initial;
+  --minimal-backdrop-opacity: initial;
+  --minimal-backdrop-saturate: initial;
+  --minimal-backdrop-sepia: initial;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

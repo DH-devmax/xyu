@@ -3,3 +3,7 @@ Copyright 2026 DH-devmax
 
 This product includes software developed by Christ9038 and is licensed under
 the Apache License, Version 2.0.
+
+The frontend visual primitives are adapted from Minimal Vite TS 7.7.0 under
+the product license recorded in THIRD_PARTY_NOTICES.md. The source archive
+SHA-256 is b058dbc7fa8d231d06663e46d3e1d8fbfd8d38e7bd22db8abe12afa6ab498dde.

@@ -14,11 +14,11 @@ const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'dh-xianyu-agen
 // temporarySchema 是临时 OpenAPI 生成文件的绝对路径。
 const temporarySchema = path.join(temporaryDirectory, 'schema.ts');
 // checkedInSchema 是仓库中受版本控制的 OpenAPI 生成文件。
-const checkedInSchema = path.join(frontendRoot, 'shared', 'api-contract', 'generated', 'schema.ts');
+const checkedInSchema = path.join(frontendRoot, 'src', 'shared', 'api-contract', 'generated', 'schema.ts');
 // generator 是固定依赖安装后实际执行的 OpenAPI TypeScript 生成器。
 const generator = path.join(frontendRoot, 'node_modules', 'openapi-typescript', 'bin', 'cli.js');
 // featureRoot 是允许通过 feature adapter 写入系统设置的源码树。
-const featureRoot = path.join(frontendRoot, 'app', 'features');
+const featureRoot = path.join(frontendRoot, 'src', 'features');
 // systemSettingsPath 是必须经由秘密归一器构造请求体的版本化系统设置写入端点。
 const systemSettingsPath = '/api/v1/settings/system';
 
@@ -97,7 +97,7 @@ const verifySystemSettingsWriteBoundary = () => {
     };
     visit(sourceFile);
     if (hasSystemSettingsWrite && !importsSharedSettingsNormalizer(sourceFile)) {
-      violations.push(`${path.relative(frontendRoot, filePath)} 必须从 shared/api-contract/settings 导入 normalizeSystemSettingsUpdate`);
+      violations.push(`${path.relative(frontendRoot, filePath)} 必须从 src/shared/api-contract/settings 导入 normalizeSystemSettingsUpdate`);
     }
   }
   if (violations.length > 0) throw new Error(`系统设置敏感命令门禁失败：\n${violations.join('\n')}`);

@@ -1,35 +1,28 @@
-# DH闲不下来前端
+# DH 闲不下来前端
 
-React 19、Vite 8、TypeScript 5.9、MUI 9、Emotion 与 React Router 7 单页应用，是 Go 后端提供的管理界面。
+本目录是 Go 服务嵌入的 C 端工作台。视觉层采用 Minimal Vite TS 7.7.0 的布局、Public Sans、MUI 组件和设置抽屉模式；业务请求、会话、OpenAPI、账号 runtime、自动化和聊天 WebSocket 仍由原有 feature/shared 边界负责。
 
-认证页和应用壳复用 Minimal Vite TS 7.7.0 的 centered auth、FormHead、MainSection
-原语，适配层位于 `shared/ui/minimal/`。Minimal 只提供视觉布局和组件令牌；会话、OpenAPI
-请求、WebSocket 和业务状态仍由本项目既有边界管理。业务页面按迁移记录逐页从 Tailwind
-过渡到 MUI `sx`，迁移完成后再移除 Tailwind 依赖。
-
-## 目录结构
+## 目录
 
 ```text
 frontend/
-  index.html                 Vite 入口 HTML
-  index.tsx                  React 挂载入口
-  App.tsx                    根组件，仅装配 Provider、路由与错误边界
-  app/
-    providers/               会话状态与初始化流程
-    router/                  浏览器历史路由与访问控制
-    shell/                   已登录应用壳与导航
-    features/                按业务领域组织的页面、状态、Hook 和 API 适配器
-  shared/
-    api-contract/            版本化 HTTP DTO 定义
-    http/                    统一 HTTP 客户端、错误解析与契约校验
-    async/                   取消和最新请求代次工具
-    browser/                 浏览器侧轻量持久化工具
-    ui/                      跨领域复用的展示组件
-      minimal/               Minimal 7.7.0 模板原语及来源记录
-  vite.config.ts             `base=/static/` 与 `/api`、`/health` 开发代理
+  index.html
+  src/
+    main.tsx                 React 挂载入口
+    app/                     Provider、错误边界和应用组合根
+    auth/guard/              会话与管理员路由守卫
+    routes/                  createBrowserRouter、路径和跨页联动
+    layouts/                 Minimal dashboard/auth 布局
+    sections/                业务页面的 Minimal 视图组合
+    features/                API adapter、Hook、状态、模型和页面实现
+    components/minimal/      Minimal 7.7.0 视觉原语与 DH 品牌组件
+    shared/                  API 契约、HTTP、异步和浏览器工具
+    theme/                   Minimal 主题、变量和本地设置 Provider
+    global.css               非业务全局样式
+  scripts/check-api-contract.mjs
 ```
 
-生产组件、Hook 和状态只能通过所属 feature 的 API adapter 使用 transport DTO；feature 之间不得导入彼此的内部文件。所有生产业务请求均使用 `/api/v1/...`，并由 `frontend/featureArchitecture.test.ts` 的架构测试约束。
+依赖方向固定为 `routes/layouts -> sections -> features -> shared`；主题和组件不依赖业务。生产页面不直接调用 `fetch`、`axios` 或 OpenAPI client，所有请求经过所属 feature adapter。
 
 ## 开发
 
@@ -39,33 +32,22 @@ npm ci
 npm run dev
 ```
 
-Vite 开发服务器运行在 `http://localhost:3000`，将 `/api` 和 `/health` 代理到 `http://localhost:59188`。先启动后端，例如：
+Vite 默认监听 `http://localhost:3000`，将 `/api`、`/health` 和 WebSocket 代理到 `http://localhost:59188`。Go 服务可使用 `go run ./cmd/server -addr 127.0.0.1:59188` 启动。生产 `base` 固定为 `/static/`，因此直接访问 Vite 时使用 `/static/app/dashboard`。
+
+## 构建与契约
 
 ```bash
-go run ./cmd/server -addr :59188
-```
-
-`-addr :59188` 会监听全部网络接口；本机开发以外应显式使用回环地址或配置网络访问控制。桌面安装包固定绑定 `127.0.0.1:59188`。
-
-## 构建产物
-
-```bash
-npm run build
-```
-
-产物写入 `../internal/webui/static/`，随后在构建 Go 服务时由 `//go:embed` 嵌入并服务于 `/static/*`。生产部署无需单独分发前端。若服务二进制已运行，必须重新构建并重启服务，浏览器刷新不会替换已嵌入的资源。
-
-侧边栏的运行版本和短提交号来自后端 `/health`。源码运行通常显示 `dev`/`unknown`；CI 构建的安装包和 Docker 镜像会注入版本信息。
-
-## 路由
-
-路由使用 `window.history.pushState`，包括 `/app/dashboard`、`/app/accounts`、`/app/chat`、`/app/cards`、`/app/items`、`/app/orders`、`/app/rules`、`/app/notifications` 与管理员可见的 `/app/settings`。未登录时显示会话表单；当 `/api/v1/session` 表示系统未初始化时，显示首次初始化表单。后端对非 API 的 GET 请求回退到 `index.html`，支持深链刷新。
-
-## 测试
-
-```bash
-npm test -- --run
 npm run typecheck
+npm test
+npm run api:check
 npm run comments:check
 npm run build
 ```
+
+`npm run build` 输出到 `../internal/webui/static/`，供 Go 的嵌入资源服务。OpenAPI 类型由 `api/openapi.yaml` 生成到 `src/shared/api-contract/generated/schema.ts`，禁止手工修改生成文件。
+
+## 正式路由
+
+`/app/dashboard`、`/app/accounts`、`/app/chat`、`/app/orders`、`/app/cards`、`/app/items`、`/app/rules`、`/app/notifications`、`/app/settings`、`/app/brain`。系统设置和 Brain 由 `AdminGuard` 保护；未认证地址显示现有 SessionGate，刷新深链由 Go 回退到 `index.html`。
+
+正式页面只使用 MUI/Minimal 原语与 `sx`；`theme/core/variables.css` 只保留 Minimal 色阶、阴影和动画变量，不包含 utility class 或兼容样式层。Minimal 设置抽屉只持久化颜色模式、导航模式和舒适密度到浏览器本地，不写入业务数据库。聊天通知 WebSocket 仍由已认证应用壳单例拥有，Chat section 只订阅事件。

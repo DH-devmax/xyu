@@ -40,6 +40,7 @@ const expectedPNGs = new Map([
   ['branding/favicon.png', 256],
   ['frontend/public/favicon.png', 256],
   ['docs/assets/favicon.png', 256],
+  ['internal/webui/static/favicon.png', 256],
   ['icon/linux/icon.png', 512],
   ['icon/windows/icon.png', 512],
   ['cmd/tray/icon.png', 512],
@@ -54,7 +55,16 @@ for (const [relativePath, size] of expectedPNGs) {
   }
   hashes.set(relativePath, createHash('sha256').update(bytes).digest('hex'));
 }
-for (const relativePath of ['frontend/public/favicon.png', 'docs/assets/favicon.png']) {
+// readPNGColorType 确认 Web favicon 保留 alpha 通道，避免背景色回归。
+const faviconBytes = await readBytes('branding/favicon.png');
+if (faviconBytes[25] !== 6) {
+  throw new Error('Web favicon 必须使用 RGBA PNG 以支持透明背景');
+}
+for (const relativePath of [
+  'frontend/public/favicon.png',
+  'docs/assets/favicon.png',
+  'internal/webui/static/favicon.png',
+]) {
   if (hashes.get(relativePath) !== hashes.get('branding/favicon.png')) {
     throw new Error(`Web favicon 未从同一源图生成：${relativePath}`);
   }

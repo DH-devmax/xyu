@@ -1,0 +1,115 @@
+/* Minimal 全局基础样式：业务组件使用 MUI sx，页面不依赖 Tailwind 运行时。 */
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  font-family: "Public Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+textarea,
+select {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote {
+  margin: 0;
+}
+
+ol,
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+table {
+  border-collapse: collapse;
+  border-color: inherit;
+  text-indent: 0;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+/* 原生按钮经 MUI Box 组合时保留统一键盘焦点，鼠标点击不产生多余描边。 */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgb(var(--minimal-color-brand) / 55%);
+  outline-offset: 2px;
+}
+
+/* 长 URL 和密钥字段在双栏设置页中保持可收缩，不把输入控件推出视口。 */
+[data-layout-contract='minimal-settings-sections'] > * {
+  min-width: 0;
+}
+
+[data-layout-contract='minimal-settings-sections'] input,
+[data-layout-contract='minimal-settings-sections'] select,
+[data-layout-contract='minimal-settings-sections'] textarea {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+[data-layout-contract='minimal-settings-sections'] input[type='url'],
+[data-layout-contract='minimal-settings-sections'] input[type='text'] {
+  text-overflow: ellipsis;
+}
+
+@keyframes minimal-page-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 图表 SVG 聚焦框不代表业务状态，使用键盘时仍保留外层控件焦点。 */
+[data-chart='dashboard-pie'] .recharts-surface:focus,
+[data-chart='dashboard-pie'] .recharts-pie-sector:focus,
+[data-chart='dashboard-revenue'] .recharts-surface:focus,
+[data-chart='dashboard-revenue'] .recharts-bar-rectangle:focus,
+[data-chart='dashboard-revenue'] .recharts-dot:focus {
+  outline: none;
+}

@@ -34,7 +34,8 @@ master="$work_dir/app-icon.png"
 # 固定裁剪保留中心 Dh 标志，去除原图边框与底部小字，再统一为 sRGB PNG。
 "$magick_bin" "$source_file" -auto-orient -crop 520x520+250+245 +repage -resize 1024x1024 -colorspace sRGB -strip PNG32:"$master"
 mkdir -p "$root_dir/branding" "$root_dir/frontend/public" "$root_dir/docs/assets" \
-  "$root_dir/icon/linux" "$root_dir/icon/windows" "$root_dir/cmd/tray" "$root_dir/icon/macos"
+  "$root_dir/internal/webui/static" "$root_dir/icon/linux" "$root_dir/icon/windows" \
+  "$root_dir/cmd/tray" "$root_dir/icon/macos"
 cp "$master" "$root_dir/branding/app-icon.png"
 
 # write_png 生成指定尺寸的无元数据 PNG，所有平台从同一 master 派生。
@@ -44,9 +45,19 @@ write_png() {
   "$magick_bin" "$master" -resize "${size}x${size}" -strip PNG32:"$target"
 }
 
-write_png 256 "$root_dir/branding/favicon.png"
+# Web favicon 只保留深色标志；亮度蒙版保留抗锯齿边缘并移除米白底色。
+favicon_source="$work_dir/favicon-source.png"
+favicon_mask="$work_dir/favicon-alpha-mask.png"
+favicon_result="$work_dir/favicon-transparent.png"
+write_png 256 "$favicon_source"
+"$magick_bin" "$favicon_source" -alpha off -colorspace Gray -negate -level 8%,82% "$favicon_mask"
+"$magick_bin" -size 256x256 xc:'#1F2428' -alpha set "$favicon_mask" \
+  -compose CopyOpacity -composite "$favicon_result"
+"$magick_bin" "$favicon_result" -define png:color-type=6 \
+  -define png:exclude-chunks=date,time -strip PNG32:"$root_dir/branding/favicon.png"
 cp "$root_dir/branding/favicon.png" "$root_dir/frontend/public/favicon.png"
 cp "$root_dir/branding/favicon.png" "$root_dir/docs/assets/favicon.png"
+cp "$root_dir/branding/favicon.png" "$root_dir/internal/webui/static/favicon.png"
 write_png 512 "$root_dir/icon/linux/icon.png"
 write_png 512 "$root_dir/icon/windows/icon.png"
 write_png 512 "$root_dir/cmd/tray/icon.png"

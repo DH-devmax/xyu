@@ -109,6 +109,25 @@ function productComponent(manifest) {
   };
 }
 
+// minimalSourceComponent 登记 Minimal 视觉源的版本、哈希和产品级许可策略。
+function minimalSourceComponent(manifest) {
+  const source = manifest.components?.minimal_frontend;
+  if (!source?.version || !source.archive_sha256) throw new Error('Minimal 视觉源必须提供版本和 archive_sha256');
+  return {
+    'bom-ref': 'application:minimal-vite-ts',
+    type: 'framework',
+    name: source.name || 'Minimal Vite TS',
+    version: source.version,
+    licenses: licenseEntries(['Minimal product license (see https://docs.minimals.cc/package/)']),
+    properties: [
+      { name: 'dh.ecosystem', value: 'frontend-visual-source' },
+      { name: 'dh.source.archive', value: source.archive },
+      { name: 'dh.source.sha256', value: source.archive_sha256 },
+      { name: 'dh.license.policy', value: source.license_policy || 'one-license-per-product' },
+    ],
+  };
+}
+
 // goInventory 通过 Go 自带的结构化 go mod edit 输出获取直接和间接 module。
 export function goInventory() {
   const moduleFile = JSON.parse(execFileSync('go', ['mod', 'edit', '-json'], {
@@ -278,7 +297,8 @@ export async function generateSupplyChain() {
   const frontend = await frontendInventory();
   const harness = await harnessInventory();
   const root = productComponent(manifest);
-  const components = [go.root, frontend.root, harness.root, ...go.dependencies, ...frontend.dependencies, ...harness.dependencies]
+  const minimal = minimalSourceComponent(manifest);
+  const components = [go.root, frontend.root, harness.root, minimal, ...go.dependencies, ...frontend.dependencies, ...harness.dependencies]
     .sort((left, right) => left['bom-ref'].localeCompare(right['bom-ref']));
   const componentReferences = components.map(component => component['bom-ref']);
   if (new Set(componentReferences).size !== componentReferences.length) throw new Error('SBOM 组件 bom-ref 重复');
@@ -298,7 +318,7 @@ export async function generateSupplyChain() {
     },
     components,
     dependencies: [
-      { ref: root['bom-ref'], dependsOn: [go.root['bom-ref'], frontend.root['bom-ref'], harness.root['bom-ref']] },
+      { ref: root['bom-ref'], dependsOn: [go.root['bom-ref'], frontend.root['bom-ref'], harness.root['bom-ref'], minimal['bom-ref']] },
       { ref: go.root['bom-ref'], dependsOn: go.dependencies.map(component => component['bom-ref']) },
       { ref: frontend.root['bom-ref'], dependsOn: frontend.dependencies.map(component => component['bom-ref']) },
       { ref: harness.root['bom-ref'], dependsOn: harness.dependencies.map(component => component['bom-ref']) },
