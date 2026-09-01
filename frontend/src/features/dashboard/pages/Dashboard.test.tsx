@@ -6,6 +6,8 @@ import { StatusBadge } from './Dashboard';
 
 // dashboardSource 仪表盘测试数据源。
 const dashboardSource = readFileSync(resolve(__dirname, 'Dashboard.tsx'), 'utf8');
+// ecommerceHeroSource Minimal 电商首屏组合源码。
+const ecommerceHeroSource = readFileSync(resolve(__dirname, '../components/DashboardEcommerceHero.tsx'), 'utf8');
 // trendChartSource 趋势图测试数据源。
 const trendChartSource = readFileSync(resolve(__dirname, '../DashboardTrendChart.tsx'), 'utf8');
 // globalStyles 测试用全局样式。
@@ -24,10 +26,19 @@ describe('Dashboard presentation safeguards', /* 当前回调处理用户交互�
 
   test('keeps the shell title while using Minimal section adapters and business data hooks', /* 当前回调验证一级标题由应用壳提供，仪表盘仍使用模板适配切片。 */ () => {
     expect(dashboardSource).not.toContain('<MinimalPageHeader');
-    expect(dashboardSource).toContain('系统正常运行');
+    expect(ecommerceHeroSource).toContain('系统正常运行');
     expect(dashboardSource).toContain('<MinimalSectionCard');
     expect(dashboardSource).toContain('useDashboard({ range: timeRange');
     expect(dashboardSource).toContain('<DashboardTrendChart');
+  });
+
+  test('uses the Minimal ecommerce welcome composition with real dashboard data', /* 当前回调验证 Minimal 欢迎区仍绑定真实仪表盘数据。 */ () => {
+    expect(dashboardSource).toContain('<DashboardEcommerceHero');
+    expect(ecommerceHeroSource).toContain('data-dashboard-welcome');
+    expect(ecommerceHeroSource).toContain('data-dashboard-minimal-grid');
+    expect(ecommerceHeroSource).toContain('<MotivationIllustration');
+    expect(ecommerceHeroSource).toContain("/static/assets/background/background-6.webp");
+    expect(ecommerceHeroSource).toContain('totalOrders.toLocaleString');
   });
 
   test('pie charts use enlarged active sectors without focus rings or external label lines', /* 当前回调处理用户交互或异步状态变化。 */ () => {

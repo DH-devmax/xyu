@@ -15,9 +15,12 @@ import { Cell,Legend,Pie,PieChart,ResponsiveContainer,Tooltip } from 'recharts';
 import { getDateRange,TimeRange } from '@/shared/dateRange';
 import { formatLocalDateTime } from '@/shared/dateTime';
 import { MinimalSectionCard } from '@/components/minimal';
-import { OrderStatus } from '../api';
+import type { OrderStatus } from '../api';
 import { DashboardTrendChart } from '../DashboardTrendChart';
 import { useDashboard } from '../hooks';
+
+// DashboardEcommerceHero 延迟加载 Minimal 电商页首屏，保持仪表盘主分片预算稳定。
+const DashboardEcommerceHero = React.lazy(/* loadDashboardEcommerceHero 加载 Minimal 仪表盘首屏组合。 */ () => import('../components/DashboardEcommerceHero'));
 
 // cssColor 状态颜色样式。
 const cssColor = (token: string, alpha?: number) => (
@@ -221,9 +224,16 @@ const Dashboard: React.FC = () => {
           {loadError}
         </Alert>
       )}
-      <Stack direction="row" sx={{ minHeight: 40, alignItems: 'center', justifyContent: 'flex-end' }}>
-        <Chip color="success" label="系统正常运行" size="small" variant="outlined" />
-      </Stack>
+
+      {/* Minimal 首屏组合使用欢迎区与摘要卡，数据仍来自原 Dashboard API。 */}
+      <React.Suspense fallback={<Box aria-busy="true" sx={{ minHeight: { xs: 430, md: 360 }, borderRadius: 'var(--dh-component-radius)', bgcolor: 'action.hover' }} />}>
+        <DashboardEcommerceHero
+          totalAmount={totalAmount}
+          totalOrders={totalOrders}
+          items={data?.items || []}
+          stats={stats}
+        />
+      </React.Suspense>
 
       {/* Time Range Selector */}
       <Stack

@@ -10,6 +10,7 @@ export { MinimalPageHeader } from './PageHeader';
 export type { MinimalPageHeaderProps } from './PageHeader';
 export { MinimalSectionCard } from './SectionCard';
 export type { MinimalSectionCardProps } from './SectionCard';
+export { default as MotivationIllustration } from './MotivationIllustration';
 export { MinimalPageFrame } from './PageFrame';
 export type { MinimalPageFrameProps } from './PageFrame';
 export { MinimalCardGrid } from './CardGrid';
