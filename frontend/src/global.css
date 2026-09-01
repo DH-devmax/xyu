@@ -1,5 +1,9 @@
 /* Minimal 全局基础样式：业务组件使用 MUI sx，页面不依赖 Tailwind 运行时。 */
 :root {
+  /* layoutSlots 固定 Minimal 壳层导航与顶栏尺寸，页面切换不改变左右节奏。 */
+  --dh-layout-nav-width: 280px;
+  --dh-layout-nav-mini-width: 88px;
+  --dh-layout-header-height: 80px;
   /* pageGrid 使用宽间隔的淡黑细线，让页面保持纯白但仍有结构感。 */
   --dh-page-background: #ffffff;
   --dh-grid-line: rgba(29, 36, 44, 0.055);

@@ -69,6 +69,6 @@ describe('online chat UI contract', () => {
 		const shell = source('src/layouts/dashboard/nav-vertical.tsx'); /* shell 表示Minimal垂直导航。 */
 		expect(nav).toContain("item('chat'");
 		expect(shell).toContain('onToggle');
-		expect(shell).toContain('props.mini ? 88 : 280');
+		expect(shell).toContain("props.mini ? 'var(--dh-layout-nav-mini-width)' : 'var(--dh-layout-nav-width)'");
 	} /* 测试回调断言侧边栏折叠控制和聊天主导航入口。 */);
 } /* 测试套件回调汇总聊天页面结构契约。 */);

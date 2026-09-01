@@ -13,7 +13,7 @@ export interface NavMobileProps extends Omit<DashboardNavigationProps, 'mini'> {
 
 // NavMobile 在窄屏使用临时 Drawer，并复用同一份业务导航数据。
 export const NavMobile: React.FC<NavMobileProps> = ({ open, onClose, ...other }) => (
-  <Drawer anchor="left" open={open} onClose={onClose} sx={{ display: { xs: 'block', lg: 'none' } }} slotProps={{ paper: { sx: { width: 280 } } }}>
+  <Drawer anchor="left" open={open} onClose={onClose} sx={{ display: { xs: 'block', lg: 'none' } }} slotProps={{ paper: { sx: { width: { xs: '100%', sm: 360 }, maxWidth: '100%', borderRight: 0 } } }}>
     <DashboardNavigationContent {...other} mini={false} onNavigate={onClose} />
   </Drawer>
 );

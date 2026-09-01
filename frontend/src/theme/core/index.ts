@@ -1,4 +1,7 @@
 import '@fontsource-variable/public-sans';
+import '@fontsource-variable/dm-sans';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/nunito-sans';
 import { createTheme, type PaletteMode, type Theme } from '@mui/material/styles';
 
 /** MinimalThemeOptions 描述 Minimal 设置抽屉可以影响的主题参数。 */
@@ -25,6 +28,16 @@ const primaryColors = {
   orange: { main: '#fda92d', dark: '#b66816', light: '#ffc66d' },
   red: { main: '#ff3030', dark: '#b71d18', light: '#ff6d6d' },
 } as const;
+
+/** minimalCustomShadows 是 Minimal 交互表面使用的统一阴影令牌。 */
+export const minimalCustomShadows = {
+  card: '0 0 2px 0 rgb(145 158 171 / 0.20), 0 12px 24px -4px rgb(145 158 171 / 0.12)',
+  dialog: '0 24px 48px rgb(145 158 171 / 0.20)',
+  dropdown: '0 0 2px rgb(145 158 171 / 0.24), 0 20px 40px -4px rgb(145 158 171 / 0.24)',
+} as const;
+
+/** varAlpha 使用 CSS color-mix 生成与 Minimal 变量透明度一致的颜色。 */
+export const varAlpha = (color: string, opacity: number): string => `color-mix(in srgb, ${color} ${Math.min(1, Math.max(0, opacity)) * 100}%, transparent)`;
 
 // createMinimalTheme 按 Minimal 7.7.0 的排版、间距和克制色阶创建应用主题。
 export const createMinimalTheme = (mode: PaletteMode = 'light', options: MinimalThemeOptions = {}): Theme => createTheme({
@@ -81,7 +94,7 @@ export const createMinimalTheme = (mode: PaletteMode = 'light', options: Minimal
     MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 8 } } },
     MuiAlert: { styleOverrides: { root: { borderRadius: 8 } } },
     MuiDialog: { styleOverrides: { paper: { borderRadius: 8 } } },
-    MuiMenu: { styleOverrides: { paper: { borderRadius: 8 } } },
+    MuiMenu: { styleOverrides: { paper: { borderRadius: 8, boxShadow: minimalCustomShadows.dropdown } } },
     MuiAppBar: { defaultProps: { elevation: 0, color: 'inherit' }, styleOverrides: { root: { backgroundImage: 'none', borderBottom: 1, borderColor: 'divider' } } },
     MuiDrawer: { styleOverrides: { paper: { backgroundImage: 'none' } } },
     MuiTableCell: { styleOverrides: { root: { borderColor: 'divider', padding: options.compactLayout ? '8px 12px' : '16px' } } },

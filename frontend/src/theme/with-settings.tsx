@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import createCache from '@emotion/cache';
+import { CacheProvider } from '@emotion/react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -10,9 +12,10 @@ import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { AlignRight, Columns3, Contrast, Expand, Maximize2, Moon, PanelLeft, PanelTop, RotateCcw, Rows3, Settings2, Type, X } from 'lucide-react';
 import { CssBaseline, ThemeProvider } from '@mui/material';
+import rtlPlugin from '@mui/stylis-plugin-rtl';
 import type { Theme } from '@mui/material/styles';
+import { Iconify } from '@/components/iconify';
 import { createMinimalTheme, type MinimalThemeOptions } from './core';
 
 /** MinimalSettingsState 保存 Minimal 7.7.0 的完整本地视觉偏好。 */
@@ -141,6 +144,8 @@ interface MinimalThemeBridgeProps extends React.PropsWithChildren { /** settings
 const MinimalThemeBridge: React.FC<MinimalThemeBridgeProps> = ({ settings, children }) => {
   // theme 是当前偏好对应的 MUI 主题。
   const theme = useMemo<Theme>(/* 根据完整偏好生成主题。 */ () => createMinimalTheme(settings.mode, settings), [settings]);
+  // emotionCache 为从右到左模式开启 Stylis 样式翻转。
+  const emotionCache = useMemo(/* 按文档方向生成隔离的 Emotion 缓存。 */ () => createCache({ key: settings.direction === 'rtl' ? 'muirtl' : 'muiltr', stylisPlugins: settings.direction === 'rtl' ? [rtlPlugin] : [] }), [settings.direction]);
   useEffect(/* 同步根节点方向和字号。 */ () => {
     document.documentElement.dataset.colorScheme = settings.mode;
     document.documentElement.dir = settings.direction;
@@ -152,7 +157,7 @@ const MinimalThemeBridge: React.FC<MinimalThemeBridgeProps> = ({ settings, child
     document.documentElement.style.setProperty('--minimal-color-brand-700', hexToRgb(theme.palette.primary.dark));
     document.documentElement.style.setProperty('--minimal-color-brand-400', hexToRgb(theme.palette.primary.light));
   }, [settings.direction, settings.fontSize, settings.mode, theme]);
-  return <ThemeProvider theme={theme}><CssBaseline enableColorScheme />{children}</ThemeProvider>;
+  return <CacheProvider value={emotionCache}><ThemeProvider theme={theme}><CssBaseline enableColorScheme />{children}</ThemeProvider></CacheProvider>;
 };
 
 /** useMinimalSettings 读取 Minimal 设置上下文。 */
@@ -189,27 +194,27 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ open, onClose })
   const toggle = <K extends keyof MinimalSettingsState>(field: K, value: MinimalSettingsState[K]): void => setField(field, value);
   return <Drawer anchor="right" open={open} onClose={onClose} slotProps={{ backdrop: { invisible: true }, paper: { sx: { width: { xs: '100%', sm: fullscreen ? 520 : 380 }, bgcolor: 'background.default' } } }}>
     <Stack sx={{ height: '100%' }}>
-      <Stack direction="row" sx={{ px: 2.5, py: 2, alignItems: 'center', gap: 0.5 }}><Typography variant="h2" sx={{ flex: 1 }}>设置</Typography><Tooltip title="全屏"><IconButton aria-label="全屏设置" onClick={/* 切换设置抽屉宽度。 */ () => setFullscreen(/* 取反当前宽屏状态。 */ previous => !previous)}><Maximize2 size={19} /></IconButton></Tooltip><Tooltip title="重置"><IconButton aria-label="重置设置" onClick={reset}><RotateCcw size={19} /></IconButton></Tooltip><Tooltip title="关闭"><IconButton aria-label="关闭设置" onClick={onClose}><X size={20} /></IconButton></Tooltip></Stack>
+      <Stack direction="row" sx={{ px: 2.5, py: 2, alignItems: 'center', gap: 0.5 }}><Typography variant="h2" sx={{ flex: 1 }}>设置</Typography><Tooltip title="全屏"><IconButton aria-label="全屏设置" onClick={/* 切换设置抽屉宽度。 */ () => setFullscreen(/* 取反当前宽屏状态。 */ previous => !previous)}><Iconify icon="fullscreen" width={19} /></IconButton></Tooltip><Tooltip title="重置"><IconButton aria-label="重置设置" onClick={reset}><Iconify icon="reset" width={19} /></IconButton></Tooltip><Tooltip title="关闭"><IconButton aria-label="关闭设置" onClick={onClose}><Iconify icon="close" width={20} /></IconButton></Tooltip></Stack>
       <Divider />
       <Box sx={{ p: 2.5, overflowY: 'auto', flex: 1 }}>
         <Stack spacing={3}>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
-            <OptionCard label="模式" selected={state.mode === 'dark'} icon={<Moon size={25} />} onClick={/* 切换深浅模式。 */ () => toggle('mode', state.mode === 'dark' ? 'light' : 'dark')} />
-            <OptionCard label="对比度" selected={state.contrast === 'high'} icon={<Contrast size={25} />} onClick={/* 切换对比度预设。 */ () => toggle('contrast', state.contrast === 'high' ? 'default' : 'high')} />
-            <OptionCard label="从右到左" selected={state.direction === 'rtl'} icon={<AlignRight size={25} />} onClick={/* 切换阅读方向。 */ () => toggle('direction', state.direction === 'rtl' ? 'ltr' : 'rtl')} />
-            <OptionCard label="紧凑" selected={state.compactLayout} icon={<Rows3 size={25} />} onClick={/* 切换紧凑布局。 */ () => toggle('compactLayout', !state.compactLayout)} />
+            <OptionCard label="模式" selected={state.mode === 'dark'} icon={<Iconify icon="moon" width={25} />} onClick={/* 切换深浅模式。 */ () => toggle('mode', state.mode === 'dark' ? 'light' : 'dark')} />
+            <OptionCard label="对比度" selected={state.contrast === 'high'} icon={<Iconify icon="contrast" width={25} />} onClick={/* 切换对比度预设。 */ () => toggle('contrast', state.contrast === 'high' ? 'default' : 'high')} />
+            <OptionCard label="从右到左" selected={state.direction === 'rtl'} icon={<Iconify icon="direction" width={25} />} onClick={/* 切换阅读方向。 */ () => toggle('direction', state.direction === 'rtl' ? 'ltr' : 'rtl')} />
+            <OptionCard label="紧凑" selected={state.compactLayout} icon={<Iconify icon="compact" width={25} />} onClick={/* 切换紧凑布局。 */ () => toggle('compactLayout', !state.compactLayout)} />
           </Box>
-          <SettingBlock title="导航" icon={<PanelLeft size={18} />}>
+          <SettingBlock title="导航" icon={<Iconify icon="layoutVertical" width={18} />}>
             <Typography variant="caption" color="text.secondary">布局</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}><SelectCard label="纵向" selected={state.navLayout === 'vertical'} icon={<PanelLeft size={17} />} onClick={/* 选择纵向导航。 */ () => toggle('navLayout', 'vertical')} /><SelectCard label="横向" selected={state.navLayout === 'horizontal'} icon={<PanelTop size={17} />} onClick={/* 选择横向导航。 */ () => toggle('navLayout', 'horizontal')} /><SelectCard label="迷你" selected={state.navLayout === 'mini'} icon={<Columns3 size={17} />} onClick={/* 选择迷你导航。 */ () => toggle('navLayout', 'mini')} /></Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}><SelectCard label="纵向" selected={state.navLayout === 'vertical'} icon={<Iconify icon="layoutVertical" width={17} />} onClick={/* 选择纵向导航。 */ () => toggle('navLayout', 'vertical')} /><SelectCard label="横向" selected={state.navLayout === 'horizontal'} icon={<Iconify icon="layoutHorizontal" width={17} />} onClick={/* 选择横向导航。 */ () => toggle('navLayout', 'horizontal')} /><SelectCard label="迷你" selected={state.navLayout === 'mini'} icon={<Iconify icon="layoutMini" width={17} />} onClick={/* 选择迷你导航。 */ () => toggle('navLayout', 'mini')} /></Box>
             <Typography variant="caption" color="text.secondary">颜色</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}><SelectCard label="融合" selected={state.navColor === 'integrate'} icon={<PanelLeft size={15} />} onClick={/* 选择融合导航表面。 */ () => toggle('navColor', 'integrate')} /><SelectCard label="独立" selected={state.navColor === 'apparent'} icon={<PanelLeft size={15} />} onClick={/* 选择独立导航表面。 */ () => toggle('navColor', 'apparent')} /></Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}><SelectCard label="融合" selected={state.navColor === 'integrate'} icon={<Iconify icon="layoutVertical" width={15} />} onClick={/* 选择融合导航表面。 */ () => toggle('navColor', 'integrate')} /><SelectCard label="独立" selected={state.navColor === 'apparent'} icon={<Iconify icon="layoutVertical" width={15} />} onClick={/* 选择独立导航表面。 */ () => toggle('navColor', 'apparent')} /></Box>
           </SettingBlock>
-          <SettingBlock title="预设" icon={<Settings2 size={18} />}><Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}><SelectCard label="默认" color="#21a675" selected={state.primaryColor === 'default'} onClick={/* 选择默认绿色预设。 */ () => toggle('primaryColor', 'default')} /><SelectCard label="青色" color="#078dee" selected={state.primaryColor === 'cyan'} onClick={/* 选择青色预设。 */ () => toggle('primaryColor', 'cyan')} /><SelectCard label="紫色" color="#8e33ff" selected={state.primaryColor === 'purple'} onClick={/* 选择紫色预设。 */ () => toggle('primaryColor', 'purple')} /><SelectCard label="蓝色" color="#1d78e8" selected={state.primaryColor === 'blue'} onClick={/* 选择蓝色预设。 */ () => toggle('primaryColor', 'blue')} /><SelectCard label="橙色" color="#fda92d" selected={state.primaryColor === 'orange'} onClick={/* 选择橙色预设。 */ () => toggle('primaryColor', 'orange')} /><SelectCard label="红色" color="#ff3030" selected={state.primaryColor === 'red'} onClick={/* 选择红色预设。 */ () => toggle('primaryColor', 'red')} /></Box></SettingBlock>
-          <SettingBlock title="字体" icon={<Type size={18} />}><Typography variant="caption" color="text.secondary">字体系列</Typography><Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>{(['Public Sans Variable', 'Inter Variable', 'DM Sans Variable', 'Nunito Sans Variable'] as const).map(/* 渲染字体族选择项。 */ font => <SelectCard key={font} label={font.replace(' Variable', '')} selected={state.fontFamily === font} onClick={/* 应用字体族偏好。 */ () => toggle('fontFamily', font)} />)}</Box><Typography variant="caption" color="text.secondary">字体大小</Typography><Slider aria-label="字体大小" value={state.fontSize} min={12} max={20} step={1} valueLabelDisplay="auto" onChange={/* 应用基础字号。 */ (_event, value) => toggle('fontSize', Array.isArray(value) ? value[0] : value)} /></SettingBlock>
+          <SettingBlock title="预设" icon={<Iconify icon="preset" width={18} />}><Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}><SelectCard label="默认" color="#21a675" selected={state.primaryColor === 'default'} onClick={/* 选择默认绿色预设。 */ () => toggle('primaryColor', 'default')} /><SelectCard label="青色" color="#078dee" selected={state.primaryColor === 'cyan'} onClick={/* 选择青色预设。 */ () => toggle('primaryColor', 'cyan')} /><SelectCard label="紫色" color="#8e33ff" selected={state.primaryColor === 'purple'} onClick={/* 选择紫色预设。 */ () => toggle('primaryColor', 'purple')} /><SelectCard label="蓝色" color="#1d78e8" selected={state.primaryColor === 'blue'} onClick={/* 选择蓝色预设。 */ () => toggle('primaryColor', 'blue')} /><SelectCard label="橙色" color="#fda92d" selected={state.primaryColor === 'orange'} onClick={/* 选择橙色预设。 */ () => toggle('primaryColor', 'orange')} /><SelectCard label="红色" color="#ff3030" selected={state.primaryColor === 'red'} onClick={/* 选择红色预设。 */ () => toggle('primaryColor', 'red')} /></Box></SettingBlock>
+          <SettingBlock title="字体" icon={<Iconify icon="font" width={18} />}><Typography variant="caption" color="text.secondary">字体系列</Typography><Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>{(['Public Sans Variable', 'Inter Variable', 'DM Sans Variable', 'Nunito Sans Variable'] as const).map(/* 渲染字体族选择项。 */ font => <SelectCard key={font} label={font.replace(' Variable', '')} selected={state.fontFamily === font} onClick={/* 应用字体族偏好。 */ () => toggle('fontFamily', font)} />)}</Box><Typography variant="caption" color="text.secondary">字体大小</Typography><Slider aria-label="字体大小" value={state.fontSize} min={12} max={20} step={1} valueLabelDisplay="auto" onChange={/* 应用基础字号。 */ (_event, value) => toggle('fontSize', Array.isArray(value) ? value[0] : value)} /></SettingBlock>
         </Stack>
       </Box>
-      <Box sx={{ p: 2.5, borderTop: 1, borderColor: 'divider' }}><Button fullWidth variant="outlined" startIcon={<Expand size={17} />} onClick={/* 请求浏览器进入全屏。 */ () => document.documentElement.requestFullscreen?.()}>进入全屏</Button></Box>
+      <Box sx={{ p: 2.5, borderTop: 1, borderColor: 'divider' }}><Button fullWidth variant="outlined" startIcon={<Iconify icon="fullscreen" width={17} />} onClick={/* 请求浏览器进入全屏。 */ () => document.documentElement.requestFullscreen?.()}>进入全屏</Button></Box>
     </Stack>
   </Drawer>;
 };
