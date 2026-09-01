@@ -37,6 +37,7 @@ const pageTitles: Readonly<Record<string, string>> = {
   [appPaths.notifications]: '通知设置',
   [appPaths.settings]: '系统与 AI',
   [appPaths.brain]: '智能中枢',
+  [appPaths.concierge]: '智能管家',
 };
 
 // workspaceOptions 是不触碰后端契约的工作区演示入口。

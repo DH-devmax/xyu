@@ -15,12 +15,13 @@ export const appRouter = createBrowserRouter([
       {
         element: <DashboardLayout />,
         children: [
-          ...appRoutes.filter(/* publicRouteFilter 把管理员页面移入独立 Guard。 */ route => route.path !== 'settings' && route.path !== 'brain'),
+          ...appRoutes.filter(/* publicRouteFilter 把管理员页面移入独立 Guard。 */ route => route.path !== 'settings' && route.path !== 'brain' && route.path !== 'concierge'),
           {
             element: <AdminGuard />,
             children: [
               { path: 'settings', element: appRoutes.find(/* settingsRouteFinder 读取设置页面元素。 */ route => route.path === 'settings')?.element },
               { path: 'brain', element: appRoutes.find(/* brainRouteFinder 读取 Brain 页面元素。 */ route => route.path === 'brain')?.element },
+              { path: 'concierge', element: appRoutes.find(/* conciergeRouteFinder 读取智能管家页面元素。 */ route => route.path === 'concierge')?.element },
             ],
           },
         ],

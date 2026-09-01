@@ -59,6 +59,7 @@ describe('Minimal source architecture', /* architectureSuite 汇总前端目录�
       'src/features/brain/pages/BrainCenter.tsx',
       'src/features/cards/pages/CardList.tsx',
       'src/features/chat/pages/Chat.tsx',
+      'src/features/concierge/pages/Concierge.tsx',
       'src/features/dashboard/pages/Dashboard.tsx',
       'src/features/items/pages/ItemList.tsx',
       'src/features/notifications/pages/Notifications.tsx',

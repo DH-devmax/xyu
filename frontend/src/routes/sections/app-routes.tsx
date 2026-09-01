@@ -45,5 +45,6 @@ export const appRoutes: RouteObject[] = [
   { path: 'notifications', element: lazyPage(/* notificationsLoader 加载通知 section。 */ () => import('@/sections/notifications/NotificationsSection')) },
   { path: 'settings', element: lazyPage(/* settingsLoader 加载设置 section。 */ () => import('@/sections/settings/SettingsSection')) },
   { path: 'brain', element: lazyPage(/* brainLoader 加载 Brain section。 */ () => import('@/sections/brain/BrainSection')) },
+  { path: 'concierge', element: lazyPage(/* conciergeLoader 加载智能管家 section。 */ () => import('@/sections/concierge/ConciergeSection')) },
   { path: '*', element: <Navigate to={appPaths.dashboard} replace /> },
 ];

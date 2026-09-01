@@ -10,6 +10,7 @@ export const appPaths = {
   notifications: '/app/notifications',
   settings: '/app/settings',
   brain: '/app/brain',
+  concierge: '/app/concierge',
 } as const;
 
 // AppPathKey 表示应用导航项的稳定标识。
