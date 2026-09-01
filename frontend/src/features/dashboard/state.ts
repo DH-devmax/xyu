@@ -30,8 +30,6 @@ export type DashboardSourcePoint = {
   value: number;
   /** 商品订单占比。 */
   percent: number;
-  /** 图表主题颜色。 */
-  color: string;
 };
 
 /** 商品金额图中的单个数据点。 */
@@ -44,8 +42,6 @@ export type DashboardCategoryPoint = {
   orderCount: number;
   /** 商品金额占比文本。 */
   percentage: string;
-  /** 图表主题颜色。 */
-  color: string;
 };
 
 /** 将商品列表转换为商品 ID 到商品名称的索引。 */
@@ -90,7 +86,7 @@ export const buildProductSalesData = (analytics: OrderAnalytics, itemNames: Reco
 );
 
 /** 将商品统计转换为订单来源占比数据。 */
-export const buildSourceData = (analytics: OrderAnalytics, itemNames: Record<string, string>, colors: string[]): DashboardSourcePoint[] => {
+export const buildSourceData = (analytics: OrderAnalytics, itemNames: Record<string, string>): DashboardSourcePoint[] => {
   // totalOrders 是当前分析周期的订单总数。
   const totalOrders = analytics.revenue_stats.total_orders || 0;
   return (analytics.item_stats || [])
@@ -107,15 +103,11 @@ export const buildSourceData = (analytics: OrderAnalytics, itemNames: Record<str
       },
     )
     .sort(/* 当前回调处理集合中的单个元素。 */ (left, right) => right.value - left.value)
-    .slice(0, 6)
-    .map(
-      // item 是截取后的商品占比数据，index 用于选择稳定颜色。
-      (item, index) => ({ ...item, color: colors[index % colors.length] }),
-    );
+    .slice(0, 6);
 };
 
 /** 将商品统计转换为金额排行数据。 */
-export const buildCategoryData = (analytics: OrderAnalytics, itemNames: Record<string, string>, colors: string[]): DashboardCategoryPoint[] => {
+export const buildCategoryData = (analytics: OrderAnalytics, itemNames: Record<string, string>): DashboardCategoryPoint[] => {
   // totalAmount 是当前分析周期的营收总额。
   const totalAmount = analytics.revenue_stats.total_amount || 0;
   return (analytics.item_stats || [])
@@ -135,8 +127,8 @@ export const buildCategoryData = (analytics: OrderAnalytics, itemNames: Record<s
     .sort(/* 当前回调处理集合中的单个元素。 */ (left, right) => right.value - left.value)
     .slice(0, 5)
     .map(
-      // item 是截取后的金额排行数据，index 用于选择稳定颜色。
-      (item, index) => ({ ...item, color: colors[index % colors.length], percentage: item.percentage.toFixed(1) }),
+      // item 是截取后的金额排行数据，保留展示需要的固定占比精度。
+      item => ({ ...item, percentage: item.percentage.toFixed(1) }),
     );
 };
 

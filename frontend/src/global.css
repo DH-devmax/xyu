@@ -35,6 +35,11 @@ body,
   min-height: 100%;
   width: 100%;
   background-color: var(--dh-page-background);
+}
+
+/* 页面网格只属于业务主区，导航抽屉与顶部菜单保持 Minimal 的纯色层次。 */
+[data-dashboard-main] {
+  background-color: var(--dh-page-background);
   background-image: linear-gradient(to right, var(--dh-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--dh-grid-line) 1px, transparent 1px);
   background-size: var(--dh-grid-size) var(--dh-grid-size);
   background-attachment: fixed;
@@ -111,7 +116,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid rgb(var(--minimal-color-brand) / 55%);
+  outline: 2px solid color-mix(in srgb, currentColor 55%, transparent);
   outline-offset: 2px;
 }
 

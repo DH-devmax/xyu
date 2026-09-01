@@ -118,7 +118,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile
     void onLogout();
   };
   return (
-    <Box component="main" sx={{ display: 'flex', minWidth: 0, minHeight: '100vh', flex: 1, flexDirection: 'column', bgcolor: 'transparent' }}>
+    <Box component="main" data-dashboard-main sx={{ display: 'flex', minWidth: 0, minHeight: '100vh', flex: 1, flexDirection: 'column', bgcolor: 'transparent' }}>
       <AppBar position="sticky" color="transparent" elevation={0} sx={{ bgcolor: 'transparent', backgroundImage: 'none', borderBottom: 1, borderColor: 'divider', backdropFilter: 'blur(14px)' }}>
         <Toolbar sx={{ minHeight: { xs: 64, lg: 80 }, gap: { xs: 0.75, sm: 1.5 }, px: 'var(--dh-content-gutter)' }}>
           <IconButton aria-label="打开主导航" onClick={onOpenMobile} sx={{ display: { xs: 'inline-flex', lg: 'none' } }}><MenuIcon /></IconButton>
