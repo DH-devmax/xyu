@@ -49,7 +49,7 @@ const AuthenticatedDashboard: React.FC<AuthenticatedDashboardProps> = ({ isAdmin
     return /* healthCleanup 释放健康检查请求。 */ () => controller.abort();
   }, []);
   // restrictedPath 表示当前地址是否属于管理员专属页面。
-  const restrictedPath = location.pathname === '/app/settings' || location.pathname === '/app/brain';
+  const restrictedPath = location.pathname === '/app/settings' || location.pathname === '/app/brain' || location.pathname === '/app/concierge';
   // handleLogout 调用 Provider 注销并把失败记录为通用错误。
   const handleLogout = async (): Promise<void> => {
     try {

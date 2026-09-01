@@ -18,7 +18,6 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { Iconify } from '@/components/iconify';
 import { DHBrandIcon, DHBrandLogo } from '@/components/minimal/DHBrandLogo';
-import { MinimalPageFrame } from '@/components/minimal';
 import { getBrainSession, getBrainSessions, runBrainTestTurn, type BrainReplyDraft, type BrainSession } from '@/features/brain/api';
 
 type MessageRole = 'assistant' | 'user' | 'system';
@@ -165,18 +164,17 @@ const Concierge: React.FC = () => {
   };
 
   return (
-    <MinimalPageFrame title="智能管家">
-      <Paper variant="outlined" sx={{ height: { xs: 'calc(100vh - 10rem)', md: 'calc(100vh - 12rem)' }, minHeight: 600, overflow: 'hidden', borderRadius: 1, display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
-        <Stack direction="row" spacing={1.5} sx={{ px: { xs: 2, md: 3 }, py: 2, alignItems: 'center', borderBottom: 1, borderColor: 'divider', bgcolor: 'primary.lighter' }}>
+    <Box component="section" data-layout-contract="minimal-concierge-layout" sx={{ height: '100%', minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+        <Stack direction="row" spacing={1.5} sx={{ px: { xs: 2, md: 3 }, py: 1.5, alignItems: 'center', borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
           <DHBrandLogo size={42} decorative />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography variant="h5" sx={{ fontWeight: 750 }}>智能管家</Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>DeepSeek Harness 对话助手 · 只生成建议草案</Typography>
+            <Typography variant="body2" color="text.secondary" noWrap>人工智能 · DeepSeek Harness 对话助手 · 只生成建议草案</Typography>
           </Box>
           <Chip label="在线" color="success" size="small" sx={{ borderRadius: 1, fontWeight: 700 }} />
         </Stack>
         {error && <Alert severity="warning" onClose={() => setError('')} /* 关闭提示后回到正常会话视图。 */ sx={{ borderRadius: 0 }}>{error}</Alert>}
-        <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '300px minmax(0, 1fr)' } }}>
+        <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '320px minmax(0, 1fr)' } }}>
           <Stack sx={{ display: { xs: 'none', md: 'flex' }, minWidth: 0, borderRight: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
             <Box sx={{ p: 2 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 750, mb: 1 }}>会话</Typography>
@@ -205,8 +203,7 @@ const Concierge: React.FC = () => {
             </Box>
           </Stack>
         </Box>
-      </Paper>
-    </MinimalPageFrame>
+    </Box>
   );
 };
 

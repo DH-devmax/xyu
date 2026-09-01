@@ -64,10 +64,13 @@ export const dashboardNavGroups: readonly DashboardNavGroup[] = [
           item('notifications', '通知设置', 'ic-mail.svg'),
           item('settings', '系统与 AI', 'ic-params.svg', true),
           item('brain', '智能中枢', 'ic-analytics.svg', true),
-          item('concierge', '智能管家', 'ic-chat.svg', true),
         ],
       },
     ],
+  },
+  {
+    title: '人工智能',
+    items: [item('concierge', '智能管家', 'ic-chat.svg', true)],
   },
 ];
 

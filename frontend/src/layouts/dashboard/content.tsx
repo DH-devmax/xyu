@@ -18,7 +18,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Iconify } from '@/components/iconify';
 import { LoadingScreen } from '@/components/minimal';
 import { DHBrandIcon } from '@/components/minimal/DHBrandLogo';
@@ -64,6 +64,10 @@ export interface DashboardContentProps {
 
 /** DashboardContent 渲染 Minimal 工作区顶栏、搜索、通知和个人资料入口。 */
 export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile, version, onLogout, hasUnreadChatMessage }) => {
+  // location 用于让聊天与智能管家进入贴合视口的沉浸式工作区。
+  const location = useLocation();
+  // immersiveWorkspace 仅针对需要桌面应用级画布的两个对话页面关闭通用 gutter。
+  const immersiveWorkspace = location.pathname === appPaths.chat || location.pathname === appPaths.concierge;
   // navigate 负责顶栏交互的应用内跳转。
   const navigate = useNavigate();
   // openSettings 打开 Minimal 本地界面设置抽屉。
@@ -148,7 +152,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile
   };
 
   return (
-    <Box component="main" data-dashboard-main sx={{ display: 'flex', minWidth: 0, minHeight: '100vh', flex: 1, flexDirection: 'column', bgcolor: 'transparent' }}>
+    <Box component="main" data-dashboard-main sx={{ display: 'flex', minWidth: 0, minHeight: immersiveWorkspace ? '100dvh' : '100vh', height: immersiveWorkspace ? '100dvh' : undefined, overflow: immersiveWorkspace ? 'hidden' : 'visible', flex: 1, flexDirection: 'column', bgcolor: 'transparent' }}>
       <Box component="header" sx={{ position: 'sticky', top: 0, zIndex: 'appBar', borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', backdropFilter: 'blur(18px)' }}>
         <Box sx={{ width: '100%', minHeight: { xs: 64, lg: 80 }, px: 'var(--dh-content-gutter)', display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
           <Tooltip title="打开主导航"><IconButton aria-label="打开主导航" onClick={onOpenMobile} sx={{ display: { xs: 'inline-flex', lg: 'none' } }}><Iconify icon="menu" /></IconButton></Tooltip>
@@ -193,7 +197,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile
         <DialogContent><Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'action.hover' }}><Iconify icon="search" /><InputBase inputRef={searchRef} fullWidth autoFocus value={search} onChange={/* searchChange 更新快捷搜索输入。 */ event => setSearch(event.target.value)} onKeyDown={handleSearch} placeholder="搜索仪表盘、账号、订单…" inputProps={{ 'aria-label': '搜索页面' }} /><Typography variant="caption" color="text.disabled">回车</Typography></Stack></DialogContent>
       </Dialog>
 
-      <Box sx={{ width: '100%', maxWidth: 1600, mx: 'auto', flex: 1, px: 'var(--dh-content-gutter)', py: { xs: 2.5, sm: 3.5, lg: 4 } }}>
+      <Box sx={{ width: '100%', maxWidth: immersiveWorkspace ? 'none' : 1600, mx: immersiveWorkspace ? 0 : 'auto', flex: 1, minHeight: 0, overflow: immersiveWorkspace ? 'hidden' : 'visible', display: immersiveWorkspace ? 'flex' : 'block', flexDirection: immersiveWorkspace ? 'column' : undefined, px: immersiveWorkspace ? 0 : 'var(--dh-content-gutter)', py: immersiveWorkspace ? 0 : { xs: 2.5, sm: 3.5, lg: 4 } }}>
         <React.Suspense fallback={<LoadingScreen minHeight={320} label="正在加载页面" />}><Outlet /></React.Suspense>
       </Box>
     </Box>
