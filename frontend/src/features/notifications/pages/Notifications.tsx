@@ -38,23 +38,23 @@ const Notifications: React.FC<NotificationsProps> = ({ isAdmin = false }) => {
     <MinimalPageFrame
       title="通知设置"
       description="配置通知渠道，账号异常时主动推送告警"
-      actions={(
-        <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<RefreshCw size={16} />} onClick={notificationState.loadChannels}>刷新</Button>
-          <Button variant="contained" startIcon={<Plus size={16} />} onClick={notificationState.openCreate}>新建渠道</Button>
-        </Stack>
-      )}
     >
       <Stack spacing={{ xs: 2, md: 3 }}>
         <MinimalSectionCard data-layout-contract="minimal-notification-summary" contentSx={{ p: { xs: 2, sm: 2.5 } }}>
-          <Alert severity="info" icon={<Bell size={20} />}>
-            配置通知渠道并在「账号管理 → 编辑」里绑定后，以下事件会主动推送到该账号绑定的渠道：
-            <Stack component="ul" spacing={0.25} sx={{ mt: 1, mb: 0, pl: 2.25 }}>
-              <li><strong>账号 session 失效</strong>：系统正在尝试自动恢复（警告）</li>
-              <li><strong>自动恢复失败</strong>：账号已停止，需人工处理（严重）</li>
-              <li><strong>触发风控验证</strong>：可能需要扫码完成验证（警告）</li>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: 'stretch' }}>
+            <Alert severity="info" icon={<Bell size={20} />} sx={{ flex: 1, minWidth: 0 }}>
+              配置通知渠道并在「账号管理 → 编辑」里绑定后，以下事件会主动推送到该账号绑定的渠道：
+              <Stack component="ul" spacing={0.25} sx={{ mt: 1, mb: 0, pl: 2.25 }}>
+                <li><strong>账号 session 失效</strong>：系统正在尝试自动恢复（警告）</li>
+                <li><strong>自动恢复失败</strong>：账号已停止，需人工处理（严重）</li>
+                <li><strong>触发风控验证</strong>：可能需要扫码完成验证（警告）</li>
+              </Stack>
+            </Alert>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0 }}>
+              <Button size="small" variant="outlined" startIcon={<RefreshCw size={16} />} onClick={notificationState.loadChannels}>刷新</Button>
+              <Button size="small" variant="contained" startIcon={<Plus size={16} />} onClick={notificationState.openCreate}>新建渠道</Button>
             </Stack>
-          </Alert>
+          </Stack>
         </MinimalSectionCard>
 
         <Tabs
