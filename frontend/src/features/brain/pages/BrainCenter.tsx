@@ -82,8 +82,18 @@ const statusColor = (state: BrainStatus['state']): 'default' | 'success' | 'warn
 // formatTime 将毫秒时间戳转为本地可扫描时间，空值保持短横线。
 const formatTime = (value?: number): string => value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—';
 
-// errorText 从请求错误提取不带敏感载荷的用户提示。
-const errorText = (error: unknown, fallback: string): string => error instanceof Error && error.message ? error.message : fallback;
+// errorText 将请求或 runtime 错误收敛成可读摘要，不把 Node 堆栈直接呈现在管理界面。
+const errorText = (error: unknown, fallback: string): string => {
+  // message 保存错误对象或字符串中的原始提示。
+  const message = typeof error === 'string' ? error : error instanceof Error ? error.message : '';
+  // compact 把换行和多余空白压缩成单行摘要。
+  const compact = message.replace(/\s+/g, ' ').trim();
+  if (!compact) return fallback;
+  if (/duplicate loader entry|ERR_MODULE_NOT_FOUND|plugin tree failed|TransportClosedError|failed to load/i.test(compact)) {
+    return 'Brain runtime 启动失败，请检查 Harness runtime 依赖后重启。';
+  }
+  return compact.length > 240 ? `${compact.slice(0, 237)}...` : compact;
+};
 
 // sessionLabel 生成会话列表中的稳定展示标题。
 const sessionLabel = (session: BrainSession): string => session.chat_id || session.id;
@@ -299,7 +309,7 @@ const BrainCenter: React.FC = () => {
             <Metric label="runtime" value={status.runtime_version || '—'} />
           </Box>
         )}
-        {status?.last_error && <Alert severity="warning" sx={{ mt: 2 }}>{status.last_error}</Alert>}
+        {status?.last_error && <Alert severity="warning" sx={{ mt: 2 }}>{errorText(status.last_error, 'Brain runtime 发生错误')}</Alert>}
       </Paper>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.15fr) minmax(320px, 0.85fr)' }, gap: { xs: 2, md: 3 } }}>
@@ -450,7 +460,7 @@ const TurnRow: React.FC<{ /** turn 是待展示的账本轮次。 */ turn: Brain
       <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>{turn.request_id}</Typography>
       <Stack direction="row" spacing={0.75}><Chip size="small" label={turn.status} /><Chip size="small" variant="outlined" label={`发送：${turn.send_status || '—'}`} /></Stack>
     </Stack>
-    {turn.error_message && <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>{turn.error_message}</Typography>}
+    {turn.error_message && <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>{errorText(turn.error_message, '本轮处理失败')}</Typography>}
     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>截止：{formatTime(turn.deadline_at)} · 创建：{formatTime(turn.created_at)}</Typography>
   </Box>
 );

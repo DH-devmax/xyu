@@ -36,11 +36,11 @@
       },
       {
         "name": "dh.input.sha256.frontend/package.json",
-        "value": "894e72454aef59ac72dcf5cae540301d04e9a46edbe992323e6f35c9490f6506"
+        "value": "be6cfd2fe59c7e455cf50d80bf4fd642a16649aae426a60c809ee737ad7dfd13"
       },
       {
         "name": "dh.input.sha256.frontend/package-lock.json",
-        "value": "45f51014013856c613cc036e57b695798f1514845f1f89066727757d32426cc7"
+        "value": "4e62298c3c984308c8cac4fd117512bba387553a594dcefc61c5178cb5ffdc6d"
       },
       {
         "name": "dh.input.sha256.brain/vendor/deepseek-harness/package.json",
@@ -60,7 +60,7 @@
       },
       {
         "name": "dh.component-count.frontend",
-        "value": "315"
+        "value": "332"
       },
       {
         "name": "dh.component-count.harness",
@@ -1315,6 +1315,105 @@
       ]
     },
     {
+      "bom-ref": "frontend:pkg:npm/%40fontsource-variable/dm-sans@5.3.0",
+      "type": "library",
+      "name": "@fontsource-variable/dm-sans",
+      "version": "5.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "OFL-1.1"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40fontsource-variable/dm-sans@5.3.0",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "069506e5ba9e3e20c530133866d2d294f74020e33df74b81d5d957cc87f86b0db5c9047b066ca479d2d75d732a196b11d7c68c2ceb1b59c73024d877ced4d068"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@fontsource-variable/dm-sans/-/dm-sans-5.3.0.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/%40fontsource-variable/inter@5.3.0",
+      "type": "library",
+      "name": "@fontsource-variable/inter",
+      "version": "5.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "OFL-1.1"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40fontsource-variable/inter@5.3.0",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3aea4be3cbdae093687dbf7bc3a358785f52ed6fe41cd28cd04afc0de9b99ea8b88de38bad5243a04f2d644a673099ad92f35b0751083cfc0771d905e9bd6850"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@fontsource-variable/inter/-/inter-5.3.0.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/%40fontsource-variable/nunito-sans@5.3.0",
+      "type": "library",
+      "name": "@fontsource-variable/nunito-sans",
+      "version": "5.3.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "OFL-1.1"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40fontsource-variable/nunito-sans@5.3.0",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "564d4f49f724343c20c36c8672cbc93f7a3fd33116f11a7a2b36c3f1097fea244742c867861023b7e71221f014ca9e6f42e4a595e187156d8b7d869a7b1d1d8b"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@fontsource-variable/nunito-sans/-/nunito-sans-5.3.0.tgz"
+        }
+      ]
+    },
+    {
       "bom-ref": "frontend:pkg:npm/%40fontsource-variable/public-sans@5.2.7",
       "type": "library",
       "name": "@fontsource-variable/public-sans",
@@ -1344,6 +1443,72 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/@fontsource-variable/public-sans/-/public-sans-5.2.7.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/%40iconify/react@6.0.2",
+      "type": "library",
+      "name": "@iconify/react",
+      "version": "6.0.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40iconify/react@6.0.2",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "48c982dac69cb5fa490f8dbb58910337a3cccb39d314c841c8af722d6d20393b678f3cdbb22fca7bf5eab2e9ac6af14fc0d897b3c8d28987994e62c22f03be16"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@iconify/react/-/react-6.0.2.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/%40iconify/types@2.0.0",
+      "type": "library",
+      "name": "@iconify/types",
+      "version": "2.0.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40iconify/types@2.0.0",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "fb096ebc2ad1857ae1c8e9910c9deaf26bb1f4990acb9489feff28976b6ee05563c98bed13391cff7a4ad79113e912a0e1be30e01993935fa0b025217f6d5892"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@iconify/types/-/types-2.0.0.tgz"
         }
       ]
     },
@@ -1641,6 +1806,39 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/@mui/styled-engine/-/styled-engine-9.4.0.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/%40mui/stylis-plugin-rtl@9.4.0",
+      "type": "library",
+      "name": "@mui/stylis-plugin-rtl",
+      "version": "9.4.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40mui/stylis-plugin-rtl@9.4.0",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "74674475c5a5309d0a0fc4b8b36f13bc52365d1a2ff8368191e08fbe10ef6a00af9b8ed45867254519dd46fab0086fd9301e2f185b9b08da18c1e36c7e8dbc15"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@mui/stylis-plugin-rtl/-/stylis-plugin-rtl-9.4.0.tgz"
         }
       ]
     },
@@ -3724,6 +3922,39 @@
       ]
     },
     {
+      "bom-ref": "frontend:pkg:npm/apexcharts@5.16.0",
+      "type": "library",
+      "name": "apexcharts",
+      "version": "5.16.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "SEE LICENSE IN LICENSE"
+          }
+        }
+      ],
+      "purl": "pkg:npm/apexcharts@5.16.0",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "50b3b71aaae6d3fdbabb005c633e3dbb5f35b88a7c172e81410820f505036a3b3e240b3f11b5f188099d73a04bcb5258dbdfc95eba0cecfd23d2dd893c302976"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/apexcharts/-/apexcharts-5.16.0.tgz"
+        }
+      ]
+    },
+    {
       "bom-ref": "frontend:pkg:npm/argparse@2.0.1",
       "type": "library",
       "name": "argparse",
@@ -4512,6 +4743,39 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/css-tree/-/css-tree-3.2.1.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/cssjanus@2.3.1",
+      "type": "library",
+      "name": "cssjanus",
+      "version": "2.3.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/cssjanus@2.3.1",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "816650fd2d2db61536282739e42e736e3c503745cf2b5b13d2ab9f0aac023546ae188b0f0ce7dd04c056a2c3fe29de307f60363719bfcfa2403fac8d1a74bb41"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/cssjanus/-/cssjanus-2.3.1.tgz"
         }
       ]
     },
@@ -5799,6 +6063,39 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/form-data/-/form-data-4.0.6.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/framer-motion@13.1.1",
+      "type": "library",
+      "name": "framer-motion",
+      "version": "13.1.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/framer-motion@13.1.1",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "07fc67d933d2e1feb570404b163898950167059516d58563fcb33e0be37838ff11b3de552c4236a2dfd195f060d75d656bf122c84085689262fc0dc5580f0c50"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/framer-motion/-/framer-motion-13.1.1.tgz"
         }
       ]
     },
@@ -7321,6 +7618,72 @@
       ]
     },
     {
+      "bom-ref": "frontend:pkg:npm/lodash-es@4.18.1",
+      "type": "library",
+      "name": "lodash-es",
+      "version": "4.18.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/lodash-es@4.18.1",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "27cc5ec0a0ff1a4db63996e1a4e552c1cb3ad3385df791120f07b3385b80dffd3df7ddb93dd1c9ece1473531ad6a32f7025664ca40f7d87ca488ca3e048048f0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lodash-es/-/lodash-es-4.18.1.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/lodash@4.18.1",
+      "type": "library",
+      "name": "lodash",
+      "version": "4.18.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/lodash@4.18.1",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "74c22789c4cf544f1dd5ee68b5fc269a3971919a14a6254bc32793754b22fc26a3fe07f3cdb941702139b111d5fc0b23b829b15abb5ed93346498b82782abed1"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lodash/-/lodash-4.18.1.tgz"
+        }
+      ]
+    },
+    {
       "bom-ref": "frontend:pkg:npm/loose-envify@1.4.0",
       "type": "library",
       "name": "loose-envify",
@@ -7746,6 +8109,72 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/minimatch/-/minimatch-5.1.9.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/motion-dom@13.1.1",
+      "type": "library",
+      "name": "motion-dom",
+      "version": "13.1.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/motion-dom@13.1.1",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "5d27fc55859207a1bfd08637ad655bc8b731597b4054790dd4f404d9a813682bf7bbc446bdbc2ee7a4f2c91fcc37306aa8d6af1014d9cc4adcc48d53c41ae370"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/motion-dom/-/motion-dom-13.1.1.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/motion-utils@13.0.0",
+      "type": "library",
+      "name": "motion-utils",
+      "version": "13.0.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/motion-utils@13.0.0",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ec39cded399b2dc617706e1155a757222856972b8cf5a7e8530c3c639020838df59062a2b8bdbf38cc8fe26279c0bcfea6f377b79c920a52ce6955c9fb07a445"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/motion-utils/-/motion-utils-13.0.0.tgz"
         }
       ]
     },
@@ -8509,6 +8938,39 @@
       ]
     },
     {
+      "bom-ref": "frontend:pkg:npm/react-apexcharts@2.1.1",
+      "type": "library",
+      "name": "react-apexcharts",
+      "version": "2.1.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "SEE LICENSE IN LICENSE"
+          }
+        }
+      ],
+      "purl": "pkg:npm/react-apexcharts@2.1.1",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "695db99fed59740cd11b42a1383542e3c2bc59b84c28102bdf259279a681a8cd724a7db691248a6e5b0d094be5c1e82c4fe71d30bb8eacaf711996fe20af8e91"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/react-apexcharts/-/react-apexcharts-2.1.1.tgz"
+        }
+      ]
+    },
+    {
       "bom-ref": "frontend:pkg:npm/react-dom@19.2.7",
       "type": "library",
       "name": "react-dom",
@@ -9268,6 +9730,72 @@
       ]
     },
     {
+      "bom-ref": "frontend:pkg:npm/simplebar-core@1.3.2",
+      "type": "library",
+      "name": "simplebar-core",
+      "version": "1.3.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/simplebar-core@1.3.2",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a8a8134ee4ea6a98ec14690d8428f23e1cac9db646a50a8d9a39349ce62314de68add0bf5a3be0f916d80b23129d6eb497f674652f3619b365b65cba3cc507d7"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/simplebar-core/-/simplebar-core-1.3.2.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/simplebar-react@3.3.2",
+      "type": "library",
+      "name": "simplebar-react",
+      "version": "3.3.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/simplebar-react@3.3.2",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "66c81c42128bb6de6b6b4051209780a5f91305009ad6f50f03f5972381dc611785b7ea0210ebdd573eab47f5ec18970ac5394244f99d1b1d6e24850286ea68f8"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/simplebar-react/-/simplebar-react-3.3.2.tgz"
+        }
+      ]
+    },
+    {
       "bom-ref": "frontend:pkg:npm/source-map-js@1.2.1",
       "type": "library",
       "name": "source-map-js",
@@ -9858,6 +10386,39 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/tr46/-/tr46-6.0.0.tgz"
+        }
+      ]
+    },
+    {
+      "bom-ref": "frontend:pkg:npm/tslib@2.8.1",
+      "type": "library",
+      "name": "tslib",
+      "version": "2.8.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "0BSD"
+          }
+        }
+      ],
+      "purl": "pkg:npm/tslib@2.8.1",
+      "properties": [
+        {
+          "name": "dh.ecosystem",
+          "value": "frontend-npm"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
         }
       ]
     },
@@ -37624,7 +38185,12 @@
         "frontend:pkg:npm/%40emotion/utils@1.4.2",
         "frontend:pkg:npm/%40emotion/weak-memoize@0.4.0",
         "frontend:pkg:npm/%40exodus/bytes@1.15.1",
+        "frontend:pkg:npm/%40fontsource-variable/dm-sans@5.3.0",
+        "frontend:pkg:npm/%40fontsource-variable/inter@5.3.0",
+        "frontend:pkg:npm/%40fontsource-variable/nunito-sans@5.3.0",
         "frontend:pkg:npm/%40fontsource-variable/public-sans@5.2.7",
+        "frontend:pkg:npm/%40iconify/react@6.0.2",
+        "frontend:pkg:npm/%40iconify/types@2.0.0",
         "frontend:pkg:npm/%40jridgewell/gen-mapping@0.3.13",
         "frontend:pkg:npm/%40jridgewell/resolve-uri@3.1.2",
         "frontend:pkg:npm/%40jridgewell/sourcemap-codec@1.5.5",
@@ -37634,6 +38200,7 @@
         "frontend:pkg:npm/%40mui/material@9.4.0",
         "frontend:pkg:npm/%40mui/private-theming@9.4.0",
         "frontend:pkg:npm/%40mui/styled-engine@9.4.0",
+        "frontend:pkg:npm/%40mui/stylis-plugin-rtl@9.4.0",
         "frontend:pkg:npm/%40mui/system@9.4.0",
         "frontend:pkg:npm/%40mui/types@9.4.0",
         "frontend:pkg:npm/%40mui/utils@9.4.0",
@@ -37697,6 +38264,7 @@
         "frontend:pkg:npm/ansi-colors@4.1.3",
         "frontend:pkg:npm/ansi-regex@5.0.1",
         "frontend:pkg:npm/ansi-styles@5.2.0",
+        "frontend:pkg:npm/apexcharts@5.16.0",
         "frontend:pkg:npm/argparse@2.0.1",
         "frontend:pkg:npm/aria-query@5.3.0",
         "frontend:pkg:npm/assertion-error@2.0.1",
@@ -37721,6 +38289,7 @@
         "frontend:pkg:npm/cookie@1.1.1",
         "frontend:pkg:npm/cosmiconfig@7.1.0",
         "frontend:pkg:npm/css-tree@3.2.1",
+        "frontend:pkg:npm/cssjanus@2.3.1",
         "frontend:pkg:npm/csstype@3.2.3",
         "frontend:pkg:npm/d3-array@3.2.4",
         "frontend:pkg:npm/d3-color@3.1.0",
@@ -37760,6 +38329,7 @@
         "frontend:pkg:npm/find-root@1.1.0",
         "frontend:pkg:npm/follow-redirects@1.16.0",
         "frontend:pkg:npm/form-data@4.0.6",
+        "frontend:pkg:npm/framer-motion@13.1.1",
         "frontend:pkg:npm/fsevents@2.3.3",
         "frontend:pkg:npm/function-bind@1.1.2",
         "frontend:pkg:npm/get-intrinsic@1.3.0",
@@ -37806,6 +38376,8 @@
         "frontend:pkg:npm/lightningcss-win32-x64-msvc@1.33.0",
         "frontend:pkg:npm/lightningcss@1.33.0",
         "frontend:pkg:npm/lines-and-columns@1.2.4",
+        "frontend:pkg:npm/lodash-es@4.18.1",
+        "frontend:pkg:npm/lodash@4.18.1",
         "frontend:pkg:npm/loose-envify@1.4.0",
         "frontend:pkg:npm/lru-cache@11.5.2",
         "frontend:pkg:npm/lucide-react@0.562.0",
@@ -37819,6 +38391,8 @@
         "frontend:pkg:npm/mime-types@2.1.35",
         "frontend:pkg:npm/minimal-shared@1.1.6",
         "frontend:pkg:npm/minimatch@5.1.9",
+        "frontend:pkg:npm/motion-dom@13.1.1",
+        "frontend:pkg:npm/motion-utils@13.0.0",
         "frontend:pkg:npm/ms@2.1.3",
         "frontend:pkg:npm/nanoid@3.3.18",
         "frontend:pkg:npm/object-assign@4.1.1",
@@ -37842,6 +38416,7 @@
         "frontend:pkg:npm/prop-types@15.8.1",
         "frontend:pkg:npm/proxy-from-env@2.1.0",
         "frontend:pkg:npm/punycode@2.3.1",
+        "frontend:pkg:npm/react-apexcharts@2.1.1",
         "frontend:pkg:npm/react-dom@19.2.7",
         "frontend:pkg:npm/react-is@16.13.1",
         "frontend:pkg:npm/react-is@17.0.2",
@@ -37865,6 +38440,8 @@
         "frontend:pkg:npm/semver@7.8.5",
         "frontend:pkg:npm/set-cookie-parser@2.7.2",
         "frontend:pkg:npm/siginfo@2.0.0",
+        "frontend:pkg:npm/simplebar-core@1.3.2",
+        "frontend:pkg:npm/simplebar-react@3.3.2",
         "frontend:pkg:npm/source-map-js@1.2.1",
         "frontend:pkg:npm/source-map@0.5.7",
         "frontend:pkg:npm/stackback@0.0.2",
@@ -37883,6 +38460,7 @@
         "frontend:pkg:npm/tldts@7.4.10",
         "frontend:pkg:npm/tough-cookie@6.0.2",
         "frontend:pkg:npm/tr46@6.0.0",
+        "frontend:pkg:npm/tslib@2.8.1",
         "frontend:pkg:npm/type-fest@4.41.0",
         "frontend:pkg:npm/typescript@5.9.3",
         "frontend:pkg:npm/undici-types@6.21.0",

@@ -107,7 +107,7 @@ func TestMigrate_AppliesCleanSchema(t *testing.T) {
 }
 
 // TestMigrate_UpgradesDatabaseWithMainChatVersions 验证已发布 main 的 00029/00030
-// 聊天迁移可以原样升级到包含快捷回复和买家备注的 00036 最终版本。
+// 聊天迁移可以原样升级到包含发货模板、发货凭证、规格契约和会话隐藏列的最新版本。
 func TestMigrate_UpgradesDatabaseWithMainChatVersions(t *testing.T) {
 	// tmpDir 保存隔离的已发布 main 数据库目录，测试结束后由 testing 清理。
 	tmpDir := t.TempDir()
@@ -146,13 +146,60 @@ func TestMigrate_UpgradesDatabaseWithMainChatVersions(t *testing.T) {
 	if !tableExists(t, rawDB, "chat_quick_replies") || !tableExists(t, rawDB, "chat_buyer_notes") {
 		t.Fatal("chat quick reply and buyer note tables should be created by the latest migration")
 	}
-	// finalVersion 验证迁移账本已推进到包含 Brain 会话账本的最新 dev schema 版本。
+	if !tableExists(t, rawDB, "delivery_templates") || !tableExists(t, rawDB, "delivery_template_messages") || !tableExists(t, rawDB, "automation_action_template_bindings") || !columnExists(t, rawDB, "automation_runs", "delivery_proof") || !columnExists(t, rawDB, "automation_rule_actions", "delivery_template_id") || !columnExists(t, rawDB, "automation_rules", "sku_migration_status") || !columnExists(t, rawDB, "chat_sessions", "is_visible") {
+		t.Fatal("delivery template, automation proof, SKU contract, and chat visibility schema should be created by the latest migration")
+	}
+	// finalVersion 验证迁移账本已推进到本地 00038 后顺延的最新 dev schema 版本。
 	finalVersion, versionErr := goose.GetDBVersion(rawDB)
 	if versionErr != nil {
 		t.Fatalf("read final migration version: %v", versionErr)
 	}
-	if finalVersion != 38 {
-		t.Fatalf("final migration version=%d, want 38", finalVersion)
+	if finalVersion != 46 {
+		t.Fatalf("final migration version=%d, want 46", finalVersion)
+	}
+}
+
+// TestMigrate_AdoptsUpstreamV107History 验证已执行上游 00038-00041 的数据库可无损接入本地顺延版本。
+func TestMigrate_AdoptsUpstreamV107History(t *testing.T) {
+	// dbPath 保存模拟上游 v1.0.7 数据库的临时文件。
+	dbPath := filepath.Join(t.TempDir(), "upstream-v107.db")
+	// db、openErr 保存模拟数据库连接及打开错误。
+	db, openErr := sql.Open("sqlite", sqliteDSN(dbPath))
+	if openErr != nil {
+		t.Fatalf("open database: %v", openErr)
+	}
+	defer db.Close()
+	// dialectErr 表示设置 SQLite goose 方言失败。
+	if dialectErr := goose.SetDialect("sqlite3"); dialectErr != nil {
+		t.Fatalf("set goose dialect: %v", dialectErr)
+	}
+	goose.SetBaseFS(migrationsFS)
+	// 先落地本地 42-46 的完整结构，再把迁移账本改成上游 38-41，模拟跨分支升级现场。
+	if upErr := goose.UpTo(db, "migrations/sqlite", 46); upErr != nil {
+		t.Fatalf("prepare v107 schema: %v", upErr)
+	}
+	// execErr 表示清理模拟迁移历史失败。
+	if _, execErr := db.Exec(`DELETE FROM goose_db_version WHERE version_id > 37`); execErr != nil {
+		t.Fatalf("reset migration history: %v", execErr)
+	}
+	// version 表示待写入的上游迁移版本号。
+	for _, version := range []int{38, 39, 40, 41} {
+		// execErr 表示写入模拟上游迁移记录失败。
+		if _, execErr := db.Exec(`INSERT INTO goose_db_version (version_id, is_applied) VALUES (?, 1)`, version); execErr != nil {
+			t.Fatalf("seed upstream migration %d: %v", version, execErr)
+		}
+	}
+	// err 表示接管上游迁移历史失败。
+	if err := Migrate(context.Background(), db, DialectSQLite); err != nil {
+		t.Fatalf("adopt upstream migration history: %v", err)
+	}
+	// finalVersion、versionErr 保存接管后的最终版本及读取错误。
+	finalVersion, versionErr := goose.GetDBVersion(db)
+	if versionErr != nil {
+		t.Fatalf("read final migration version: %v", versionErr)
+	}
+	if finalVersion != 46 {
+		t.Fatalf("final migration version=%d, want 46", finalVersion)
 	}
 }
 

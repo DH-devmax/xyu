@@ -33,3 +33,5 @@ export { SvgColor } from './SvgColor';
 export type { SvgColorProps } from './SvgColor';
 export { LoadingScreen } from './LoadingScreen';
 export type { LoadingScreenProps } from './LoadingScreen';
+export { MinimalChart, useChart } from './Chart';
+export type { MinimalChartProps } from './Chart';

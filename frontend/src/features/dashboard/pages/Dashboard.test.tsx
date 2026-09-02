@@ -10,6 +10,8 @@ const dashboardSource = readFileSync(resolve(__dirname, 'Dashboard.tsx'), 'utf8'
 const ecommerceHeroSource = readFileSync(resolve(__dirname, '../components/DashboardEcommerceHero.tsx'), 'utf8');
 // trendChartSource 趋势图测试数据源。
 const trendChartSource = readFileSync(resolve(__dirname, '../DashboardTrendChart.tsx'), 'utf8');
+// minimalChartSource Minimal ApexCharts 适配器源码。
+const minimalChartSource = readFileSync(resolve(__dirname, '../../../components/minimal/Chart.tsx'), 'utf8');
 // globalStyles 测试用全局样式。
 const globalStyles = readFileSync(resolve(__dirname, '../../../global.css'), 'utf8');
 
@@ -69,5 +71,14 @@ describe('Dashboard presentation safeguards', /* 当前回调处理用户交互�
     expect(trendChartSource).not.toContain('--minimal-');
     expect(globalStyles).toContain("[data-chart='dashboard-revenue'] .recharts-bar-rectangle:focus");
     expect(globalStyles).toContain('[data-dashboard-main]');
+  });
+
+  test('keeps Minimal ApexCharts sparklines visible for empty and snapshot metrics', /* 当前回调验证零值和缺少历史快照时仍保留 Minimal 折线图。 */ () => {
+    expect(minimalChartSource).toContain("from 'react-apexcharts'");
+    expect(minimalChartSource).toContain('export const useChart');
+    expect(dashboardSource).toContain('<MinimalChart');
+    expect(dashboardSource).toContain('normalizedSeries');
+    expect(dashboardSource).toContain('series={activeCookieSeries}');
+    expect(dashboardSource).toContain('series={cardStockSeries}');
   });
 });

@@ -23,6 +23,7 @@ import (
 	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
 	chatapp "github.com/DH-devmax/xyu/internal/application/chat"
 	defaultreplyapp "github.com/DH-devmax/xyu/internal/application/defaultreply"
+	deliveryapp "github.com/DH-devmax/xyu/internal/application/deliverytemplate"
 	itemapp "github.com/DH-devmax/xyu/internal/application/items"
 	keywordsapp "github.com/DH-devmax/xyu/internal/application/keywords"
 	lifecycleapp "github.com/DH-devmax/xyu/internal/application/lifecycle"
@@ -131,6 +132,8 @@ type Services struct {
 	brain *brainapp.Service
 	// brainRuntime 保存可选的 gateway 生命周期拥有者，关闭顺序由组合根统一登记。
 	brainRuntime brainapp.Runtime
+	// deliveryTemplates 提供发货模板 CRUD 应用服务。
+	deliveryTemplates *deliveryapp.Service
 }
 
 // LifecycleContext 返回已启动协调器拥有的进程生命周期 Context，供组合层 transport adapter 注册后台 worker。
@@ -338,7 +341,8 @@ type TransportPorts struct {
 	Settings               *settingsapp.Service
 	Admin                  *adminapp.Service
 	// Brain 是 Harness 客服大脑应用服务；未装配时仅禁用对应 HTTP 路由。
-	Brain *brainapp.Service
+	Brain             *brainapp.Service
+	DeliveryTemplates *deliveryapp.Service
 }
 
 // TransportPorts 返回已完成构造的只读服务引用；调用方不得在运行期替换任何字段。
@@ -359,7 +363,7 @@ func (services *Services) TransportPorts() TransportPorts {
 		UncertainNotifications: services.uncertainNotifications, NotificationChannels: services.notificationChannels,
 		Analytics: services.analytics, AutomationIssues: services.automationIssues, AutomationRules: services.automationRules,
 		Cards: services.cards, APICardTester: services.apiCardTester, PublishAutomationRules: services.publishAutomationRules, DefaultReplies: services.defaultReplies,
-		Keywords: services.keywords, Settings: services.settings, Admin: services.admin, Brain: services.brain,
+		Keywords: services.keywords, Settings: services.settings, Admin: services.admin, Brain: services.brain, DeliveryTemplates: services.deliveryTemplates,
 	}
 }
 
@@ -527,6 +531,7 @@ func New(dependencies Dependencies) (*Services, error) {
 		settings:               dependencies.TransportApplications.Settings,
 		admin:                  dependencies.TransportApplications.Admin,
 		brainRuntime:           dependencies.BrainRuntime,
+		deliveryTemplates:      dependencies.TransportApplications.DeliveryTemplates,
 	}
 	// brainErr、brainService 保存当前步骤的中间结果。
 	brainService, brainErr := buildBrainService(dependencies)

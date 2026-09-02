@@ -644,7 +644,7 @@ func TestAutomationRunAttemptFencesStaleWorker(t *testing.T) {
 		t.Fatalf("stale worker changed current run: %+v err=%v", afterStale, err)
 	}
 	if // err 用于本次流程后续判断的err
-	err := s.Automation.AdvanceRunAction(ctx, runID, current.AttemptCount, 0, 1); err != nil {
+	err := s.Automation.AdvanceRunAction(ctx, AutomationRunActionAdvance{RunID: runID, Attempt: current.AttemptCount, Cursor: 0, SentDelta: 1}); err != nil {
 		t.Fatal(err)
 	}
 	if // err 用于本次流程后续判断的err
@@ -728,8 +728,11 @@ func TestAutomationIssuesCanBeListedAndResolved(t *testing.T) {
 		t.Fatal(err)
 	}
 	// runID、started、err 用于本次流程后续判断的运行ID、started、err
+	// snapshot 冻结本次外部动作计划，验证可安全跳过的文字发送仍允许人工继续。
+	snapshot := `{"AccountID":"` + cid + `","ActionPlan":[{"ActionType":"send_text"}]}`
+	// runID、started、err 保存运行启动结果、是否成功占用和错误。
 	runID, started, err := s.Automation.TryStartRun(ctx, AutomationRun{RuleID: ruleID, CookieID: cid, OrderID: "issue-order",
-		TriggerType: "buyer_reviewed", TriggerKey: "issue-key", RawEventJSON: `{}`, LeaseExpiresAt: 1})
+		TriggerType: "buyer_reviewed", TriggerKey: "issue-key", RawEventJSON: snapshot, LeaseExpiresAt: 1})
 	if err != nil || !started {
 		t.Fatalf("start=%v err=%v", started, err)
 	}
@@ -854,11 +857,11 @@ func TestAutomationIssuePolicyForDisabledRuleRequiresReenableBeforeRetry(t *test
 	// raw 用于本次流程后续判断的原始
 	raw := string(rawBytes)
 	// kind、allowed 用于本次流程后续判断的kind、allowed
-	kind, allowed := automationIssuePolicy(raw, false, false, 0, "自动化规则不存在或已停用，无法恢复")
+	kind, allowed := automationIssuePolicy(raw, false, 0, false, 0, "自动化规则不存在或已停用，无法恢复")
 	if kind != "rule_unavailable" || containsString(allowed, "retry") || !containsString(allowed, "cancel") {
 		t.Fatalf("disabled policy kind=%q allowed=%v", kind, allowed)
 	}
-	kind, allowed = automationIssuePolicy(raw, false, true, 0, "自动化规则不存在或已停用，无法恢复")
+	kind, allowed = automationIssuePolicy(raw, false, 0, true, 0, "自动化规则不存在或已停用，无法恢复")
 	if kind != "rule_unavailable" || !containsString(allowed, "retry") || containsString(allowed, "continue") {
 		t.Fatalf("reenabled policy kind=%q allowed=%v", kind, allowed)
 	}

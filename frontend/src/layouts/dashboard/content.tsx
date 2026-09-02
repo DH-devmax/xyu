@@ -11,6 +11,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import InputBase from '@mui/material/InputBase';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/material/Menu';
@@ -20,25 +22,24 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Iconify } from '@/components/iconify';
-import { LoadingScreen } from '@/components/minimal';
+import { LoadingScreen, SvgColor } from '@/components/minimal';
 import { DHBrandIcon } from '@/components/minimal/DHBrandLogo';
 import { appPaths } from '@/routes/paths';
 import { useMinimalSettings } from '@/theme';
+import { dashboardNavGroups } from './nav-config';
+import type { DashboardNavItem } from './nav-config';
 
-// pageTitles 保存快捷搜索标题与正式页面 URL 的稳定映射。
-const pageTitles: Readonly<Record<string, string>> = {
-  [appPaths.dashboard]: '仪表盘',
-  [appPaths.accounts]: '账号管理',
-  [appPaths.chat]: '在线聊天',
-  [appPaths.orders]: '订单管理',
-  [appPaths.cards]: '卡密库存',
-  [appPaths.items]: '商品列表',
-  [appPaths.rules]: '自动化规则',
-  [appPaths.notifications]: '通知设置',
-  [appPaths.settings]: '系统与 AI',
-  [appPaths.brain]: '智能中枢',
-  [appPaths.concierge]: '智能管家',
-};
+/** DashboardSearchRoute 为每个导航入口补充可搜索的所属分组。 */
+interface DashboardSearchRoute extends DashboardNavItem {
+  /** group 是搜索结果中展示的导航层级。 */
+  group: string;
+}
+
+// dashboardSearchRoutes 直接展平侧边栏配置，保证页面名称、路径和权限始终一致。
+const dashboardSearchRoutes: readonly DashboardSearchRoute[] = dashboardNavGroups.flatMap(/* 展平每个导航分组。 */ group => [
+  ...(group.items ?? []).map(/* 为直接入口标记顶层分组。 */ route => ({ ...route, group: group.title })),
+  ...(group.children ?? []).flatMap(/* 展平可折叠的子分组。 */ child => child.items.map(/* 保留完整导航层级。 */ route => ({ ...route, group: `${group.title} / ${child.title}` }))),
+]);
 
 // workspaceOptions 是不触碰后端契约的工作区演示入口。
 const workspaceOptions = [
@@ -46,9 +47,6 @@ const workspaceOptions = [
   { name: '工作区 2', plan: '专业版', current: false },
   { name: '工作区 3', plan: '专业版', current: false },
 ] as const;
-
-// pageSearchMatcher 匹配路径或中文标题，供顶栏快捷搜索复用。
-const pageSearchMatcher = (query: string) => ([path, label]: [string, string]): boolean => path.toLowerCase().includes(query) || label.toLowerCase().includes(query);
 
 /** DashboardContentProps 描述 Minimal 主区接收的移动导航、会话和版本信息回调。 */
 export interface DashboardContentProps {
@@ -60,10 +58,12 @@ export interface DashboardContentProps {
   onLogout: () => Promise<void>;
   /** hasUnreadChatMessage 控制顶栏通知徽标。 */
   hasUnreadChatMessage: boolean;
+  /** isAdmin 控制搜索面板中管理员专属路由的可见性。 */
+  isAdmin: boolean;
 }
 
 /** DashboardContent 渲染 Minimal 工作区顶栏、搜索、通知和个人资料入口。 */
-export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile, version, onLogout, hasUnreadChatMessage }) => {
+export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile, version, onLogout, hasUnreadChatMessage, isAdmin }) => {
   // location 用于让聊天与智能管家进入贴合视口的沉浸式工作区。
   const location = useLocation();
   // immersiveWorkspace 仅针对需要桌面应用级画布的两个对话页面关闭通用 gutter。
@@ -84,6 +84,14 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile
   const [notificationAnchor, setNotificationAnchor] = useState<HTMLElement | null>(null);
   // searchRef 让快捷键打开后立即聚焦输入框。
   const searchRef = useRef<HTMLInputElement>(null);
+  // normalizedSearch 是供标题、路径和分组共用的小写搜索词。
+  const normalizedSearch = search.trim().toLowerCase();
+  // filteredSearchRoutes 仅包含当前用户可访问且符合搜索词的页面。
+  const filteredSearchRoutes = dashboardSearchRoutes.filter(/* 过滤权限和搜索词。 */ route => {
+    if (route.adminOnly && !isAdmin) return false;
+    if (!normalizedSearch) return true;
+    return [route.title, route.path, route.group].some(/* 匹配页面名、路径或导航分组。 */ value => value.toLowerCase().includes(normalizedSearch));
+  });
 
   useEffect(/* keyboardShortcutEffect 注册 Minimal 风格的全局搜索快捷键。 */ () => {
     // handleShortcut 处理 macOS Command-K 和 Windows/Linux Control-K。
@@ -111,18 +119,17 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile
     setSearchOpen(false);
     setSearch('');
   };
-  // handleSearch 在回车时将页面名称映射到正式 URL。
+  // navigateSearchRoute 关闭面板并进入选中的正式页面路径。
+  const navigateSearchRoute = (path: string): void => {
+    navigate(path);
+    closeSearch();
+  };
+  // handleSearch 在回车时进入当前第一个可见结果。
   const handleSearch = (event: React.KeyboardEvent<HTMLInputElement>): void => {
     if (event.key !== 'Enter') return;
-    // query 是去除空白后的大小写不敏感搜索词。
-    const query = search.trim().toLowerCase();
-    if (!query) return;
-    // match 是搜索命中的路径和中文标题。
-    const match = Object.entries(pageTitles).find(pageSearchMatcher(query));
-    if (match) {
-      navigate(match[0]);
-      closeSearch();
-    }
+    // match 是权限过滤后的首个可见搜索结果。
+    const match = filteredSearchRoutes[0];
+    if (match) navigateSearchRoute(match.path);
   };
   // closeProfileMenu 关闭个人资料菜单。
   const closeProfileMenu = (): void => setProfileAnchor(null);
@@ -193,8 +200,25 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onOpenMobile
       </Menu>
 
       <Dialog open={searchOpen} onClose={closeSearch} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ pb: 1 }}>搜索页面</DialogTitle>
-        <DialogContent><Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'action.hover' }}><Iconify icon="search" /><InputBase inputRef={searchRef} fullWidth autoFocus value={search} onChange={/* searchChange 更新快捷搜索输入。 */ event => setSearch(event.target.value)} onKeyDown={handleSearch} placeholder="搜索仪表盘、账号、订单…" inputProps={{ 'aria-label': '搜索页面' }} /><Typography variant="caption" color="text.disabled">回车</Typography></Stack></DialogContent>
+        <DialogTitle sx={{ pb: 0.75 }}>搜索页面</DialogTitle>
+        <DialogContent sx={{ px: 2, pb: 2 }}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'action.hover' }}><Iconify icon="search" /><InputBase inputRef={searchRef} fullWidth autoFocus value={search} onChange={/* searchChange 更新快捷搜索输入。 */ event => setSearch(event.target.value)} onKeyDown={handleSearch} placeholder="按页面名称、路由或分组搜索" inputProps={{ 'aria-label': '搜索页面' }} /><Typography variant="caption" color="text.disabled" noWrap>回车</Typography></Stack>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', px: 1, pt: 1.5, pb: 0.5 }}>{normalizedSearch ? `找到 ${filteredSearchRoutes.length} 个页面` : '全部可访问页面'}</Typography>
+          {filteredSearchRoutes.length > 0 ? (
+            <List disablePadding sx={{ maxHeight: { xs: '55vh', sm: 420 }, overflowY: 'auto' }}>
+              {filteredSearchRoutes.map(/* 渲染可点击的 Minimal 路由引导项。 */ route => (
+                <ListItemButton key={route.key} selected={location.pathname === route.path} onClick={/* searchRouteClick 进入所选页面。 */ () => navigateSearchRoute(route.path)} sx={{ minHeight: 68, mb: 0.5, px: 1.25, border: 1, borderColor: 'transparent', borderRadius: 1, '&:hover': { borderColor: 'divider', bgcolor: 'action.hover' }, '&.Mui-selected': { borderColor: 'primary.main', bgcolor: 'action.selected' } }}>
+                  <ListItemIcon sx={{ minWidth: 42, color: 'text.secondary' }}><SvgColor src={`/static/assets/icons/navbar/${route.icon}`} size={23} /></ListItemIcon>
+                  <ListItemText primary={route.title} secondary={route.path} slotProps={{ primary: { sx: { fontWeight: 700 } }, secondary: { sx: { mt: 0.25, fontFamily: 'monospace' } } }} />
+                  <Typography variant="caption" color="text.disabled" sx={{ maxWidth: { xs: 100, sm: 180 }, ml: 1, textAlign: 'right' }}>{route.group}</Typography>
+                  <Iconify icon="chevron" width={18} sx={{ ml: 1, color: 'text.disabled', transform: 'rotate(-90deg)' }} />
+                </ListItemButton>
+              ))}
+            </List>
+          ) : (
+            <Box sx={{ py: 5, textAlign: 'center' }}><Typography sx={{ fontWeight: 700 }}>没有匹配的页面</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>请尝试页面名称或 /app 路由</Typography></Box>
+          )}
+        </DialogContent>
       </Dialog>
 
       <Box sx={{ width: '100%', maxWidth: immersiveWorkspace ? 'none' : 1600, mx: immersiveWorkspace ? 0 : 'auto', flex: 1, minHeight: 0, overflow: immersiveWorkspace ? 'hidden' : 'visible', display: immersiveWorkspace ? 'flex' : 'block', flexDirection: immersiveWorkspace ? 'column' : undefined, px: immersiveWorkspace ? 0 : 'var(--dh-content-gutter)', py: immersiveWorkspace ? 0 : { xs: 2.5, sm: 3.5, lg: 4 } }}>

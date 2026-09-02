@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import List from '@mui/material/List';
@@ -17,7 +19,7 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { Iconify } from '@/components/iconify';
-import { DHBrandIcon, DHBrandLogo } from '@/components/minimal/DHBrandLogo';
+import { DHBrandIcon } from '@/components/minimal/DHBrandLogo';
 import { getBrainSession, getBrainSessions, runBrainTestTurn, type BrainReplyDraft, type BrainSession } from '@/features/brain/api';
 
 type MessageRole = 'assistant' | 'user' | 'system';
@@ -71,6 +73,10 @@ const Concierge: React.FC = () => {
   const [draft, setDraft] = useState('');
   // search 保存会话筛选关键词。
   const [search, setSearch] = useState('');
+  // sidebarCollapsed 控制桌面会话栏在完整列表和紧凑模式之间切换。
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // mobileSidebarOpen 控制移动端会话列表抽屉的显示状态。
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   // loadingSessions 表示会话列表加载状态。
   const [loadingSessions, setLoadingSessions] = useState(true);
   // loadingSession 表示历史消息加载状态。
@@ -163,32 +169,62 @@ const Concierge: React.FC = () => {
     }
   };
 
+  // toggleDesktopSidebar 切换桌面会话栏的展开状态。
+  const toggleDesktopSidebar = () => setSidebarCollapsed(value => /* 反转会话栏收缩状态。 */ !value);
+  // closeMobileSidebar 关闭移动端会话列表抽屉。
+  const closeMobileSidebar = () => setMobileSidebarOpen(false);
+  // openMobileSidebar 在窄屏下打开会话列表抽屉。
+  const openMobileSidebar = () => setMobileSidebarOpen(true);
+
+  // renderSessionSidebar 复用桌面栏与移动抽屉的会话列表内容。
+  const renderSessionSidebar = (mobile = false) => (
+    <Stack sx={{ minWidth: 0, height: '100%', borderRight: mobile ? 0 : 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
+      <Box sx={{ p: mobile || !sidebarCollapsed ? 2 : 1 }}>
+        <Box sx={{ position: 'relative', minHeight: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: mobile || !sidebarCollapsed ? 1 : 0 }}>
+          {(mobile || !sidebarCollapsed) && <Typography variant="subtitle1" sx={{ width: '100%', px: 4, textAlign: 'center', fontWeight: 750 }}>会话</Typography>}
+          {!mobile && <Tooltip title={sidebarCollapsed ? '展开会话列表' : '收起会话列表'} placement="right">
+              <IconButton aria-label={sidebarCollapsed ? '展开会话列表' : '收起会话列表'} size="small" onClick={toggleDesktopSidebar} sx={{ position: sidebarCollapsed ? 'static' : 'absolute', right: 0 }}>
+                <Iconify icon="chevron" width={18} sx={{ transform: sidebarCollapsed ? 'rotate(-90deg)' : 'rotate(90deg)', transition: 'transform 160ms ease' }} />
+              </IconButton>
+            </Tooltip>}
+        </Box>
+        {(mobile || !sidebarCollapsed) && <TextField fullWidth size="small" value={search} onChange={event => /* 实时更新左侧筛选词。 */ setSearch(event.target.value)} placeholder="搜索会话" slotProps={{ input: { startAdornment: <InputAdornment position="start"><Iconify icon="search" width={18} /></InputAdornment> } }} />}
+      </Box>
+      {(mobile || !sidebarCollapsed) && <Divider />}
+      {(mobile || !sidebarCollapsed) ? <List disablePadding sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 1 }}>
+        {loadingSessions && <Stack role="status" aria-label="正在加载会话" sx={{ alignItems: 'center', py: 4 }}><CircularProgress size={24} /></Stack>}
+        {!loadingSessions && !filteredSessions.length && <Typography variant="body2" color="text.secondary" sx={{ px: 1.5, py: 3, textAlign: 'center' }}>暂无历史会话，发送消息后会在这里记录。</Typography>}
+        {filteredSessions.map(session => /* 渲染可点击的会话摘要项。 */ <ListItemButton key={session.id} selected={selectedSessionId === session.id} onClick={() => /* 打开选中会话的历史消息。 */ void handleSelectSession(session)} sx={{ borderRadius: 1, mb: 0.5, alignItems: 'flex-start' }}><Avatar sx={{ width: 32, height: 32, mr: 1.25, bgcolor: 'primary.lighter', color: 'primary.main' }}><Iconify icon="user" width={18} /></Avatar><ListItemText primary={sessionTitle(session)} secondary={`${session.status || '会话'} · ${formatTime(session.updated_at)}`} slotProps={{ primary: { noWrap: true, sx: { fontWeight: 650 } }, secondary: { noWrap: true } }} /></ListItemButton>)}
+      </List> : <Box sx={{ flex: 1 }} />}
+    </Stack>
+  );
+
   return (
     <Box component="section" data-layout-contract="minimal-concierge-layout" sx={{ height: '100%', minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
-        <Stack direction="row" spacing={1.5} sx={{ px: { xs: 2, md: 3 }, py: 1.5, alignItems: 'center', borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-          <DHBrandLogo size={42} decorative />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h5" sx={{ fontWeight: 750 }}>智能管家</Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>人工智能 · DeepSeek Harness 对话助手 · 只生成建议草案</Typography>
-          </Box>
-          <Chip label="在线" color="success" size="small" sx={{ borderRadius: 1, fontWeight: 700 }} />
-        </Stack>
         {error && <Alert severity="warning" onClose={() => setError('')} /* 关闭提示后回到正常会话视图。 */ sx={{ borderRadius: 0 }}>{error}</Alert>}
-        <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '320px minmax(0, 1fr)' } }}>
-          <Stack sx={{ display: { xs: 'none', md: 'flex' }, minWidth: 0, borderRight: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
-            <Box sx={{ p: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 750, mb: 1 }}>会话</Typography>
-              <TextField fullWidth size="small" value={search} onChange={event => /* 实时更新左侧筛选词。 */ setSearch(event.target.value)} placeholder="搜索会话" slotProps={{ input: { startAdornment: <InputAdornment position="start"><Iconify icon="search" width={18} /></InputAdornment> } }} />
-            </Box>
-            <Divider />
-            <List disablePadding sx={{ overflowY: 'auto', p: 1 }}>
-              {loadingSessions && <Stack role="status" aria-label="正在加载会话" sx={{ alignItems: 'center', py: 4 }}><CircularProgress size={24} /></Stack>}
-              {!loadingSessions && !filteredSessions.length && <Typography variant="body2" color="text.secondary" sx={{ px: 1.5, py: 3 }}>暂无历史会话，发送消息后会在这里记录。</Typography>}
-              {filteredSessions.map(session => /* 渲染可点击的会话摘要项。 */ <ListItemButton key={session.id} selected={selectedSessionId === session.id} onClick={() => /* 打开选中会话的历史消息。 */ void handleSelectSession(session)} sx={{ borderRadius: 1, mb: 0.5, alignItems: 'flex-start' }}><Avatar sx={{ width: 32, height: 32, mr: 1.25, bgcolor: 'primary.lighter', color: 'primary.main' }}><Iconify icon="user" width={18} /></Avatar><ListItemText primary={sessionTitle(session)} secondary={`${session.status || '会话'} · ${formatTime(session.updated_at)}`} slotProps={{ primary: { noWrap: true, sx: { fontWeight: 650 } }, secondary: { noWrap: true } }} /></ListItemButton>)}
-            </List>
-          </Stack>
+        <Drawer anchor="left" open={mobileSidebarOpen} onClose={closeMobileSidebar} sx={{ display: { xs: 'block', md: 'none' } }} slotProps={{ paper: { sx: { width: 'min(78vw, 320px)', maxWidth: '100%', overflow: 'visible' } } }}>
+          <Box sx={{ position: 'relative', height: '100%' }}>
+            {renderSessionSidebar(true)}
+            <Tooltip title="收起会话列表" placement="right">
+              <IconButton aria-label="收起会话列表" onClick={closeMobileSidebar} sx={{ position: 'absolute', top: '50%', right: -14, transform: 'translateY(-50%)', width: 28, height: 28, p: 0, bgcolor: '#fff', border: '1px solid #e5e8ef', boxShadow: 2, zIndex: 10, '&:hover': { bgcolor: '#fff' } }}>
+                <ChevronLeft size={16} strokeWidth={2.2} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Drawer>
+        <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '36px minmax(0, 1fr)', md: sidebarCollapsed ? '72px minmax(0, 1fr)' : '320px minmax(0, 1fr)' }, transition: theme => /* 生成会话栏列宽动画。 */ theme.transitions.create('grid-template-columns', { duration: theme.transitions.duration.shorter }) }}>
+          <Box sx={{ display: { xs: 'block', md: 'none' }, position: 'relative', minWidth: 0, borderRight: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
+            <Tooltip title="展开会话列表" placement="right">
+              <IconButton aria-label="展开会话列表" onClick={openMobileSidebar} sx={{ position: 'absolute', top: '50%', right: -14, transform: 'translateY(-50%)', width: 28, height: 28, p: 0, bgcolor: '#fff', border: '1px solid #e5e8ef', boxShadow: 2, zIndex: 10, '&:hover': { bgcolor: '#fff' } }}>
+                <ChevronRight size={16} strokeWidth={2.2} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Box sx={{ display: { xs: 'none', md: 'block' }, minWidth: 0 }}>
+            {renderSessionSidebar()}
+          </Box>
           <Stack sx={{ minWidth: 0, minHeight: 0 }}>
-            <Stack direction="row" spacing={1.25} sx={{ px: { xs: 2, md: 3 }, py: 1.5, alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
+            <Stack direction="row" spacing={1.25} sx={{ pl: { xs: 3, md: 3 }, pr: { xs: 2, md: 3 }, py: 1.5, alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
               <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.lighter' }}><DHBrandIcon size={28} decorative /></Avatar>
               <Box sx={{ flex: 1, minWidth: 0 }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }} noWrap>{selectedSessionId ? (sessions.find(/* 定位当前会话标题。 */ session => session.id === selectedSessionId) ? sessionTitle(sessions.find(/* 读取当前会话对象。 */ session => session.id === selectedSessionId) as BrainSession) : '当前会话') : '智能管家'}</Typography><Typography variant="caption" color="text.secondary">建议会保留在当前会话中</Typography></Box>
               {loadingSession && <CircularProgress size={18} />}

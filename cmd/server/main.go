@@ -341,6 +341,10 @@ func prepareServerStartup(opts *serverOptions) (serverStartupConfig, error) {
 			return serverStartupConfig{}, fmt.Errorf("创建数据库目录失败: %w", err)
 		}
 	}
+	// err 表示确保数据库数据密钥可用失败。
+	if err := ensureDataKeyForDatabase(resolvedDBURL, &opts.dataKeyFile); err != nil {
+		return serverStartupConfig{}, err
+	}
 	// resolvedLogLevel 是环境变量、命令行和 verbose 共同决定的日志等级；explicit 标记是否禁止数据库覆盖。
 	resolvedLogLevel := strings.TrimSpace(os.Getenv("LOG_LEVEL"))
 	// explicitLogLevel 表示日志等级来自进程配置，因此不允许数据库设置覆盖它。

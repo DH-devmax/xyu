@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { CssBaseline, ThemeProvider } from '@mui/material';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { AppTheme } from '../../../app/providers/AppTheme';
 import { useSession, type SessionContextValue } from '@/app/providers/SessionProvider';
+import { minimalTheme } from '@/theme/core';
 import { SessionGate } from './SessionGate';
 
 vi.mock('../../../app/providers/SessionProvider', /* sessionProviderMockFactory 提供认证页面可控的会话边界。 */ () => ({
@@ -21,9 +22,10 @@ const signOutMock = vi.fn();
 // renderGate 将认证页面放入真实 MUI 主题，确保模板样式和表单控件走生产装配路径。
 const renderGate = (): void => {
   render(
-    <AppTheme>
+    <ThemeProvider theme={minimalTheme}>
+      <CssBaseline enableColorScheme />
       <SessionGate />
-    </AppTheme>,
+    </ThemeProvider>,
   );
 };
 

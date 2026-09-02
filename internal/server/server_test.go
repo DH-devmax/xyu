@@ -371,7 +371,7 @@ func testServerDependencies(authentication *auth.Service, databaseHealth Databas
 		UncertainNotifications: ports.UncertainNotifications, NotificationChannels: ports.NotificationChannels, Analytics: ports.Analytics,
 		AutomationIssues: ports.AutomationIssues, AutomationRules: ports.AutomationRules, Cards: ports.Cards,
 		PublishAutomationRules: ports.PublishAutomationRules, DefaultReplies: ports.DefaultReplies, Keywords: ports.Keywords,
-		Settings: ports.Settings, Admin: ports.Admin,
+		Settings: ports.Settings, Admin: ports.Admin, DeliveryTemplates: ports.DeliveryTemplates,
 	})}
 }
 

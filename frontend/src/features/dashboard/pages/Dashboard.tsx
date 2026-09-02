@@ -1,6 +1,6 @@
 import { AlertCircle,DollarSign,ExternalLink,Package,PackageCheck,Search,ShoppingCart,TrendingUp,Users } from 'lucide-react';
 import React,{ useState } from 'react';
-import { Cell,Line,LineChart,Pie,PieChart,ResponsiveContainer,Tooltip as RechartsTooltip } from 'recharts';
+import { Cell,Pie,PieChart,ResponsiveContainer,Tooltip as RechartsTooltip } from 'recharts';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -22,15 +22,13 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { alpha,useTheme } from '@mui/material/styles';
-import { MinimalSectionCard } from '@/components/minimal';
+import { MinimalChart,useChart,MinimalSectionCard } from '@/components/minimal';
 import { getDateRange,TimeRange } from '@/shared/dateRange';
 import { formatLocalDateTime } from '@/shared/dateTime';
 import type { OrderStatus } from '../api';
 import { DashboardTrendChart } from '../DashboardTrendChart';
+import DashboardEcommerceHero from '../components/DashboardEcommerceHero';
 import { useDashboard } from '../hooks';
-
-// DashboardEcommerceHero 延迟加载 Minimal 电商页首屏，保持仪表盘主分片预算稳定。
-const DashboardEcommerceHero = React.lazy(/* loadDashboardEcommerceHero 加载 Minimal 仪表盘首屏组合。 */ () => import('../components/DashboardEcommerceHero'));
 
 /** 格式化仪表盘内的人民币金额。 */
 const formatCurrency = (value: number): string => `¥${Number(value || 0).toLocaleString('zh-CN', { maximumFractionDigits: 2 })}`;
@@ -80,17 +78,20 @@ interface DashboardMetricCardProps {
   series?: number[];
 }
 
-/** DashboardMetricSparkline 以真实统计序列显示轻量趋势线。 */
+/** DashboardMetricSparkline 以 Minimal ApexCharts sparkline 显示轻量趋势线。 */
 const DashboardMetricSparkline: React.FC<{ /** series 是趋势序列。 */ series: number[]; /** color 是当前主题色。 */ color: string }> = ({ series, color }) => {
-  if (series.length < 2) return null;
+  // normalizedSeries 保证零值或单点响应仍保留稳定的 Minimal 折线图占位。
+  const normalizedSeries = series.length === 0 ? [0, 0] : series.length === 1 ? [series[0], series[0]] : series;
+  // chartOptions 复用 Minimal 的 sparkline、渐变和悬浮提示配置。
+  const chartOptions = useChart({
+    chart: { sparkline: { enabled: true } },
+    colors: [color],
+    xaxis: { categories: normalizedSeries.map(/* _、index 生成稳定的 sparkline 横轴分类。 */ (_, index) => index + 1) },
+    fill: { type: 'gradient', gradient: { type: 'vertical', shadeIntensity: 0, opacityFrom: 0.35, opacityTo: 0, stops: [0, 100] } },
+    tooltip: { y: { formatter: /* value 格式化 sparkline 悬浮提示。 */ (value: number) => value.toLocaleString('zh-CN') } },
+  });
   return (
-    <Box aria-hidden="true" sx={{ height: 54, width: 116, flexShrink: 0 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={series.map(/* value 转换为 Recharts 所需的数据点。 */ value => ({ value }))}>
-          <Line dataKey="value" type="monotone" stroke={color} strokeWidth={3} dot={false} isAnimationActive={false} />
-        </LineChart>
-      </ResponsiveContainer>
-    </Box>
+    <MinimalChart aria-hidden="true" type="line" series={[{ name: 'trend', data: normalizedSeries }]} options={chartOptions} sx={{ height: 54, width: 116 }} />
   );
 };
 
@@ -213,14 +214,16 @@ const Dashboard: React.FC = () => {
   const amountSeries = chartData.map(/* point 提取单日营收。 */ point => point.amount);
   // orderSeries 从真实趋势图中提取订单量迷你曲线。
   const orderSeries = chartData.map(/* point 提取单日订单数量。 */ point => point.orders);
+  // activeCookieSeries 没有历史快照时保持当前账号数的水平线，不虚构趋势数据。
+  const activeCookieSeries = [stats.active_cookies, stats.active_cookies];
+  // cardStockSeries 没有历史快照时保持当前卡密库存的水平线，不虚构趋势数据。
+  const cardStockSeries = [stats.available_card_stock, stats.available_card_stock];
 
   return (
     <Stack data-page-template="minimal-dashboard" spacing={{ xs: 2.5, sm: 3 }}>
       {loadError ? <Alert severity="warning" action={<Button color="inherit" size="small" onClick={refresh}>重试</Button>}>{loadError}</Alert> : null}
 
-      <React.Suspense fallback={<Box aria-busy="true" sx={{ minHeight: { xs: 430, md: 360 }, borderRadius: 1, bgcolor: 'action.hover' }} />}>
-        <DashboardEcommerceHero totalAmount={totalAmount} totalOrders={totalOrders} items={data?.items || []} stats={stats} />
-      </React.Suspense>
+      <DashboardEcommerceHero totalAmount={totalAmount} totalOrders={totalOrders} items={data?.items || []} stats={stats} />
 
       <MinimalSectionCard contentSx={{ p: { xs: 1, sm: 1.25 } }}>
         <Stack direction={{ xs: 'column', lg: 'row' }} spacing={1} sx={{ alignItems: { xs: 'stretch', lg: 'center' }, justifyContent: 'space-between' }}>
@@ -245,9 +248,9 @@ const Dashboard: React.FC = () => {
 
       <Box data-dashboard-metric-grid sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', xl: 'repeat(4, minmax(0, 1fr))' }, gap: { xs: 2, sm: 2.5 } }}>
         <DashboardMetricCard title="累计营收 (CNY)" value={formatCurrency(totalAmount)} icon={DollarSign} tone="primary" trend={trendPercent || undefined} series={amountSeries} />
-        <DashboardMetricCard title="活跃账号 / 总数" value={`${stats.active_cookies} / ${stats.total_cookies}`} icon={Users} tone="info" />
+        <DashboardMetricCard title="活跃账号 / 总数" value={`${stats.active_cookies} / ${stats.total_cookies}`} icon={Users} tone="info" series={activeCookieSeries} />
         <DashboardMetricCard title="订单数" value={totalOrders.toLocaleString('zh-CN')} icon={ShoppingCart} tone="success" series={orderSeries} />
-        <DashboardMetricCard title="库存卡密余量" value={stats.available_card_stock.toLocaleString('zh-CN')} icon={Package} tone="warning" />
+        <DashboardMetricCard title="库存卡密余量" value={stats.available_card_stock.toLocaleString('zh-CN')} icon={Package} tone="warning" series={cardStockSeries} />
       </Box>
 
       <Box data-dashboard-analytics-grid sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.45fr) minmax(300px, 0.9fr)' }, gap: { xs: 2.5, sm: 3 } }}>
