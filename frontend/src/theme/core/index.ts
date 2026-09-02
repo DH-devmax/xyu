@@ -1,35 +1,51 @@
 import '@fontsource-variable/public-sans';
+import '@fontsource-variable/dm-sans';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/nunito-sans';
 import { createTheme, type PaletteMode, type Theme } from '@mui/material/styles';
 
+/** MinimalThemeOptions 描述 Minimal 设置抽屉可以影响的主题参数。 */
+export interface MinimalThemeOptions {
+  /** primaryColor 是 Minimal 颜色预设。 */
+  primaryColor?: 'default' | 'cyan' | 'purple' | 'blue' | 'orange' | 'red';
+  /** contrast 是默认或高对比度。 */
+  contrast?: 'default' | 'high';
+  /** direction 是文档阅读方向。 */
+  direction?: 'ltr' | 'rtl';
+  /** fontFamily 是设置抽屉选择的字体族。 */
+  fontFamily?: string;
+  /** fontSize 是基础字号。 */
+  fontSize?: number;
+  /** compactLayout 收紧表格和控件的间距。 */
+  compactLayout?: boolean;
+}
+
+const primaryColors = {
+  default: { main: '#21a675', dark: '#16825a', light: '#65c7a2' },
+  cyan: { main: '#078dee', dark: '#006c9c', light: '#61d6f5' },
+  purple: { main: '#8e33ff', dark: '#5119b7', light: '#b985ff' },
+  blue: { main: '#1d78e8', dark: '#0f4fbf', light: '#6da7f7' },
+  orange: { main: '#fda92d', dark: '#b66816', light: '#ffc66d' },
+  red: { main: '#ff3030', dark: '#b71d18', light: '#ff6d6d' },
+} as const;
+
+/** minimalCustomShadows 是 Minimal 交互表面使用的统一阴影令牌。 */
+export const minimalCustomShadows = {
+  card: '0 0 2px 0 rgb(145 158 171 / 0.20), 0 12px 24px -4px rgb(145 158 171 / 0.12)',
+  dialog: '0 24px 48px rgb(145 158 171 / 0.20)',
+  dropdown: '0 0 2px rgb(145 158 171 / 0.24), 0 20px 40px -4px rgb(145 158 171 / 0.24)',
+} as const;
+
+/** varAlpha 使用 CSS color-mix 生成与 Minimal 变量透明度一致的颜色。 */
+export const varAlpha = (color: string, opacity: number): string => `color-mix(in srgb, ${color} ${Math.min(1, Math.max(0, opacity)) * 100}%, transparent)`;
+
 // createMinimalTheme 按 Minimal 7.7.0 的排版、间距和克制色阶创建应用主题。
-export const createMinimalTheme = (mode: PaletteMode = 'light'): Theme => createTheme({
+export const createMinimalTheme = (mode: PaletteMode = 'light', options: MinimalThemeOptions = {}): Theme => createTheme({
+  direction: options.direction ?? 'ltr',
   cssVariables: { cssVarPrefix: 'dh', colorSchemeSelector: 'data-color-scheme' },
-  palette: mode === 'dark' ? {
-    mode,
-    primary: { main: '#75b9ed', contrastText: '#102235' },
-    secondary: { main: '#a9b8c8' },
-    success: { main: '#64c79a' },
-    warning: { main: '#e3ad54' },
-    error: { main: '#ef7777' },
-    info: { main: '#83b9eb' },
-    background: { default: '#141a20', paper: '#1d252d' },
-    text: { primary: '#f2f5f7', secondary: '#a9b5c0' },
-    divider: '#35414c',
-  } : {
-    mode,
-    primary: { main: '#1268a8', dark: '#0b4e7f', light: '#5a9fce', contrastText: '#ffffff' },
-    secondary: { main: '#536273' },
-    success: { main: '#1f7a55' },
-    warning: { main: '#a66700' },
-    error: { main: '#bb3d3d' },
-    info: { main: '#3c6fa8' },
-    background: { default: '#f5f7f9', paper: '#ffffff' },
-    text: { primary: '#1d242c', secondary: '#627080' },
-    divider: '#e1e6eb',
-  },
-  shape: { borderRadius: 8 },
   typography: {
-    fontFamily: '"Public Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
+    fontFamily: options.fontFamily ? `"${options.fontFamily}", "Public Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif` : '"Public Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
+    fontSize: options.fontSize ?? 14,
     h1: { fontSize: '2rem', fontWeight: 750, lineHeight: 1.2, letterSpacing: 0 },
     h2: { fontSize: '1.5rem', fontWeight: 750, lineHeight: 1.25, letterSpacing: 0 },
     h3: { fontSize: '1.05rem', fontWeight: 700, lineHeight: 1.35, letterSpacing: 0 },
@@ -38,23 +54,50 @@ export const createMinimalTheme = (mode: PaletteMode = 'light'): Theme => create
     body2: { fontSize: '0.8125rem', lineHeight: 1.55, letterSpacing: 0 },
     button: { fontWeight: 650, textTransform: 'none', letterSpacing: 0 },
   },
+  palette: mode === 'dark' ? {
+    mode,
+    primary: { ...(primaryColors[options.primaryColor ?? 'default']), contrastText: '#ffffff' },
+    secondary: { main: '#a9b8c8' },
+    success: { main: '#64c79a' },
+    warning: { main: '#e3ad54' },
+    error: { main: '#ef7777' },
+    info: { main: '#83b9eb' },
+    background: { default: '#141a20', paper: '#1d252d' },
+    text: { primary: '#f2f5f7', secondary: '#a9b5c0' },
+    divider: options.contrast === 'high' ? '#637587' : '#35414c',
+  } : {
+    mode,
+    primary: { ...(primaryColors[options.primaryColor ?? 'default']), contrastText: '#ffffff' },
+    secondary: { main: '#536273' },
+    success: { main: '#1f7a55' },
+    warning: { main: '#a66700' },
+    error: { main: '#bb3d3d' },
+    info: { main: '#3c6fa8' },
+    background: { default: '#ffffff', paper: '#ffffff' },
+    text: { primary: '#1d242c', secondary: '#627080' },
+    divider: options.contrast === 'high' ? '#9ca9b5' : '#e1e6eb',
+  },
+  shape: { borderRadius: 8 },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        html: { minWidth: 320, backgroundColor: mode === 'dark' ? '#141a20' : '#f5f7f9' },
-        body: { margin: 0, minWidth: 320, backgroundColor: mode === 'dark' ? '#141a20' : '#f5f7f9' },
+        html: { minWidth: 320, backgroundColor: mode === 'dark' ? '#141a20' : '#ffffff' },
+        body: { margin: 0, minWidth: 320, backgroundColor: mode === 'dark' ? '#141a20' : '#ffffff' },
         '*, *::before, *::after': { boxSizing: 'border-box' },
       },
     },
     MuiPaper: { defaultProps: { elevation: 0 }, styleOverrides: { root: { backgroundImage: 'none' } } },
     MuiCard: { defaultProps: { variant: 'outlined' }, styleOverrides: { root: { borderRadius: 8, borderColor: mode === 'dark' ? '#35414c' : '#e1e6eb' } } },
-    MuiButton: { defaultProps: { disableElevation: true }, styleOverrides: { root: { minHeight: 38, borderRadius: 6 } } },
-    MuiIconButton: { styleOverrides: { root: { borderRadius: 6 } } },
+    MuiButton: { defaultProps: { disableElevation: true }, styleOverrides: { root: { minHeight: 38, borderRadius: 8 } } },
+    MuiIconButton: { styleOverrides: { root: { borderRadius: 8 } } },
     MuiTextField: { defaultProps: { size: 'small' } },
-    MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 6 } } },
+    MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 8 } } },
+    MuiAlert: { styleOverrides: { root: { borderRadius: 8 } } },
+    MuiDialog: { styleOverrides: { paper: { borderRadius: 8 } } },
+    MuiMenu: { styleOverrides: { paper: { borderRadius: 8, boxShadow: minimalCustomShadows.dropdown } } },
     MuiAppBar: { defaultProps: { elevation: 0, color: 'inherit' }, styleOverrides: { root: { backgroundImage: 'none', borderBottom: 1, borderColor: 'divider' } } },
     MuiDrawer: { styleOverrides: { paper: { backgroundImage: 'none' } } },
-    MuiTableCell: { styleOverrides: { root: { borderColor: 'divider' } } },
+    MuiTableCell: { styleOverrides: { root: { borderColor: 'divider', padding: options.compactLayout ? '8px 12px' : '16px' } } },
     MuiTooltip: { defaultProps: { arrow: true } },
   },
 });

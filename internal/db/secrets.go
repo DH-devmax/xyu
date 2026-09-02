@@ -27,6 +27,14 @@ const (
 // secretCodec 用于本次流程后续判断的secretCodec
 type secretCodec struct{ aead cipher.AEAD }
 
+// currentAEAD 返回进程启动时固定的数据加密实例。
+func (c *secretCodec) currentAEAD() cipher.AEAD {
+	if c == nil {
+		return nil
+	}
+	return c.aead
+}
+
 // secretCodecFromEnvironment 封装secretCodecFromEnvironment业务协调。
 func secretCodecFromEnvironment() *secretCodec {
 	// codec 用于本次流程后续判断的codec
@@ -115,6 +123,10 @@ func (s *Store) EncryptLegacySecrets(ctx context.Context) error {
 
 	// err 表示历史 API 卡券配置迁移错误。
 	if err := migrateLegacyCardAPIConfigs(ctx, tx, codec); err != nil {
+		return err
+	}
+	// err 表示历史自动化发货凭证迁移错误。
+	if err := migrateLegacyAutomationDeliveryProofs(ctx, tx, codec); err != nil {
 		return err
 	}
 

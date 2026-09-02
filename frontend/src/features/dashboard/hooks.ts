@@ -122,16 +122,10 @@ export const useDashboard = (options: UseDashboardOptions): UseDashboardResult =
   const chartData = useMemo(/* 当前回调计算并缓存派生数据。 */ () => analytics ? buildChartData(analytics) : [], [analytics]);
   // productSalesData productSales数据，负责当前功能中的对应处理。
   const productSalesData = useMemo(/* 当前回调计算并缓存派生数据。 */ () => analytics ? buildProductSalesData(analytics, itemNames) : [], [analytics, itemNames]);
-  // colors 颜色列表。
-  const colors = useMemo(
-    // colors 是图表使用的主题颜色序列。
-    () => ['rgb(var(--minimal-color-brand))', 'rgb(var(--minimal-color-brand-highlight))', 'rgb(var(--minimal-color-success-500))', 'rgb(var(--minimal-color-warning-500))', 'rgb(var(--minimal-color-accent-500))'],
-    [],
-  );
   // sourceData 来源数据，负责当前功能中的对应处理。
-  const sourceData = useMemo(/* 当前回调计算并缓存派生数据。 */ () => analytics ? buildSourceData(analytics, itemNames, colors) : [], [analytics, colors, itemNames]);
+  const sourceData = useMemo(/* 当前回调计算并缓存派生数据。 */ () => analytics ? buildSourceData(analytics, itemNames) : [], [analytics, itemNames]);
   // categoryData 分类数据，负责当前功能中的对应处理。
-  const categoryData = useMemo(/* 当前回调计算并缓存派生数据。 */ () => analytics ? buildCategoryData(analytics, itemNames, colors) : [], [analytics, colors, itemNames]);
+  const categoryData = useMemo(/* 当前回调计算并缓存派生数据。 */ () => analytics ? buildCategoryData(analytics, itemNames) : [], [analytics, itemNames]);
   // maxProductSales 最大值ProductSales，负责当前功能中的对应处理。
   const maxProductSales = useMemo(/* 当前回调计算并缓存派生数据。 */ () => getMaxProductSales(productSalesData), [productSalesData]);
 

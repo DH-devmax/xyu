@@ -9,6 +9,7 @@ import (
 	automationapp "github.com/DH-devmax/xyu/internal/application/automation"
 	cardsapp "github.com/DH-devmax/xyu/internal/application/cards"
 	defaultreplyapp "github.com/DH-devmax/xyu/internal/application/defaultreply"
+	deliveryapp "github.com/DH-devmax/xyu/internal/application/deliverytemplate"
 	keywordsapp "github.com/DH-devmax/xyu/internal/application/keywords"
 	notificationsapp "github.com/DH-devmax/xyu/internal/application/notifications"
 	settingsapp "github.com/DH-devmax/xyu/internal/application/settings"
@@ -63,6 +64,8 @@ type TransportApplicationServices struct {
 	DefaultReplies *defaultreplyapp.Service
 	// Keywords 提供关键词和指定商品回复规则用例。
 	Keywords *keywordsapp.Service
+	// DeliveryTemplates 提供发货模板 CRUD 用例。
+	DeliveryTemplates *deliveryapp.Service
 }
 
 // NewTransportApplicationServices 在进程启动期构造不依赖 Server callback 的 transport-facing 应用服务集合。
@@ -102,6 +105,7 @@ func NewTransportApplicationServices(options TransportApplicationServiceOptions)
 		PublishAutomationRules: automationapp.NewPublishRuleService(automationRepository),
 		DefaultReplies:         defaultreplyapp.NewService(options.AutomationDependencies.NewDefaultReplyRepository()),
 		Keywords:               keywordsapp.NewService(options.AutomationDependencies.NewKeywordRepository()),
+		DeliveryTemplates:      deliveryapp.NewService(options.AutomationDependencies.NewDeliveryTemplateRepository()),
 	}
 	// validationErr 表示服务集合字段缺失或半初始化，启动流程必须立即终止。
 	if validationErr := services.Validate(); validationErr != nil {
@@ -115,7 +119,7 @@ func (services *TransportApplicationServices) Validate() error {
 	if services == nil {
 		return fmt.Errorf("transport 应用服务集合不能为空")
 	}
-	if services.Settings == nil || services.Admin == nil || services.AccountTasks == nil || services.UncertainNotifications == nil || services.NotificationChannels == nil || services.Analytics == nil || services.AutomationIssues == nil || services.AutomationRules == nil || services.Cards == nil || services.APICardTester == nil || services.PublishAutomationRules == nil || services.DefaultReplies == nil || services.Keywords == nil {
+	if services.Settings == nil || services.Admin == nil || services.AccountTasks == nil || services.UncertainNotifications == nil || services.NotificationChannels == nil || services.Analytics == nil || services.AutomationIssues == nil || services.AutomationRules == nil || services.Cards == nil || services.APICardTester == nil || services.PublishAutomationRules == nil || services.DefaultReplies == nil || services.Keywords == nil || services.DeliveryTemplates == nil {
 		return fmt.Errorf("transport 应用服务集合存在未装配服务")
 	}
 	return nil

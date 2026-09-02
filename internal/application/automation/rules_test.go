@@ -15,6 +15,11 @@ type ruleRepositoryFake struct {
 	listedFilter RuleFilter
 }
 
+// GetForUser 返回测试用规则仓储中的单条规则；默认按不存在处理。
+func (r *ruleRepositoryFake) GetForUser(context.Context, int64, int64) (Rule, error) {
+	return Rule{}, ErrRuleNotFound
+}
+
 // ListForUser 返回空规则列表。
 func (r *ruleRepositoryFake) ListForUser(context.Context, int64) ([]Rule, error) { return nil, nil }
 

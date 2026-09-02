@@ -36,7 +36,7 @@ export const MinimalSectionCard: React.FC<MinimalSectionCardProps> = ({
         spacing={1}
         sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 2, sm: 2.5 }, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between' }}
       >
-        <Typography variant="h3">{title}</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>{title}</Typography>
         {action ? <Stack direction="row" sx={{ alignItems: 'center' }}>{action}</Stack> : null}
       </Stack>
     ) : null}

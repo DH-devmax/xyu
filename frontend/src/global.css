@@ -1,10 +1,52 @@
 /* Minimal 全局基础样式：业务组件使用 MUI sx，页面不依赖 Tailwind 运行时。 */
+:root {
+  /* layoutSlots 固定 Minimal 壳层导航与顶栏尺寸，页面切换不改变左右节奏。 */
+  --dh-layout-nav-width: 280px;
+  --dh-layout-nav-mini-width: 88px;
+  --dh-layout-header-height: 80px;
+  /* pageGrid 使用宽间隔的淡黑细线，让页面保持纯白但仍有结构感。 */
+  --dh-page-background: #ffffff;
+  --dh-grid-line: rgba(29, 36, 44, 0.055);
+  --dh-grid-size: 72px;
+  /* contentGutter 让顶栏、页面主体和业务卡片共享同一左右槽位。 */
+  --dh-content-gutter: 24px;
+  /* componentRadius 对齐 Minimal 导航选中按钮的 8px 圆角。 */
+  --dh-component-radius: 8px;
+}
+
+[data-color-scheme='dark'] {
+  /* darkGrid 在深色偏好下保持低对比度，不改变用户已选择的主题模式。 */
+  --dh-page-background: #141a20;
+  --dh-grid-line: rgba(242, 245, 247, 0.07);
+}
+
+@media (min-width: 900px) {
+  :root {
+    --dh-content-gutter: 32px;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --dh-content-gutter: 40px;
+  }
+}
+
 html,
 body,
 #root {
   min-width: 320px;
   min-height: 100%;
   width: 100%;
+  background-color: var(--dh-page-background);
+}
+
+/* 页面网格只属于业务主区，导航抽屉与顶部菜单保持 Minimal 的纯色层次。 */
+[data-dashboard-main] {
+  background-color: var(--dh-page-background);
+  background-image: linear-gradient(to right, var(--dh-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--dh-grid-line) 1px, transparent 1px);
+  background-size: var(--dh-grid-size) var(--dh-grid-size);
+  background-attachment: fixed;
 }
 
 body {
@@ -78,7 +120,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid rgb(var(--minimal-color-brand) / 55%);
+  outline: 2px solid color-mix(in srgb, currentColor 55%, transparent);
   outline-offset: 2px;
 }
 

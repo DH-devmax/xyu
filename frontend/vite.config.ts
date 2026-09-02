@@ -84,6 +84,8 @@ export default defineConfig({
             return 'mui-vendor';
           }
           if (
+            modulePath.includes('/apexcharts/') ||
+            modulePath.includes('/react-apexcharts/') ||
             modulePath.includes('/recharts/') ||
             modulePath.includes('/victory-vendor/') ||
             modulePath.includes('/d3-')

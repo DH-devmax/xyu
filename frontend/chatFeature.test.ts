@@ -67,8 +67,8 @@ describe('online chat UI contract', () => {
 	test('sidebar exposes collapse control and chat primary navigation', () => {
 		const nav = source('src/layouts/dashboard/nav-config.tsx'); /* nav 表示Minimal导航配置。 */
 		const shell = source('src/layouts/dashboard/nav-vertical.tsx'); /* shell 表示Minimal垂直导航。 */
-		expect(nav).toContain("key: 'chat'");
+		expect(nav).toContain("item('chat'");
 		expect(shell).toContain('onToggle');
-		expect(shell).toContain('mini ? 72 : 256');
+		expect(shell).toContain("props.mini ? 'var(--dh-layout-nav-mini-width)' : 'var(--dh-layout-nav-width)'");
 	} /* 测试回调断言侧边栏折叠控制和聊天主导航入口。 */);
 } /* 测试套件回调汇总聊天页面结构契约。 */);

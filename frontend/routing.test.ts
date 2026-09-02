@@ -41,6 +41,16 @@ describe('Minimal application routing', /* routingSuite 汇总应用路由门禁
     expect(source('src/layouts/dashboard/nav-config.tsx')).toContain('adminOnly: true');
   });
 
+  test('guides page search with the visible Minimal route catalog', /* routeSearchTest 校验搜索路由引导。 */ () => {
+    // content 是顶栏搜索弹窗的实现源码。
+    const content = source('src/layouts/dashboard/content.tsx');
+    expect(content).toContain('dashboardNavGroups.flatMap');
+    expect(content).toContain('route.adminOnly && !isAdmin');
+    expect(content).toContain('route.title, route.path, route.group');
+    expect(content).toContain('secondary={route.path}');
+    expect(content).toContain('const match = filteredSearchRoutes[0]');
+  });
+
   test('preserves logout and one-time item-to-rule context', /* contextTest 校验注销和商品规则联动。 */ () => {
     // layout 是认证应用壳源码。
     const layout = source('src/layouts/dashboard/layout.tsx');

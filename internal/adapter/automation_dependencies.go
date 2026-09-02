@@ -60,3 +60,11 @@ func (d *AutomationDependencies) NewKeywordRepository() *KeywordRepository {
 	}
 	return NewKeywordRepository(d.store)
 }
+
+// NewDeliveryTemplateRepository 创建发货模板 CRUD 适配器。
+func (d *AutomationDependencies) NewDeliveryTemplateRepository() *DeliveryTemplateRepository {
+	if d == nil {
+		return nil
+	}
+	return NewDeliveryTemplateRepository(d.store)
+}

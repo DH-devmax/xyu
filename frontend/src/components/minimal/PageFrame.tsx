@@ -2,7 +2,6 @@ import React from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { MinimalPageHeader } from './PageHeader';
 
 /** MinimalPageFrameProps 描述 Minimal 业务页面的标题、操作和内容区域。 */
 export interface MinimalPageFrameProps {
@@ -21,13 +20,11 @@ export interface MinimalPageFrameProps {
 }
 
 /**
- * MinimalPageFrame 统一业务页的标题和舒适间距，避免每个 feature 重复搭建页面骨架。
+ * MinimalPageFrame 统一业务页的操作栏和舒适间距，页面一级标题由应用壳统一提供。
  * 组件只负责排版，数据和交互仍由 feature 页面拥有。
  */
 export const MinimalPageFrame: React.FC<MinimalPageFrameProps> = ({
-  eyebrow = 'DH闲不下来',
   title,
-  description,
   actions,
   children,
   sx,
@@ -37,7 +34,15 @@ export const MinimalPageFrame: React.FC<MinimalPageFrameProps> = ({
     spacing={{ xs: 2.5, md: 3 }}
     sx={[{ minWidth: 0, animation: 'minimal-page-enter 180ms ease-out' }, ...(Array.isArray(sx) ? sx : [sx])]}
   >
-    <MinimalPageHeader eyebrow={eyebrow} title={title} description={description} actions={actions} />
+    {actions ? (
+      <Box
+        data-layout-contract="minimal-page-actions"
+        aria-label={`${String(title)}页面操作`}
+        sx={{ minHeight: 40, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}
+      >
+        {actions}
+      </Box>
+    ) : null}
     <Box sx={{ minWidth: 0 }}>{children}</Box>
   </Stack>
 );

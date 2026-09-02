@@ -66,7 +66,7 @@ const Settings: React.FC = () => {
       title="系统设置"
       description="配置全局自动化规则与系统参数"
       actions={<Button variant="outlined" startIcon={<RefreshCw size={16} />} onClick={loadSettings}>刷新</Button>}
-      sx={{ maxWidth: 1200, mx: 'auto', pb: 12 }}
+      sx={{ pb: 12 }}
     >
 
       <Tabs
@@ -365,7 +365,7 @@ const Settings: React.FC = () => {
   'lineHeight': '1rem',
   '--minimal-text-opacity': '1',
   'color': 'rgb(var(--minimal-color-neutral-500)/var(--minimal-text-opacity,1))',
-}}>v2 的客服请求统一由 Brain Center 中的 Harness runtime 处理；这里仅保留旧字段，供升级迁移和回滚核对。</MuiBox>
+}}>v2 的客服请求统一由智能中枢中的 Harness runtime 处理；这里仅保留旧字段，供升级迁移和回滚核对。</MuiBox>
 
             <MinimalSectionCard data-layout-contract="minimal-settings-ai-legacy" contentSx={{ p: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } } }}>
               <MuiBox component='div' sx={{
@@ -708,7 +708,7 @@ const Settings: React.FC = () => {
   '--minimal-text-opacity': '1',
   'color': 'rgb(var(--minimal-color-neutral-500)/var(--minimal-text-opacity,1))',
 }}>
-                    {aiModels.length > 0 ? `已从旧版地址读取到 ${aiModels.length} 个模型` : '旧版模型字段仅用于兼容迁移；新的模型配置请在 Brain Center 完成'}
+                    {aiModels.length > 0 ? `已从旧版地址读取到 ${aiModels.length} 个模型` : '旧版模型字段仅用于兼容迁移；新的模型配置请在智能中枢完成'}
                   </MuiBox>
                 )}
               </MuiBox>
@@ -734,7 +734,7 @@ const Settings: React.FC = () => {
     'marginBottom': 'calc(.125rem*var(--minimal-space-y-reverse))',
   },
 }}>
-                  <li>打开管理员侧栏中的 Brain Center</li>
+                  <li>打开管理员侧栏中的智能中枢</li>
                   <li>选择 Harness provider 并保存脱敏设置</li>
                 </MuiBox>
               </MuiBox>

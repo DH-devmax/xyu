@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Stack from '@mui/material/Stack';
 import { Navigate, useLocation } from 'react-router-dom';
 import { SessionGate } from '@/features/session/pages/SessionGate';
 import { useSession } from '@/app/providers/SessionProvider';
@@ -11,8 +9,10 @@ import { DeliveryRuleProvider } from '@/routes/delivery-rule-context';
 import { useMinimalSettings } from '@/theme';
 import { NavMobile } from './nav-mobile';
 import { NavVertical } from './nav-vertical';
+import { NavHorizontal } from './nav-horizontal';
 import { DashboardContent } from './content';
 import { useChatTitleNotification } from '@/features/chat/titleNotification';
+import { LoadingScreen } from '@/components/minimal';
 
 // DashboardLayout 负责认证后的 Minimal 多栏应用壳和业务 Outlet 生命周期。
 export const DashboardLayout: React.FC = () => {
@@ -49,7 +49,7 @@ const AuthenticatedDashboard: React.FC<AuthenticatedDashboardProps> = ({ isAdmin
     return /* healthCleanup 释放健康检查请求。 */ () => controller.abort();
   }, []);
   // restrictedPath 表示当前地址是否属于管理员专属页面。
-  const restrictedPath = location.pathname === '/app/settings' || location.pathname === '/app/brain';
+  const restrictedPath = location.pathname === '/app/settings' || location.pathname === '/app/brain' || location.pathname === '/app/concierge';
   // handleLogout 调用 Provider 注销并把失败记录为通用错误。
   const handleLogout = async (): Promise<void> => {
     try {
@@ -61,16 +61,16 @@ const AuthenticatedDashboard: React.FC<AuthenticatedDashboardProps> = ({ isAdmin
   if (!isAdmin && restrictedPath) return <Navigate to="/app/dashboard" replace />;
   return (
     <DeliveryRuleProvider>
-      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-        <NavVertical isAdmin={isAdmin} mini={state.navLayout === 'mini'} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} onToggle={/* desktopNavToggle 切换 Minimal 纵向和迷你布局。 */ () => setField('navLayout', state.navLayout === 'mini' ? 'vertical' : 'mini')} onLogout={handleLogout} />
-        <NavMobile open={mobileOpen} onClose={/* mobileClose 关闭窄屏导航。 */ () => setMobileOpen(false)} isAdmin={isAdmin} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} onToggle={/* mobileNavToggle 切换导航布局偏好。 */ () => setField('navLayout', state.navLayout === 'mini' ? 'vertical' : 'mini')} onLogout={handleLogout} />
-        <DashboardContent onOpenMobile={/* mobileOpenAction 打开窄屏导航。 */ () => setMobileOpen(true)} version={buildInfo.version} />
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'transparent' }}>
+        {state.navLayout === 'horizontal' ? <NavHorizontal isAdmin={isAdmin} mini={false} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} navColor={state.navColor} onToggle={/* horizontalNavToggle 恢复纵向导航布局。 */ () => setField('navLayout', 'vertical')} onLogout={handleLogout} /> : <NavVertical isAdmin={isAdmin} mini={state.navLayout === 'mini'} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} navColor={state.navColor} onToggle={/* desktopNavToggle 切换 Minimal 纵向和迷你布局。 */ () => setField('navLayout', state.navLayout === 'mini' ? 'vertical' : 'mini')} onLogout={handleLogout} />}
+        <NavMobile open={mobileOpen} onClose={/* mobileClose 关闭窄屏导航。 */ () => setMobileOpen(false)} isAdmin={isAdmin} hasUnreadChatMessage={hasUnreadChatMessage} version={buildInfo.version} navColor={state.navColor} onToggle={/* mobileNavToggle 切换导航布局偏好。 */ () => setField('navLayout', state.navLayout === 'mini' ? 'vertical' : 'mini')} onLogout={handleLogout} />
+        <DashboardContent onOpenMobile={/* mobileOpenAction 打开窄屏导航。 */ () => setMobileOpen(true)} version={buildInfo.version} onLogout={handleLogout} hasUnreadChatMessage={hasUnreadChatMessage} isAdmin={isAdmin} />
       </Box>
     </DeliveryRuleProvider>
   );
 };
 
 // DashboardLoading 是路由恢复期间的静态占位，避免空白视图改变布局。
-export const DashboardLoading: React.FC = () => <Stack role="status" aria-label="正在加载" sx={{ minHeight: 320, alignItems: 'center', justifyContent: 'center' }}><CircularProgress size={30} /></Stack>;
+export const DashboardLoading: React.FC = () => <LoadingScreen minHeight={320} label="正在加载" />;
 
 export default DashboardLayout;

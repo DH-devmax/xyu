@@ -1148,7 +1148,7 @@ func TestMultiDB_AutomationSafeCheckpointRetry(t *testing.T) {
 				t.Fatalf("start first action: ok=%v err=%v", ok, err)
 			}
 			if // err 用于本次流程后续判断的err
-			err := s.Automation.AdvanceRunAction(ctx, runID, 1, 0, 1); err != nil {
+			err := s.Automation.AdvanceRunAction(ctx, AutomationRunActionAdvance{RunID: runID, Attempt: 1, Cursor: 0, SentDelta: 1}); err != nil {
 				t.Fatal(err)
 			}
 			if // ok、err 用于本次流程后续判断的ok、err

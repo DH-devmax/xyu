@@ -77,6 +77,19 @@ func (r *AutomationRepository) ListForUser(ctx context.Context, userID int64) ([
 	return automationRulesModel(rules), nil
 }
 
+// GetForUser 返回用户拥有的单条自动化规则，并隐藏数据库模型细节。
+func (r *AutomationRepository) GetForUser(ctx context.Context, userID, ruleID int64) (automationapp.Rule, error) {
+	// rule、err 保存数据库规则及读取错误。
+	rule, err := r.store.Automation.Get(ctx, ruleID)
+	if errors.Is(err, db.ErrNotFound) || (err == nil && (rule == nil || rule.UserID != userID)) {
+		return automationapp.Rule{}, automationapp.ErrRuleNotFound
+	}
+	if err != nil {
+		return automationapp.Rule{}, err
+	}
+	return automationRulesModel([]db.AutomationRule{*rule})[0], nil
+}
+
 // ListPageForUser 返回用户自动化规则分页及总数。
 func (r *AutomationRepository) ListPageForUser(ctx context.Context, filter automationapp.RuleFilter) ([]automationapp.Rule, int, error) {
 	// rules、total、err 保存分页规则、总数及数据库查询失败原因。
@@ -195,6 +208,30 @@ func (r *AutomationRepository) OwnsItem(ctx context.Context, userID int64, accou
 	return true, nil
 }
 
+// GetItemDeliveryProfile 返回规则规格校验所需的商品非敏感摘要。
+func (r *AutomationRepository) GetItemDeliveryProfile(ctx context.Context, userID int64, accountID, itemID string) (automationapp.ItemDeliveryProfile, error) {
+	if r == nil || r.store == nil || r.store.Items == nil {
+		return automationapp.ItemDeliveryProfile{}, errors.New("商品存储未初始化")
+	}
+	// item、err 保存商品非敏感摘要及读取错误。
+	item, err := r.store.Items.Get(ctx, accountID, itemID)
+	if errors.Is(err, db.ErrNotFound) {
+		return automationapp.ItemDeliveryProfile{}, automationapp.ErrRuleNotFound
+	}
+	if err != nil {
+		return automationapp.ItemDeliveryProfile{}, err
+	}
+	// owned、ownerErr 保存商品所属账号的归属检查结果及错误。
+	owned, ownerErr := r.store.Cookies.ExistsOwned(ctx, userID, accountID)
+	if ownerErr != nil {
+		return automationapp.ItemDeliveryProfile{}, ownerErr
+	}
+	if !owned {
+		return automationapp.ItemDeliveryProfile{}, automationapp.ErrRuleNotFound
+	}
+	return automationapp.ItemDeliveryProfile{IsMultiSpec: item.IsMultiSpec}, nil
+}
+
 // GetCard 返回用户拥有的卡密组类型，不将卡密内容传入应用层。
 func (r *AutomationRepository) GetCard(ctx context.Context, userID, cardID int64) (automationapp.CardInfo, error) {
 	// card、err 保存卡密组摘要及读取失败原因；卡密正文不会进入应用层。
@@ -205,7 +242,7 @@ func (r *AutomationRepository) GetCard(ctx context.Context, userID, cardID int64
 	if err != nil {
 		return automationapp.CardInfo{}, err
 	}
-	return automationapp.CardInfo{Type: card.Type, APIReady: card.Type != "api" || card.APIConfigSummary != nil && card.APIConfigSummary.Ready}, nil
+	return automationapp.CardInfo{Enabled: card.Enabled, Type: card.Type, APIReady: card.Type != "api" || card.APIConfigSummary != nil && card.APIConfigSummary.Ready}, nil
 }
 
 // AIReplyEnabled 判断账号是否启用了 AI 议价，不读取任何 API 密钥或平台凭证。
@@ -214,6 +251,22 @@ func (r *AutomationRepository) AIReplyEnabled(ctx context.Context, accountID str
 		return false, errors.New("AI 设置存储未初始化")
 	}
 	return r.store.AIReply.IsEnabled(ctx, accountID)
+}
+
+// GetDeliveryTemplate 返回规则校验所需的模板非敏感摘要，并确认用户归属。
+func (r *AutomationRepository) GetDeliveryTemplate(ctx context.Context, userID, templateID int64) (automationapp.TemplateInfo, error) {
+	if r == nil || r.store == nil || r.store.DeliveryTemplates == nil {
+		return automationapp.TemplateInfo{}, errors.New("发货模板存储未初始化")
+	}
+	// template、err 保存模板摘要及读取错误。
+	template, err := r.store.DeliveryTemplates.GetForUser(ctx, userID, templateID)
+	if errors.Is(err, db.ErrNotFound) {
+		return automationapp.TemplateInfo{}, automationapp.ErrRuleNotFound
+	}
+	if err != nil {
+		return automationapp.TemplateInfo{}, err
+	}
+	return automationapp.TemplateInfo{Enabled: template.Enabled, Keys: append([]string(nil), template.Keys...), CustomKeys: append([]string(nil), template.CustomKeys...)}, nil
 }
 
 // automationRulesModel 将数据库规则列表转换为应用模型。
@@ -228,11 +281,39 @@ func automationRulesModel(rules []db.AutomationRule) []automationapp.Rule {
 		for _, action := range rule.Actions {
 			actions = append(actions, automationapp.Action{ID: action.ID, ActionType: action.ActionType, CardID: action.CardID,
 				CardName: action.CardName, DeliveryCount: action.DeliveryCount, MessageTemplate: action.MessageTemplate,
-				DelaySeconds: action.DelaySeconds, ConfigJSON: action.ConfigJSON, Enabled: action.Enabled, SortOrder: action.SortOrder})
+				DelaySeconds: action.DelaySeconds, ConfigJSON: action.ConfigJSON, Enabled: action.Enabled, SortOrder: action.SortOrder,
+				DeliveryTemplateID: action.DeliveryTemplateID, DeliveryTemplateName: action.DeliveryTemplateName,
+				TemplateMessages: append([]string(nil), action.TemplateMessages...), TemplateKeys: append([]string(nil), action.TemplateKeys...),
+				TemplateBindings: templateBindingsModel(action.TemplateBindings), CustomVariables: cloneStringMap(action.CustomVariables)})
 		}
 		result = append(result, automationapp.Rule{ID: rule.ID, CookieID: rule.CookieID, ItemID: rule.ItemID, ItemTitle: rule.ItemTitle,
 			Name: rule.Name, TriggerType: rule.TriggerType, Enabled: rule.Enabled, Priority: rule.Priority,
-			ConfigJSON: rule.ConfigJSON, Actions: actions, CreatedAt: rule.CreatedAt, UpdatedAt: rule.UpdatedAt})
+			ConfigJSON: rule.ConfigJSON, SKUMigrationStatus: rule.SKUMigrationStatus, Actions: actions, CreatedAt: rule.CreatedAt, UpdatedAt: rule.UpdatedAt})
+	}
+	return result
+}
+
+// templateBindingsModel 转换模板变量绑定，避免向应用层暴露数据库模型。
+func templateBindingsModel(bindings []db.DeliveryTemplateBinding) []automationapp.TemplateBinding {
+	// result 保存转换后的应用层模板绑定列表。
+	result := make([]automationapp.TemplateBinding, 0, len(bindings))
+	// binding 表示当前数据库模板绑定。
+	for _, binding := range bindings {
+		result = append(result, automationapp.TemplateBinding{VariableKey: binding.VariableKey, CardID: binding.CardID, CardName: binding.CardName, DeliveryCount: binding.DeliveryCount})
+	}
+	return result
+}
+
+// cloneStringMap 复制模板自定义变量，避免调用方修改仓储返回值。
+func cloneStringMap(values map[string]string) map[string]string {
+	if values == nil {
+		return nil
+	}
+	// result 保存复制后的自定义变量映射。
+	result := make(map[string]string, len(values))
+	// key、value 表示当前自定义变量键值对。
+	for key, value := range values {
+		result[key] = value
 	}
 	return result
 }
@@ -243,12 +324,20 @@ func automationRuleInputDB(input automationapp.RuleInput) db.AutomationRuleInput
 	actions := make([]db.AutomationActionInput, 0, len(input.Actions))
 	// action 是当前待转换的应用动作。
 	for _, action := range input.Actions {
+		// bindings 保存模板变量到卡密组的数据库绑定模型。
+		bindings := make([]db.DeliveryTemplateBinding, 0, len(action.TemplateBindings))
+		// binding 表示当前动作的模板变量绑定。
+		for _, binding := range action.TemplateBindings {
+			bindings = append(bindings, db.DeliveryTemplateBinding{VariableKey: binding.VariableKey, CardID: binding.CardID, DeliveryCount: binding.DeliveryCount})
+		}
 		actions = append(actions, db.AutomationActionInput{ActionType: action.ActionType, CardID: action.CardID,
 			DeliveryCount: action.DeliveryCount, MessageTemplate: action.MessageTemplate, DelaySeconds: action.DelaySeconds,
-			ConfigJSON: action.ConfigJSON, Enabled: action.Enabled, SortOrder: action.SortOrder})
+			ConfigJSON: action.ConfigJSON, Enabled: action.Enabled, SortOrder: action.SortOrder,
+			DeliveryTemplateID: action.DeliveryTemplateID, TemplateBindings: bindings, CustomVariables: cloneStringMap(action.CustomVariables)})
 	}
 	return db.AutomationRuleInput{UserID: input.UserID, CookieID: input.CookieID, ItemID: input.ItemID, Name: input.Name,
-		TriggerType: input.TriggerType, Enabled: input.Enabled, Priority: input.Priority, ConfigJSON: input.ConfigJSON, Actions: actions}
+		TriggerType: input.TriggerType, Enabled: input.Enabled, Priority: input.Priority, ConfigJSON: input.ConfigJSON,
+		SKUMigrationStatus: input.SKUMigrationStatus, Actions: actions}
 }
 
 // mapAutomationRuleError 将数据库规则错误转换为应用层错误。

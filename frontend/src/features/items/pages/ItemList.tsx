@@ -3039,7 +3039,7 @@ const ItemList: React.FC<ItemListProps> = ({ onConfigureDelivery }) => {
   '@media (min-width:768px)': { 'gridTemplateColumns': 'repeat(5,minmax(0,1fr))' },
   'gap': '.75rem',
 }}>
-                    <MuiBox component='div' sx={[{ border: 1, borderRadius: 2, p: 2 }, batchToneSx(batchDetail.status)]}>
+                    <MuiBox component='div' sx={[{ border: 1, borderRadius: 1, p: 2 }, batchToneSx(batchDetail.status)]}>
                       <MuiBox component='div' sx={{ 'fontSize': '.75rem', 'lineHeight': '1rem', 'fontWeight': '700', 'opacity': '.7' }}>任务状态</MuiBox>
                       <MuiBox component='div' sx={{ 'fontSize': '1.25rem', 'lineHeight': '1.75rem', 'fontWeight': '800', 'marginTop': '.25rem' }}>{batchStatusText(batchDetail.status)}</MuiBox>
                     </MuiBox>

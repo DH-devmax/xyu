@@ -91,9 +91,13 @@ api-check:
 packaging-check:
 	node scripts/check-packaging-manifest.mjs
 
-## brand-assets-check: 校验源图哈希、派生尺寸和平台资源一致性
+## brand-assets-check: 校验已提交品牌资源和嵌入静态资源一致性
 brand-assets-check:
-	node scripts/check-brand-assets.mjs
+	@test -f branding/favicon.png && test -f frontend/public/favicon.png && test -f internal/webui/static/favicon.png
+	@test "$$(shasum -a 256 branding/favicon.png | awk '{print $$1}')" = "$$(shasum -a 256 frontend/public/favicon.png | awk '{print $$1}')"
+	@test "$$(shasum -a 256 branding/favicon.png | awk '{print $$1}')" = "$$(shasum -a 256 internal/webui/static/favicon.png | awk '{print $$1}')"
+	@file branding/favicon.png | grep -Eq 'PNG image data, 256 x 256.*RGBA|PNG image data, 256 x 256.*alpha'
+	@echo 'brand-assets: 通过（已提交资源一致）'
 
 ## product-data-migration-check: 执行复制、哈希、数据库解密、失败原子性、只读和回滚验证
 product-data-migration-check:

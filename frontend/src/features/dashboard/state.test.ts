@@ -37,10 +37,10 @@ test('Dashboard 派生数据覆盖空值、零值和名称截断分支',
     // rankedAnalytics 是包含多个商品的排行数据，用于覆盖排序比较器。
     const rankedAnalytics = { ...analytics, revenue_stats: { total_amount: 40, total_orders: 4 }, item_stats: [{ item_id: 'item-a', order_count: 1, total_amount: 10, avg_amount: 10 }, { item_id: 'item-b', order_count: 3, total_amount: 30, avg_amount: 10 }] } as OrderAnalytics;
     expect(buildProductSalesData(rankedAnalytics, { 'item-a': '商品A', 'item-b': '商品B' })).toEqual([{ name: '商品B', sales: 3 }, { name: '商品A', sales: 1 }]);
-    expect(buildSourceData(rankedAnalytics, { 'item-a': '商品A', 'item-b': '商品B' }, ['red', 'blue'])[0]).toMatchObject({ name: '商品B', percent: 75, color: 'red' });
-    expect(buildCategoryData(rankedAnalytics, { 'item-a': '商品A', 'item-b': '商品B' }, ['blue', 'red'])[0]).toMatchObject({ name: '商品B', percentage: '75.0', color: 'blue' });
-    expect(buildSourceData(analytics, {}, ['red'])[0]).toMatchObject({ name: 'item-long', percent: 100, color: 'red' });
-    expect(buildCategoryData(analytics, {}, ['blue'])[0]).toMatchObject({ name: 'item-long', percentage: '100.0', color: 'blue' });
+    expect(buildSourceData(rankedAnalytics, { 'item-a': '商品A', 'item-b': '商品B' })[0]).toMatchObject({ name: '商品B', percent: 75 });
+    expect(buildCategoryData(rankedAnalytics, { 'item-a': '商品A', 'item-b': '商品B' })[0]).toMatchObject({ name: '商品B', percentage: '75.0' });
+    expect(buildSourceData(analytics, {})[0]).toMatchObject({ name: 'item-long', percent: 100 });
+    expect(buildCategoryData(analytics, {})[0]).toMatchObject({ name: 'item-long', percentage: '100.0' });
     expect(getTrendPercent(null, analytics)).toBeNull();
     expect(getTrendPercent(analytics, null)).toBeNull();
     expect(getTrendPercent(analytics, empty)).toBe('+100%');

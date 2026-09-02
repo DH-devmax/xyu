@@ -757,6 +757,11 @@ func (contractChatPort) ListSessions(context.Context, int64, string, int) ([]cha
 	return nil, nil
 }
 
+// ListSessionPage 返回空的稳定键集分页结果，供分页端点契约测试使用。
+func (contractChatPort) ListSessionPage(context.Context, int64, string, *chatapp.SessionCursor, int) (chatapp.SessionPage, error) {
+	return chatapp.SessionPage{}, nil
+}
+
 // FindSession 返回空会话。
 func (contractChatPort) FindSession(context.Context, int64, string, string) (chatapp.Session, error) {
 	return chatapp.Session{}, nil

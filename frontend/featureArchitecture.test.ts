@@ -42,8 +42,12 @@ describe('Minimal source architecture', /* architectureSuite 汇总前端目录�
   });
 
   test('limits dynamic imports to the route registry', /* dynamicImportTest 校验懒加载位置。 */ () => {
-    // violations 是非 routes 目录中的动态导入文件。
-    const violations = productionSources().filter(/* dynamicSourceFilter 查找动态导入。 */ file => /\bimport\s*\(/.test(file.source) && !file.path.startsWith('routes/')).map(/* dynamicPathMapper 输出违规路径。 */ file => file.path);
+    // viewSplitAllowlist 是需要在页面内部延迟加载的低频视图分片白名单。
+    const viewSplitAllowlist = new Set(['features/dashboard/pages/Dashboard.tsx']);
+    // violations 是非 routes 目录中未声明为视图分片的动态导入文件。
+    const violations = productionSources()
+      .filter(/* dynamicSourceFilter 查找动态导入。 */ file => /\bimport\s*\(/.test(file.source) && !file.path.startsWith('routes/') && !viewSplitAllowlist.has(file.path))
+      .map(/* dynamicPathMapper 输出违规路径。 */ file => file.path);
     expect(violations).toEqual([]);
   });
 
@@ -55,6 +59,7 @@ describe('Minimal source architecture', /* architectureSuite 汇总前端目录�
       'src/features/brain/pages/BrainCenter.tsx',
       'src/features/cards/pages/CardList.tsx',
       'src/features/chat/pages/Chat.tsx',
+      'src/features/concierge/pages/Concierge.tsx',
       'src/features/dashboard/pages/Dashboard.tsx',
       'src/features/items/pages/ItemList.tsx',
       'src/features/notifications/pages/Notifications.tsx',

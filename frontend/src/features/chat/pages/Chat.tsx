@@ -63,15 +63,11 @@ const Chat: React.FC = () => {
       data-layout-contract="minimal-chat-layout"
       sx={{
         display: 'flex',
-        height: 'calc(100vh - 4rem)',
-        minHeight: 560,
+        height: '100%',
+        minHeight: 0,
         flexDirection: 'column',
         overflow: 'hidden',
-        border: 1,
-        borderRadius: 2,
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        boxShadow: 2,
+        bgcolor: 'background.default',
       }}
     >
       <MuiBox component='header' sx={{
@@ -81,7 +77,7 @@ const Chat: React.FC = () => {
   'backgroundColor': 'rgb(var(--minimal-color-slate-50)/.7)',
   'paddingLeft': '1.25rem',
   'paddingRight': '1.25rem',
-  'paddingTop': '1rem',
+  'paddingTop': '.75rem',
 }}>
         <MuiBox component='div' sx={{
   'marginBottom': '.75rem',

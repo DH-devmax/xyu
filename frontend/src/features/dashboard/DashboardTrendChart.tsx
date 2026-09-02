@@ -1,10 +1,11 @@
 import { ShoppingCart } from 'lucide-react';
 import React from 'react';
 import { Area,AreaChart,Bar,BarChart,CartesianGrid,Cell,ResponsiveContainer,Tooltip,XAxis,YAxis } from 'recharts';
-import { MinimalSectionCard } from '@/components/minimal';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { alpha,useTheme } from '@mui/material/styles';
+import { MinimalSectionCard } from '@/components/minimal';
 import type { DashboardChartPoint } from './state';
 
 /** 趋势图组件的输入参数。 */
@@ -17,70 +18,85 @@ export type DashboardTrendChartProps = {
   totalAmount: number;
 };
 
-/** 读取设计系统颜色变量。 */
-const cssColor = (token: string, alpha?: number): string => (
-  alpha === undefined ? `rgb(var(--minimal-color-${token}))` : `rgb(var(--minimal-color-${token}) / ${alpha})`
-);
 /** 展示 Dashboard 营收趋势，并根据数据点数量选择柱状图或面积图。 */
-export const DashboardTrendChart: React.FC<DashboardTrendChartProps> = ({ chartData, selectedRangeLabel, totalAmount }) => (
-  <MinimalSectionCard contentSx={{ p: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } } }}>
-    <Stack spacing={0.5} sx={{ mb: 3 }}>
-      <Typography variant="h3">营收趋势分析</Typography>
-      <Typography variant="body2" color="text.secondary">{selectedRangeLabel}的销售额走势</Typography>
-    </Stack>
-    <Box data-chart="dashboard-revenue" sx={{ height: 350, width: '100%' }}>
-      {chartData.length === 0 || totalAmount === 0 ? (
-        <Stack sx={{ height: '100%', alignItems: 'center', justifyContent: 'center', color: 'text.disabled' }} spacing={1}><ShoppingCart size={56} strokeWidth={1.5} /><Typography variant="h4" sx={{ color: 'text.secondary' }}>暂无营收数据</Typography><Typography variant="body2" color="text.secondary">所选时间范围内暂无订单记录</Typography></Stack>
-      ) : chartData.length <= 2 ? (
-        // 数据点少于等于2个时使用美化柱状图。
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 30, right: 20, left: 0, bottom: 30 }} barCategoryGap="45%">
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: cssColor('neutral-700'), fontSize: 14, fontWeight: 600 }} dy={10} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: cssColor('neutral-400'), fontSize: 13, fontWeight: 500 }} tickFormatter={
-              // value 是纵轴刻度的原始金额。
-              value => `¥${value}`
-            } />
-            <Tooltip
-              contentStyle={{ backgroundColor: cssColor('white'), borderRadius: '8px', border: `1px solid ${cssColor('neutral-200')}`, boxShadow: 'var(--minimal-shadow-xl)', padding: '12px 16px' }}
-              labelStyle={{ color: cssColor('neutral-500'), fontWeight: 500 }}
-              itemStyle={{ color: cssColor('brand'), fontWeight: 600 }}
-              cursor={{ fill: cssColor('brand', 0.08) }}
-              formatter={
-                // value 是提示框当前数据点的原始金额。
-                value => [`¥${Number(value).toFixed(2)}`, '营收']
-              }
-            />
-            <Bar dataKey="amount" fill={cssColor('brand')} maxBarSize={72} radius={[12, 12, 0, 0]} activeBar={false} stroke="none" strokeWidth={0}>
-              {chartData.map(
-                // index 用于生成稳定的图表扇区键。
-                (_, index) => <Cell key={`cell-${index}`} fill={cssColor('brand')} stroke="none" strokeWidth={0} />,
-              )}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      ) : (
-        // 数据点多于2个时使用面积图。
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={cssColor('brand')} stopOpacity={0.5} />
-                <stop offset="95%" stopColor={cssColor('brand')} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: cssColor('neutral-400'), fontSize: 13, fontWeight: 500 }} dy={15} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: cssColor('neutral-400'), fontSize: 13, fontWeight: 500 }} />
-            <CartesianGrid vertical={false} stroke={cssColor('neutral-100')} strokeDasharray="3 3" />
-            <Tooltip
-              contentStyle={{ backgroundColor: cssColor('white'), borderRadius: '8px', border: `1px solid ${cssColor('neutral-200')}`, boxShadow: 'var(--minimal-shadow-xl)', padding: '12px 16px' }}
-              labelStyle={{ color: cssColor('neutral-500'), fontWeight: 500 }}
-              itemStyle={{ color: cssColor('brand'), fontWeight: 600 }}
-              cursor={{ stroke: cssColor('brand'), strokeWidth: 2, strokeDasharray: '4 4' }}
-            />
-            <Area type="monotone" dataKey="amount" stroke={cssColor('brand')} strokeWidth={4} fillOpacity={1} fill="url(#colorAmount)" activeDot={{ r: 8, fill: cssColor('white'), stroke: cssColor('brand'), strokeWidth: 2 }} />
-          </AreaChart>
-        </ResponsiveContainer>
-      )}
-    </Box>
-  </MinimalSectionCard>
-);
+export const DashboardTrendChart: React.FC<DashboardTrendChartProps> = ({ chartData, selectedRangeLabel, totalAmount }) => {
+  // theme 读取当前设置抽屉生效后的 MUI 调色板，图表不再依赖旧 CSS 色彩令牌。
+  const theme = useTheme();
+  // tooltipStyle 统一 Recharts 浮层与 Minimal 卡片外观。
+  const tooltipStyle = {
+    backgroundColor: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: 8,
+    boxShadow: theme.shadows[8],
+    padding: '10px 12px',
+  };
+
+  return (
+    <MinimalSectionCard contentSx={{ p: { xs: 2, sm: 2.5 }, '&:last-child': { pb: { xs: 2, sm: 2.5 } } }}>
+      <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 2.5 }}>
+        <Box>
+          <Typography variant="h6">营收趋势分析</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{selectedRangeLabel}的销售额走势</Typography>
+        </Box>
+        <Typography color="primary.main" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+          ¥{totalAmount.toLocaleString('zh-CN', { maximumFractionDigits: 2 })}
+        </Typography>
+      </Stack>
+      <Box data-chart="dashboard-revenue" sx={{ height: 320, width: '100%' }}>
+        {chartData.length === 0 || totalAmount === 0 ? (
+          <Stack sx={{ height: '100%', alignItems: 'center', justifyContent: 'center', color: 'text.disabled', textAlign: 'center' }} spacing={1}>
+            <ShoppingCart size={44} strokeWidth={1.5} />
+            <Typography variant="subtitle1" color="text.secondary">暂无营收数据</Typography>
+            <Typography variant="body2" color="text.secondary">所选时间范围内暂无订单记录</Typography>
+          </Stack>
+        ) : chartData.length <= 2 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 20, right: 12, left: 0, bottom: 18 }} barCategoryGap="45%">
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12, fontWeight: 600 }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.disabled, fontSize: 12 }} tickFormatter={/* value 格式化纵轴金额。 */ value => `¥${value}`} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                labelStyle={{ color: theme.palette.text.secondary, fontWeight: 500 }}
+                itemStyle={{ color: theme.palette.primary.main, fontWeight: 700 }}
+                cursor={{ fill: alpha(theme.palette.primary.main, 0.08) }}
+                formatter={/* value 格式化悬浮提示金额。 */ value => [`¥${Number(value).toFixed(2)}`, '营收']}
+              />
+              <Bar dataKey="amount" fill={theme.palette.primary.main} maxBarSize={72} radius={[8, 8, 0, 0]} activeBar={false} stroke="none" strokeWidth={0}>
+                {chartData.map(/* _、index 将每个短周期数据点着色为主题主色。 */ (_, index) => <Cell key={`cell-${index}`} fill={theme.palette.primary.main} stroke="none" strokeWidth={0} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 8, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="dashboard-revenue-gradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.32} />
+                  <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.disabled, fontSize: 12 }} dy={12} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.disabled, fontSize: 12 }} />
+              <CartesianGrid vertical={false} stroke={theme.palette.divider} strokeDasharray="3 3" />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                labelStyle={{ color: theme.palette.text.secondary, fontWeight: 500 }}
+                itemStyle={{ color: theme.palette.primary.main, fontWeight: 700 }}
+                cursor={{ stroke: theme.palette.primary.main, strokeWidth: 2, strokeDasharray: '4 4' }}
+              />
+              <Area
+                type="monotone"
+                dataKey="amount"
+                stroke={theme.palette.primary.main}
+                strokeWidth={3}
+                fillOpacity={1}
+                fill="url(#dashboard-revenue-gradient)"
+                activeDot={{ r: 6, fill: theme.palette.background.paper, stroke: theme.palette.primary.main, strokeWidth: 2 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </Box>
+    </MinimalSectionCard>
+  );
+};
